@@ -1,0 +1,728 @@
+---
+import Icon from '../Icon.astro';
+import { fleet, site } from '../../data/site';
+import { categories, paxRanges, meta, isStudio, catCount, pad } from './fleetMeta';
+const total = fleet.length;
+---
+<section class="fb" id="collection" aria-label="Browse the fleet">
+  <div class="ff" data-ff>
+    <div class="ff__inner container">
+      <div class="ff__bar glass">
+        <div class="ff__group ff__cats" role="group" aria-label="Vehicle type" data-ff-cats>
+          <span class="ff__ind" aria-hidden="true"></span>
+          {categories.map((c, i) => (
+            <button type="button" class="ff__pill" data-cat={c.id} data-singular={c.singular} data-label={c.label} aria-pressed={i === 0 ? 'true' : 'false'}>
+              {c.label}<span class="ff__n">{catCount(c.id)}</span>
+            </button>
+          ))}
+        </div>
+
+        <!-- Desktop: segmented guests control -->
+        <div class="ff__paxwrap">
+          <span class="ff__label"><Icon name="users" /> Guests</span>
+          <div class="ff__group ff__seg" role="group" aria-label="Minimum number of guests" data-ff-pax>
+            <span class="ff__ind" aria-hidden="true"></span>
+            {paxRanges.map((p, i) => (
+              <button type="button" class="ff__pill ff__pill--seg" data-pax={p.min} data-label={p.label} aria-pressed={i === 0 ? 'true' : 'false'}>{p.label}</button>
+            ))}
+          </div>
+        </div>
+
+        <!-- Tablet & phone: one compact pill backed by a native select -->
+        <label class="ff__select" data-ff-select-wrap>
+          <Icon name="users" />
+          <span class="ff__select-lab">Guests</span>
+          <span class="ff__select-val" data-ff-pax-val>Any</span>
+          <svg class="ff__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+          <select data-ff-pax-select aria-label="Minimum number of guests">
+            {paxRanges.map((p) => <option value={p.min}>{p.min ? `${p.label} guests` : 'Any group size'}</option>)}
+          </select>
+        </label>
+
+        <p class="ff__count" aria-live="polite" data-ff-count><span class="ff__shown" data-ff-shown>{total}</span><span class="ff__of"> of {total}</span><span class="ff__word"> vehicles</span></p>
+      </div>
+      <p class="ff__toast" data-ff-toast aria-hidden="true"></p>
+    </div>
+  </div>
+
+  <div class="container fb__list" data-ff-list>
+    {fleet.map((v, i) => {
+      const m = meta[v.id];
+      const studio = isStudio(v);
+      const reserve = `/book/?vehicle=${v.id}`;
+      return (
+        <article
+          id={v.id}
+          class:list={['vh', i % 2 === 1 && 'is-rev', i === 0 && 'is-first', studio && 'vh--studio', m.grade && 'vh--grade']}
+          data-vehicle
+          data-cat={m.cat}
+          data-pax={v.passengers}
+          aria-labelledby={`vh-${v.id}`}
+        >
+          <div class="vh__stage" data-tilt>
+            <div class="vh__card" data-tilt-card>
+              <a href={reserve} class="vh__frame media" data-reveal="scale" data-cursor="Reserve" tabindex="-1" aria-hidden="true">
+                <div class="vh__zoom">
+                  <img src={v.image} alt={m.alt} loading="lazy" decoding="async" style={m.position ? `object-position:${m.position}` : undefined} />
+                </div>
+                <span class="vh__glare" aria-hidden="true"></span>
+                <span class="vh__tag">{v.category}</span>
+                {studio && <span class="vh__studio-note">Up to {v.passengers} guests · {v.luggage} bags</span>}
+              </a>
+            </div>
+            <span class="vh__num" aria-hidden="true">{pad(i + 1)}</span>
+          </div>
+
+          <div class="vh__info" data-stagger="0.07">
+            <p class="vh__meta"><span class="vh__idx">{pad(i + 1)} <i>/ {pad(total)}</i></span><span class="eyebrow">{v.category}</span></p>
+            <h2 class="vh__name" id={`vh-${v.id}`}>{m.make} <em>{m.model}</em></h2>
+            <p class="vh__intro">{m.intro}</p>
+            <dl class="vh__specs">
+              <div class="vh__spec">
+                <dt><Icon name="users" /> Passengers</dt>
+                <dd><span class="vh__big">{v.passengers}</span> <span class="vh__unit">guests</span></dd>
+              </div>
+              <div class="vh__spec">
+                <dt><Icon name="suitcase" /> Luggage</dt>
+                <dd><span class="vh__big">{v.luggage}</span> <span class="vh__unit">bags</span></dd>
+              </div>
+              <div class="vh__spec vh__spec--wide">
+                <dt><Icon name="sparkle" /> Best for</dt>
+                <dd class="vh__best">{v.bestFor}</dd>
+              </div>
+            </dl>
+            <ul class="vh__features" role="list">
+              {v.features.map((f) => <li><Icon name="check" /> {f}</li>)}
+            </ul>
+            <div class="vh__ctas">
+              <a href={reserve} class="btn btn--gold" data-magnetic="0.2">Reserve this vehicle <Icon name="arrow" /></a>
+              <a href={reserve} class="btn btn--ghost">Get a quote</a>
+            </div>
+          </div>
+        </article>
+      );
+    })}
+
+    <div class="fb__empty" data-ff-empty hidden>
+      <span class="fb__empty-icon" aria-hidden="true"><Icon name="car" /></span>
+      <p class="eyebrow">No exact match</p>
+      <h3 class="fb__empty-title" data-ff-empty-title>Nothing fits that combination.</h3>
+      <p class="muted">Try another vehicle type, or let our concierge recommend the right fit for your group.</p>
+      <div class="fb__empty-ctas">
+        <button type="button" class="btn btn--gold" data-ff-widen><span data-ff-widen-label>Show all vehicles</span> <Icon name="arrow" /></button>
+        <button type="button" class="btn btn--ghost" data-ff-reset>Reset filters</button>
+        <a href={site.phoneHref} class="link-underline fb__empty-call"><Icon name="phone" /> {site.phone}</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  import gsap from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+  gsap.registerPlugin(ScrollTrigger);
+
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const fine = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+  /* ---------- 3D tilt toward the cursor (desktop only) ---------- */
+  if (fine && !reduce) {
+    document.querySelectorAll<HTMLElement>('[data-tilt]').forEach((stage) => {
+      const card = stage.querySelector<HTMLElement>('[data-tilt-card]');
+      if (!card) return;
+      gsap.set(card, { transformPerspective: 1600, transformOrigin: '50% 50%' });
+      const rx = gsap.quickTo(card, 'rotationX', { duration: 0.9, ease: 'power3.out' });
+      const ry = gsap.quickTo(card, 'rotationY', { duration: 0.9, ease: 'power3.out' });
+      let raf = 0;
+      stage.addEventListener('pointermove', (e) => {
+        if (raf) return;
+        raf = requestAnimationFrame(() => {
+          raf = 0;
+          const r = stage.getBoundingClientRect();
+          const px = (e.clientX - r.left) / r.width - 0.5;
+          const py = (e.clientY - r.top) / r.height - 0.5;
+          ry(px * 7);
+          rx(-py * 5);
+          card.style.setProperty('--gx', `${(px + 0.5) * 100}%`);
+          card.style.setProperty('--gy', `${(py + 0.5) * 100}%`);
+        });
+      });
+      stage.addEventListener('pointerleave', () => { rx(0); ry(0); });
+    });
+  }
+
+  /* ---------- Filtering ---------- */
+  const root = document.querySelector<HTMLElement>('[data-ff]');
+  const section = root?.closest<HTMLElement>('.fb') ?? null;
+  const list = document.querySelector<HTMLElement>('[data-ff-list]');
+  const rows = Array.from(document.querySelectorAll<HTMLElement>('[data-vehicle]'));
+  const total = rows.length;
+  const empty = document.querySelector<HTMLElement>('[data-ff-empty]');
+  const emptyTitle = document.querySelector<HTMLElement>('[data-ff-empty-title]');
+  const shownEl = document.querySelector<HTMLElement>('[data-ff-shown]');
+  const countEl = document.querySelector<HTMLElement>('[data-ff-count]');
+  const toast = document.querySelector<HTMLElement>('[data-ff-toast]');
+  const catGroup = document.querySelector<HTMLElement>('[data-ff-cats]');
+  const paxGroup = document.querySelector<HTMLElement>('[data-ff-pax]');
+  const paxSelect = document.querySelector<HTMLSelectElement>('[data-ff-pax-select]');
+  const paxSelectWrap = document.querySelector<HTMLElement>('[data-ff-select-wrap]');
+  const paxVal = document.querySelector<HTMLElement>('[data-ff-pax-val]');
+
+  const widenLabel = document.querySelector<HTMLElement>('[data-ff-widen-label]');
+  const emptyArr: HTMLElement[] = empty ? [empty] : [];
+  const state = { cat: 'all', pax: 0 };
+  let busy: gsap.core.Timeline | null = null;
+
+  const matches = (el: HTMLElement) =>
+    (state.cat === 'all' || el.dataset.cat === state.cat) && Number(el.dataset.pax) >= state.pax;
+
+  const paxLabel = (min: number) => paxGroup?.querySelector<HTMLElement>(`[data-pax="${min}"]`)?.dataset.label ?? '';
+
+  function moveIndicator(group: HTMLElement | null, instant = false) {
+    if (!group) return;
+    const ind = group.querySelector<HTMLElement>('.ff__ind');
+    const active = group.querySelector<HTMLElement>('[aria-pressed="true"]');
+    if (!ind || !active) return;
+    const vars = { x: active.offsetLeft, width: active.offsetWidth, height: active.offsetHeight, y: active.offsetTop };
+    if (instant || reduce) gsap.set(ind, vars);
+    else gsap.to(ind, { ...vars, duration: 0.7, ease: 'expo.out' });
+    // keep the active pill in view inside the horizontally scrollable group (tablet / mobile)
+    if (group.scrollWidth > group.clientWidth + 2) {
+      const target = active.offsetLeft - (group.clientWidth - active.offsetWidth) / 2;
+      group.scrollTo({ left: Math.max(0, target), behavior: instant || reduce ? 'auto' : 'smooth' });
+    }
+  }
+
+  function press(group: HTMLElement | null, btn: HTMLElement | null) {
+    if (!group || !btn) return;
+    group.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
+  }
+
+  /* Feedback on every change, even when the visible set does not change. */
+  let toastT = 0;
+  function feedback(n: number) {
+    if (countEl) {
+      countEl.classList.remove('is-pulse');
+      void countEl.offsetWidth;
+      countEl.classList.add('is-pulse');
+    }
+    if (toast) {
+      toast.textContent = n === 0 ? 'No exact match' : n === total ? `Showing all ${total} vehicles` : `Showing ${n} of ${total} vehicles`;
+      toast.classList.add('is-show');
+      clearTimeout(toastT);
+      toastT = window.setTimeout(() => toast.classList.remove('is-show'), 1900);
+    }
+  }
+
+  function layout() {
+    let n = 0;
+    rows.forEach((r) => {
+      const show = matches(r);
+      r.hidden = !show;
+      if (show) { r.classList.toggle('is-rev', n % 2 === 1); r.classList.toggle('is-first', n === 0); n++; }
+    });
+    if (shownEl) shownEl.textContent = String(n);
+    if (empty) {
+      empty.hidden = n > 0;
+      if (n === 0 && emptyTitle) {
+        const catBtn = catGroup?.querySelector<HTMLElement>(`[data-cat="${state.cat}"]`);
+        const lbl = paxLabel(state.pax);
+        emptyTitle.innerHTML = `No ${catBtn?.dataset.singular ?? 'vehicle'} seats <em>${lbl} guests.</em>`;
+        if (widenLabel) widenLabel.textContent = state.pax ? `Show every vehicle for ${lbl}` : 'Show all vehicles';
+      }
+    }
+    return n;
+  }
+
+  function apply() {
+    busy?.progress(1).kill();
+    const before = rows.filter((r) => !r.hidden);
+    const after = rows.filter(matches);
+    const same = before.length === after.length && before.every((r, i) => r === after[i]) && (!empty || empty.hidden === after.length > 0);
+    feedback(after.length);
+    if (same) return;
+
+    if (reduce) { layout(); ScrollTrigger.refresh(); return; }
+
+    const outgoing = [...before, ...emptyArr.filter((el) => !el.hidden)];
+    busy = gsap.timeline();
+    busy.to(outgoing, { opacity: 0, y: 24, duration: 0.38, ease: 'power2.in', stagger: 0.025 })
+      .add(() => {
+        layout();
+        gsap.set([...rows, ...emptyArr], { clearProps: 'opacity,transform' });
+        // If the visitor is deep in the list, bring the results back into view while they're hidden.
+        if (list && list.getBoundingClientRect().top < 0) {
+          const y = list.getBoundingClientRect().top + window.scrollY - 150;
+          if (window.lenis) window.lenis.scrollTo(y, { immediate: true });
+          else window.scrollTo(0, y);
+        }
+        ScrollTrigger.refresh();
+      })
+      .fromTo(
+        [...after, ...(after.length ? [] : emptyArr)],
+        { opacity: 0, y: 60 },
+        { opacity: 1, y: 0, duration: 1.1, ease: 'expo.out', stagger: 0.09, clearProps: 'transform' },
+      );
+  }
+
+  function setCat(id: string) {
+    state.cat = id;
+    press(catGroup, catGroup?.querySelector<HTMLElement>(`[data-cat="${id}"]`) ?? null);
+    moveIndicator(catGroup);
+  }
+  function setPax(min: number) {
+    state.pax = min;
+    press(paxGroup, paxGroup?.querySelector<HTMLElement>(`[data-pax="${min}"]`) ?? null);
+    moveIndicator(paxGroup);
+    if (paxSelect) paxSelect.value = String(min);
+    if (paxVal) paxVal.textContent = paxLabel(min) || 'Any';
+    paxSelectWrap?.classList.toggle('is-active', min > 0);
+  }
+
+  catGroup?.addEventListener('click', (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLElement>('[data-cat]');
+    if (!b) return;
+    if (b.getAttribute('aria-pressed') === 'true') { feedback(rows.filter(matches).length); return; }
+    setCat(b.dataset.cat || 'all');
+    apply();
+  });
+  paxGroup?.addEventListener('click', (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLElement>('[data-pax]');
+    if (!b) return;
+    if (b.getAttribute('aria-pressed') === 'true') { feedback(rows.filter(matches).length); return; }
+    setPax(Number(b.dataset.pax) || 0);
+    apply();
+  });
+  paxSelect?.addEventListener('change', () => { setPax(Number(paxSelect.value) || 0); apply(); });
+
+  document.querySelector('[data-ff-widen]')?.addEventListener('click', () => { setCat('all'); apply(); });
+  document.querySelector('[data-ff-reset]')?.addEventListener('click', () => { setCat('all'); setPax(0); apply(); });
+
+  // Deep links (footer, quick-match list): make sure a filtered-out vehicle is visible before scrolling to it.
+  document.addEventListener('click', (e) => {
+    const a = (e.target as HTMLElement).closest<HTMLAnchorElement>('a[href*="#"]');
+    if (!a) return;
+    const url = new URL(a.href, location.href);
+    if (url.pathname !== location.pathname || !url.hash) return;
+    const row = rows.find((r) => `#${r.id}` === url.hash);
+    if (row && row.hidden) {
+      busy?.progress(1).kill();
+      setCat('all'); setPax(0); layout();
+      gsap.set([...rows, ...emptyArr], { clearProps: 'opacity,transform' });
+      ScrollTrigger.refresh();
+    }
+  }, true);
+
+  // Fade hint on the scrollable category row disappears once scrolled to the end (or when it fits).
+  const checkEnd = () => {
+    if (!catGroup) return;
+    catGroup.classList.toggle('is-end', catGroup.scrollLeft + catGroup.clientWidth >= catGroup.scrollWidth - 4);
+  };
+  catGroup?.addEventListener('scroll', checkEnd, { passive: true });
+
+  // Initial indicator placement (after fonts settle) + on resize.
+  root?.classList.add('is-ready');
+  const place = () => { moveIndicator(catGroup, true); moveIndicator(paxGroup, true); checkEnd(); };
+  place();
+  document.fonts?.ready.then(place);
+  let rt = 0;
+  window.addEventListener('resize', () => { clearTimeout(rt); rt = window.setTimeout(place, 120); });
+
+  // Darken the bar only while it is actually pinned (its top sits at its sticky offset).
+  if (root && section) {
+    let ticking = false;
+    const checkStuck = () => {
+      ticking = false;
+      const top = parseFloat(getComputedStyle(root).top) || 0;
+      const r = root.getBoundingClientRect();
+      const inSection = section.getBoundingClientRect().bottom > r.height + top + 40;
+      root.classList.toggle('is-stuck', Math.abs(r.top - top) < 1.5 && inSection);
+    };
+    const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(checkStuck); } };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    root.addEventListener('transitionend', onScroll);
+    checkStuck();
+  }
+</script>
+
+<style>
+  .fb { position: relative; padding-bottom: clamp(3rem, 7vw, 6rem); }
+
+  /* ---------- Sticky filter bar ----------
+     Only the sticky offset moves when the header hides, so the bar never shifts while it is still in normal flow. */
+  .ff {
+    position: sticky;
+    top: 70px;
+    z-index: 40;
+    padding-block: 1rem 0.5rem;
+    transition: top 0.6s var(--ease-out);
+  }
+  :global(body:has(.header.is-hidden)) .ff { top: 0; }
+  .ff__inner { position: relative; }
+  .ff__bar {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 6px;
+    border-radius: 999px;
+    border-color: var(--line-strong);
+    box-shadow: 0 18px 50px -20px rgba(0, 0, 0, 0.8);
+    transition: background 0.4s, box-shadow 0.4s;
+  }
+  .ff.is-stuck .ff__bar { background: rgba(14, 14, 17, 0.86); box-shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.95); }
+  .ff__group { position: relative; display: flex; align-items: center; gap: 2px; isolation: isolate; }
+  .ff__cats {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+    -webkit-mask-image: linear-gradient(90deg, #000 80%, transparent);
+    mask-image: linear-gradient(90deg, #000 80%, transparent);
+  }
+  .ff__cats.is-end { -webkit-mask-image: none; mask-image: none; }
+  .ff__cats::-webkit-scrollbar { display: none; }
+  .ff__ind {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: -1;
+    width: 0;
+    height: 44px;
+    border-radius: 999px;
+    background: var(--ivory);
+    opacity: 0;
+    pointer-events: none;
+  }
+  .ff.is-ready .ff__ind { opacity: 1; }
+  .ff__pill {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: none;
+    min-height: 44px;
+    padding: 0 1.05rem;
+    border-radius: 999px;
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ivory-2);
+    white-space: nowrap;
+    transition: color 0.45s var(--ease-out);
+  }
+  .ff__pill:hover { color: var(--ivory); }
+  .ff__pill[aria-pressed='true'] { color: var(--ink); }
+  .ff:not(.is-ready) .ff__pill[aria-pressed='true'] { background: var(--ivory); }
+  .ff__n { font-size: 0.62rem; letter-spacing: 0.04em; color: var(--muted); font-variant-numeric: tabular-nums; transition: color 0.45s; }
+  .ff__pill[aria-pressed='true'] .ff__n { color: var(--gold-3); }
+  .ff__paxwrap { display: flex; align-items: center; gap: 0.6rem; flex: none; padding-left: 1rem; border-left: 1px solid var(--line); }
+  .ff__label { display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); }
+  .ff__label :global(svg) { width: 15px; height: 15px; color: var(--gold); }
+  .ff__seg { padding: 0; }
+  .ff__pill--seg { min-width: 52px; justify-content: center; padding: 0 0.85rem; letter-spacing: 0.06em; font-variant-numeric: tabular-nums; }
+
+  /* Compact guests pill (tablet & phone) */
+  .ff__select {
+    position: relative;
+    display: none;
+    align-items: center;
+    gap: 0.45rem;
+    flex: none;
+    min-height: 44px;
+    padding: 0 0.95rem 0 0.9rem;
+    border-radius: 999px;
+    border: 1px solid var(--line-strong);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ivory);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: border-color 0.4s, background 0.4s;
+  }
+  .ff__select :global(svg) { width: 15px; height: 15px; color: var(--gold); flex: none; }
+  .ff__select .ff__chev { width: 13px; height: 13px; color: var(--muted); }
+  .ff__select-lab { color: var(--muted); }
+  .ff__select-val { font-variant-numeric: tabular-nums; }
+  .ff__select.is-active { border-color: rgba(201, 168, 106, 0.6); background: rgba(201, 168, 106, 0.1); }
+  .ff__select.is-active .ff__select-val { color: var(--gold-2); }
+  .ff__select:focus-within { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .ff__select select {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    font-size: 16px; /* prevents iOS zoom */
+    appearance: none;
+  }
+
+  .ff__count { flex: none; padding: 0 1rem 0 0.4rem; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .ff__shown { display: inline-block; color: var(--gold-2); }
+  .ff__word { display: none; }
+  .ff__count.is-pulse .ff__shown { animation: ff-pulse 0.9s var(--ease-out); }
+  @keyframes ff-pulse {
+    0% { transform: scale(1); text-shadow: 0 0 0 rgba(232, 211, 162, 0); }
+    30% { transform: scale(1.35); text-shadow: 0 0 18px rgba(232, 211, 162, 0.7); }
+    100% { transform: scale(1); text-shadow: 0 0 0 rgba(232, 211, 162, 0); }
+  }
+
+  .ff__toast {
+    position: absolute;
+    left: 50%;
+    top: calc(100% + 0.5rem);
+    display: none;
+    padding: 0.5rem 0.95rem;
+    border-radius: 999px;
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--ink);
+    background: var(--gold-grad);
+    box-shadow: 0 14px 30px -12px rgba(0, 0, 0, 0.8);
+    opacity: 0;
+    transform: translate(-50%, -6px);
+    pointer-events: none;
+    transition: opacity 0.45s var(--ease-out), transform 0.6s var(--ease-out);
+  }
+  .ff__toast.is-show { opacity: 1; transform: translate(-50%, 0); }
+
+  @media (max-width: 1180px) {
+    .ff__bar { gap: 0.6rem; }
+    .ff__paxwrap { display: none; }
+    .ff__select { display: inline-flex; }
+    .ff__word { display: inline; }
+    .ff__count { padding: 0 0.9rem 0 0.2rem; }
+  }
+  @media (max-width: 760px) {
+    .ff { padding-block: 0.5rem 0.25rem; }
+    .ff__inner { width: calc(100% - 20px); }
+    .ff__bar { gap: 0.4rem; padding: 5px; }
+    .ff__pill { padding: 0 0.85rem; font-size: 0.68rem; letter-spacing: 0.1em; }
+    .ff__select { padding: 0 0.8rem; gap: 0.4rem; font-size: 0.68rem; letter-spacing: 0.08em; }
+    .ff__select-lab { display: none; }
+    /* the count moves into a transient toast so the bar stays one row */
+    .ff__count { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; padding: 0; }
+    .ff__toast { display: block; }
+  }
+
+  /* ---------- Vehicle rows ---------- */
+  .fb__list { position: relative; }
+  .vh {
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+    gap: clamp(2.5rem, 6vw, 6rem);
+    align-items: center;
+    padding-block: clamp(3.5rem, 6vw, 5.5rem);
+    border-top: 1px solid var(--line);
+    scroll-margin-top: 150px;
+  }
+  .vh.is-first { border-top: 0; padding-top: clamp(3.5rem, 6vw, 5.5rem); }
+  .vh[hidden] { display: none; }
+  .vh.is-rev .vh__stage { order: 2; }
+  /* Reversed rows mirror the columns so every image keeps the wide 1.3fr column. */
+  @media (min-width: 1101px) {
+    .vh.is-rev { grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); }
+  }
+
+  .vh__stage { position: relative; }
+  .vh__card { position: relative; will-change: transform; transform-style: preserve-3d; }
+  .vh__frame {
+    display: block;
+    aspect-ratio: 16 / 11;
+    border-radius: var(--radius-l);
+    border: 1px solid var(--line);
+    box-shadow: 0 50px 90px -50px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+  }
+  .vh__zoom { position: absolute; inset: 0; transition: transform 1.6s var(--ease-out); }
+  .vh__zoom img { width: 100%; height: 100%; object-fit: cover; }
+  .vh__stage:hover .vh__zoom { transform: scale(1.06); }
+  .vh__frame::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(180deg, rgba(10, 10, 12, 0) 55%, rgba(10, 10, 12, 0.55) 100%);
+  }
+
+  /* Daylight stock photos: graded down into the page's dark, cinematic palette. */
+  .vh--grade .vh__zoom img { filter: brightness(0.74) contrast(1.12) saturate(0.6); }
+  .vh--grade .vh__frame::after {
+    background:
+      radial-gradient(120% 90% at 50% 45%, rgba(10, 10, 12, 0) 45%, rgba(10, 10, 12, 0.55) 100%),
+      linear-gradient(180deg, rgba(10, 10, 12, 0.18) 0%, rgba(10, 10, 12, 0) 30%, rgba(10, 10, 12, 0) 50%, rgba(10, 10, 12, 0.72) 100%);
+  }
+  /* Tighter editorial crops: the oversized zoom layer is clipped by the frame. */
+  #s550 .vh__zoom { inset: -34% -6% 0 -6%; }
+  #party-sprinter .vh__zoom { inset: -6% -14% -4% -4%; }
+
+  .vh__glare {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    opacity: 0;
+    background: radial-gradient(60% 60% at var(--gx, 50%) var(--gy, 30%), rgba(255, 244, 220, 0.18), transparent 70%);
+    mix-blend-mode: soft-light;
+    transition: opacity 0.6s var(--ease-out);
+  }
+  .vh__stage:hover .vh__glare { opacity: 1; }
+  .vh__tag {
+    position: absolute;
+    left: 1.1rem;
+    bottom: 1.1rem;
+    z-index: 3;
+    padding: 0.45rem 0.85rem;
+    border-radius: 999px;
+    font-size: 0.64rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ivory);
+    background: rgba(10, 10, 12, 0.5);
+    border: 1px solid rgba(243, 238, 228, 0.16);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .vh__num {
+    position: absolute;
+    right: 1.2rem;
+    top: -0.66em;
+    z-index: 4;
+    font-family: var(--font-display);
+    font-size: clamp(5rem, 9vw, 9rem);
+    line-height: 1;
+    font-style: italic;
+    color: transparent;
+    -webkit-text-stroke: 1px rgba(232, 211, 162, 0.7);
+    text-shadow: 0 6px 28px rgba(0, 0, 0, 0.6);
+    pointer-events: none;
+    user-select: none;
+  }
+  .vh.is-rev .vh__num { right: auto; left: 1.2rem; }
+  /* First row: the info column already carries "01 / 06", so keep the opener clean. */
+  .vh.is-first .vh__num { display: none; }
+
+  /* Studio-shot vehicle: present the white backdrop as an intentional ivory plate. */
+  .vh--studio .vh__zoom {
+    background:
+      radial-gradient(70% 18% at 50% 86%, rgba(60, 48, 30, 0.22), transparent 70%),
+      radial-gradient(120% 95% at 50% 30%, #fbf8f2 0%, #efe8dc 58%, #ddd3c1 100%);
+  }
+  .vh--studio .vh__zoom img { object-fit: contain; padding: 9% 9% 7%; mix-blend-mode: multiply; }
+  .vh--studio .vh__frame { border-color: rgba(232, 211, 162, 0.35); }
+  .vh--studio .vh__frame::after { background: linear-gradient(180deg, rgba(10, 10, 12, 0) 70%, rgba(10, 10, 12, 0.18) 100%); }
+  .vh--studio .vh__tag { background: rgba(23, 19, 11, 0.88); border-color: transparent; color: var(--gold-2); backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .vh--studio .vh__num { -webkit-text-stroke-color: rgba(122, 100, 64, 0.8); text-shadow: none; }
+  .vh__studio-note {
+    position: absolute;
+    top: 1.25rem;
+    left: 1.3rem;
+    z-index: 3;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: #7a6440;
+  }
+  .vh.is-rev .vh__studio-note { left: auto; right: 1.3rem; }
+  .vh--studio.is-rev .vh__studio-note { left: auto; right: 1.3rem; }
+
+  /* Info column */
+  .vh__info { display: grid; gap: 1.35rem; align-content: center; }
+  .vh__meta { display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap; }
+  .vh__idx { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.18em; color: var(--ivory); font-variant-numeric: tabular-nums; }
+  .vh__idx i { font-style: normal; color: var(--muted-2); }
+  .vh__name { font-size: clamp(2.6rem, 4.4vw, 4.2rem); line-height: 0.98; }
+  .vh__intro { color: var(--ivory-2); max-width: 46ch; line-height: 1.7; }
+
+  .vh__specs {
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+    border-block: 1px solid var(--line);
+  }
+  .vh__spec { display: grid; gap: 0.35rem; padding: 1.05rem 1.4rem 1.05rem 0; }
+  .vh__spec + .vh__spec { padding-left: 1.4rem; border-left: 1px solid var(--line); }
+  .vh__spec dt { display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); }
+  .vh__spec dt :global(svg) { width: 14px; height: 14px; color: var(--gold); }
+  .vh__spec dd { display: flex; align-items: baseline; gap: 0.35rem; }
+  .vh__big { font-family: var(--font-display); font-size: 2.4rem; line-height: 1; color: var(--ivory); font-variant-numeric: lining-nums; }
+  .vh__unit { font-size: 0.78rem; color: var(--muted); }
+  .vh__best { font-size: 0.9rem; line-height: 1.45; color: var(--ivory-2); }
+
+  .vh__features { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem 1.4rem; }
+  .vh__features li { display: flex; align-items: center; gap: 0.6rem; font-size: 0.92rem; color: var(--ivory-2); }
+  .vh__features :global(svg) {
+    flex: none;
+    width: 22px;
+    height: 22px;
+    padding: 4px;
+    border-radius: 50%;
+    color: var(--gold-2);
+    background: rgba(201, 168, 106, 0.1);
+    border: 1px solid rgba(201, 168, 106, 0.3);
+    stroke-width: 2.2;
+  }
+  .vh__ctas { display: flex; flex-wrap: wrap; gap: 0.75rem; padding-top: 0.4rem; }
+
+  @media (max-width: 1100px) and (min-width: 861px) {
+    .vh { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(2rem, 4vw, 3rem); }
+    .vh__frame { aspect-ratio: 5 / 4; }
+    .vh__specs { grid-template-columns: 1fr 1fr; }
+    .vh__spec--wide { grid-column: 1 / -1; padding-left: 0 !important; border-left: 0 !important; border-top: 1px solid var(--line); }
+    .vh__ctas .btn { flex: 1 1 auto; padding-inline: 1.2rem; }
+  }
+  @media (max-width: 860px) {
+    .vh__features li { font-size: 0.9rem; }
+    .vh { grid-template-columns: 1fr; gap: 2rem; padding-block: 3.25rem; scroll-margin-top: 132px; }
+    .vh.is-first { padding-top: 2.5rem; }
+    .vh.is-rev .vh__stage { order: 0; }
+    .vh__frame { aspect-ratio: 16 / 10; border-radius: var(--radius); }
+    .vh__num { font-size: 4.6rem; right: 0.9rem; left: auto; top: -0.6em; }
+    .vh.is-rev .vh__num { left: 0.9rem; right: auto; }
+    .vh.is-rev .vh__studio-note { right: auto; left: 1.1rem; }
+    .vh__specs { grid-template-columns: 1fr 1fr; }
+    .vh__spec--wide { grid-column: 1 / -1; padding-left: 0 !important; border-left: 0 !important; border-top: 1px solid var(--line); }
+    .vh__ctas { display: grid; grid-template-columns: 1fr; }
+    .vh__ctas .btn { width: 100%; }
+  }
+  @media (max-width: 560px) {
+    .vh__frame { aspect-ratio: 4 / 3; }
+  }
+  @media (max-width: 420px) {
+    .vh__features { grid-template-columns: 1fr; }
+    .vh__name { font-size: 2.6rem; }
+    .vh__studio-note { font-size: 0.56rem; letter-spacing: 0.18em; }
+  }
+
+  /* ---------- Empty state ---------- */
+  .fb__empty {
+    display: grid;
+    justify-items: center;
+    gap: 1rem;
+    max-width: 620px;
+    margin: clamp(3rem, 7vw, 5rem) auto;
+    padding: clamp(2.5rem, 6vw, 4rem) clamp(1.5rem, 4vw, 3rem);
+    text-align: center;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-l);
+    background: radial-gradient(100% 80% at 50% 0%, rgba(201, 168, 106, 0.08), transparent 70%), var(--ink-2);
+  }
+  .fb__empty[hidden] { display: none; }
+  .fb__empty-icon { display: grid; place-items: center; width: 64px; height: 64px; border-radius: 50%; border: 1px solid rgba(201, 168, 106, 0.35); color: var(--gold-2); }
+  .fb__empty-icon :global(svg) { width: 28px; height: 28px; }
+  .fb__empty-title { font-size: clamp(2rem, 3.4vw, 2.8rem); }
+  .fb__empty-call { min-height: 44px; white-space: nowrap; }
+  .fb__empty-call :global(svg) { width: 16px; height: 16px; }
+  .fb__empty-ctas { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 0.8rem 1.4rem; margin-top: 0.6rem; }
+  @media (max-width: 520px) {
+    .fb__empty-ctas { display: grid; width: 100%; justify-items: center; }
+    .fb__empty-ctas .btn { width: 100%; }
+  }
+</style>

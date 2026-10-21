@@ -1,0 +1,266 @@
+---
+// Intro: occasions marquee, scroll-scrubbed brand statement and proof stats.
+import Icon from '../Icon.astro';
+import { site, stats, occasions } from '../../data/site';
+
+// Statement copy, tokenised so each word can be scrubbed from muted to ivory.
+const statement: { t: string; gold?: boolean }[] = [
+  ...`Since ${site.since}, we’ve driven Seattle’s executives, newlyweds and night owls\u00A0—`.split(' ').map((t) => ({ t })),
+  ...'on time, every time,'.split(' ').map((t) => ({ t })),
+  ...'door to door.'.split(' ').map((t) => ({ t, gold: true })),
+];
+
+const rowB = [...occasions.slice(6), ...occasions.slice(0, 6)];
+---
+<section class="intro" aria-label="Who we are">
+  <div class="mq" data-mq>
+    <div class="mq__row mq__row--a" data-mq-row data-dir="-1">
+      <div class="mq__track" data-mq-track>
+        <ul class="mq__group" role="list" aria-label="Occasions we serve">
+          {occasions.map((o) => (
+            <li class="mq__item"><span>{o}</span><svg class="mq__gem" viewBox="0 0 10 10" aria-hidden="true"><path d="M5 0 10 5 5 10 0 5Z" /></svg></li>
+          ))}
+        </ul>
+        <ul class="mq__group" role="list" aria-hidden="true">
+          {occasions.map((o) => (
+            <li class="mq__item"><span>{o}</span><svg class="mq__gem" viewBox="0 0 10 10"><path d="M5 0 10 5 5 10 0 5Z" /></svg></li>
+          ))}
+        </ul>
+      </div>
+    </div>
+    <div class="mq__row mq__row--b" data-mq-row data-dir="1" aria-hidden="true">
+      <div class="mq__track" data-mq-track>
+        {[0, 1].map(() => (
+          <ul class="mq__group" role="list">
+            {rowB.map((o) => (
+              <li class="mq__item"><span>{o}</span><svg class="mq__gem mq__gem--line" viewBox="0 0 10 10"><path d="M5 .8 9.2 5 5 9.2 .8 5Z" /></svg></li>
+            ))}
+          </ul>
+        ))}
+      </div>
+    </div>
+  </div>
+
+  <div class="container intro__body">
+    <div class="intro__grid">
+      <aside class="intro__aside" data-reveal>
+        <p class="eyebrow">Our promise</p>
+        <p class="intro__aside-text">{site.tagline}. Driven by locals who treat your schedule as sacred.</p>
+        <a href="/fleet/" class="link-underline">Meet the fleet <Icon name="arrow" /></a>
+      </aside>
+      <p class="intro__statement display" data-statement>
+        {statement.map((w) => (
+          <>
+            <span class:list={['intro__w', w.gold && 'intro__w--gold']}>{w.t}</span>{' '}
+          </>
+        ))}
+      </p>
+    </div>
+
+    <dl class="intro__stats" data-stagger="0.1">
+      {stats.map((s) => (
+        <div class="intro__stat">
+          <dt class="intro__stat-label">{s.label}</dt>
+          <dd class="intro__stat-value">
+            <span data-count={s.value}>{s.value.toLocaleString('en-US')}</span><span class="intro__stat-suffix">{s.suffix}</span>
+          </dd>
+        </div>
+      ))}
+    </dl>
+  </div>
+</section>
+
+<style>
+  .intro { position: relative; background: var(--ink); overflow: hidden; }
+
+  /* ---------- Marquee ---------- */
+  .mq {
+    position: relative;
+    padding-block: clamp(1.6rem, 3.4vw, 2.8rem);
+    border-block: 1px solid var(--line);
+    background:
+      radial-gradient(60% 120% at 50% 50%, rgba(201, 168, 106, 0.07), transparent 70%),
+      var(--ink);
+    display: grid;
+    gap: clamp(0.2rem, 0.8vw, 0.6rem);
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  }
+  .mq__row { overflow: hidden; }
+  .mq__track { display: flex; width: max-content; will-change: transform; }
+  .mq__group { display: flex; flex: none; align-items: center; list-style: none; padding: 0; margin: 0; }
+  .mq__item {
+    display: inline-flex;
+    align-items: center;
+    flex: none;
+    font-family: var(--font-display);
+    font-style: italic;
+    line-height: 1.12;
+    white-space: nowrap;
+    transition: color 0.6s var(--ease-out);
+  }
+  .mq__row--a .mq__item { font-size: clamp(2.5rem, 6.6vw, 6.2rem); color: var(--ivory); letter-spacing: -0.02em; }
+  .mq__row--b .mq__item { font-size: clamp(1.5rem, 3.2vw, 3rem); color: var(--muted-2); letter-spacing: -0.005em; }
+  .mq__item:hover { color: var(--gold-2); }
+  .mq__gem { width: 0.2em; height: 0.2em; margin-inline: 0.55em; fill: var(--gold); flex: none; transform: translateY(0.05em); }
+  .mq__gem--line { fill: none; stroke: var(--gold); stroke-width: 1; opacity: 0.8; width: 0.26em; height: 0.26em; }
+
+  /* ---------- Statement ---------- */
+  .intro__body { padding-block: clamp(4.5rem, 10vw, 9rem) clamp(2.5rem, 5vw, 4rem); }
+  .intro__grid {
+    display: grid;
+    gap: 2.2rem;
+  }
+  @media (min-width: 1024px) {
+    .intro__grid { grid-template-columns: minmax(220px, 3fr) 9fr; gap: clamp(3rem, 6vw, 6rem); align-items: start; }
+  }
+  .intro__aside { display: grid; gap: 1.1rem; align-content: start; max-width: 34ch; }
+  @media (min-width: 1024px) { .intro__aside { padding-top: 1.1rem; } }
+  .intro__aside-text { color: var(--muted); font-size: 0.95rem; line-height: 1.7; }
+  /* Tap target from padding, so the gold underline still sits right under the text */
+  .intro__aside .link-underline { justify-self: start; min-height: 0; padding-block: 0.75rem; }
+  .intro__aside .link-underline::after { bottom: 0.55rem; }
+  .intro__aside .link-underline :global(svg) { width: 15px; height: 15px; }
+
+  .intro__statement {
+    font-size: clamp(1.9rem, 3.5vw, 3.3rem);
+    line-height: 1.16;
+    letter-spacing: -0.015em;
+    color: var(--ivory);
+    text-wrap: pretty;
+    font-variant-numeric: lining-nums;
+  }
+  .intro__w { display: inline; }
+  .intro__w--gold {
+    font-style: italic;
+    background: var(--gold-grad);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    padding-right: 0.04em;
+  }
+
+  /* ---------- Stats ---------- */
+  .intro__stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: clamp(4rem, 8vw, 7rem);
+    border-top: 1px solid var(--line);
+  }
+  @media (min-width: 900px) { .intro__stats { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  .intro__stat {
+    position: relative;
+    display: flex;
+    flex-direction: column-reverse;
+    justify-content: flex-end;
+    gap: 0.7rem;
+    padding: clamp(1.6rem, 3vw, 2.4rem) clamp(0.9rem, 2.2vw, 2rem) 0;
+  }
+  .intro__stat:first-child, .intro__stat:nth-child(3) { padding-left: 0; }
+  @media (min-width: 900px) { .intro__stat:nth-child(3) { padding-left: clamp(0.9rem, 2.2vw, 2rem); } }
+  .intro__stat + .intro__stat::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: clamp(1.6rem, 3vw, 2.4rem);
+    bottom: 0.4rem;
+    width: 1px;
+    background: linear-gradient(180deg, rgba(201, 168, 106, 0.65), rgba(201, 168, 106, 0));
+  }
+  @media (max-width: 899px) {
+    .intro__stat:nth-child(3)::before { display: none; }
+    .intro__stat:nth-child(n + 3) { margin-top: 1.2rem; }
+  }
+  .intro__stat-value {
+    font-family: var(--font-display);
+    font-size: clamp(2.8rem, 5.4vw, 4.8rem);
+    line-height: 1;
+    color: var(--ivory);
+    letter-spacing: -0.02em;
+    font-variant-numeric: lining-nums tabular-nums;
+    white-space: nowrap;
+  }
+  .intro__stat-suffix {
+    font-style: italic;
+    background: var(--gold-grad);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    padding-left: 0.04em;
+    padding-right: 0.08em;
+  }
+  .intro__stat-label {
+    font-size: var(--fs-micro);
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+</style>
+
+<script>
+  import gsap from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- Marquee: infinite rows, slows on hover, leans with scroll velocity ---------- */
+  const mq = document.querySelector<HTMLElement>('[data-mq]');
+  if (mq && !reduce) {
+    const rows = Array.from(mq.querySelectorAll<HTMLElement>('[data-mq-row]'));
+    const tracks = rows.map((r) => r.querySelector<HTMLElement>('[data-mq-track]')!);
+    const loops = rows.map((row, i) => {
+      const dir = Number(row.dataset.dir) || -1;
+      const group = tracks[i].firstElementChild as HTMLElement;
+      const speed = i === 0 ? 62 : 48; // px per second
+      const duration = Math.max(20, group.offsetWidth / speed);
+      return gsap.fromTo(
+        tracks[i],
+        { xPercent: dir < 0 ? 0 : -50 },
+        { xPercent: dir < 0 ? -50 : 0, duration, ease: 'none', repeat: -1 },
+      );
+    });
+
+    let hover = 1;
+    let boost = 0;
+    const apply = (dur = 0.6) => loops.forEach((t) => gsap.to(t, { timeScale: hover * (1 + boost), duration: dur, ease: 'power2.out', overwrite: true }));
+    const skewTo = gsap.quickTo(tracks, 'skewX', { duration: 0.7, ease: 'power3.out' });
+
+    mq.addEventListener('mouseenter', () => { hover = 0.22; apply(0.9); });
+    mq.addEventListener('mouseleave', () => { hover = 1; apply(0.9); });
+
+    let idle = 0;
+    ScrollTrigger.create({
+      trigger: mq,
+      start: 'top bottom',
+      end: 'bottom top',
+      onToggle: (self) => loops.forEach((t) => (self.isActive ? t.play() : t.pause())),
+      onUpdate: (self) => {
+        const v = self.getVelocity();
+        boost = gsap.utils.clamp(0, 3.2, Math.abs(v) / 900);
+        skewTo(gsap.utils.clamp(-7, 7, v / -260));
+        apply(0.35);
+        window.clearTimeout(idle);
+        idle = window.setTimeout(() => { boost = 0; skewTo(0); apply(1.2); }, 140);
+      },
+    });
+  }
+
+  /* ---------- Statement: scroll-scrubbed word highlight ---------- */
+  const statement = document.querySelector<HTMLElement>('[data-statement]');
+  if (statement && !reduce) {
+    const words = statement.querySelectorAll<HTMLElement>('.intro__w');
+    gsap.fromTo(
+      words,
+      { opacity: 0.16 },
+      {
+        opacity: 1,
+        ease: 'none',
+        stagger: 0.12,
+        scrollTrigger: { trigger: statement, start: 'top 85%', end: 'bottom 38%', scrub: 0.6 },
+      },
+    );
+  }
+</script>

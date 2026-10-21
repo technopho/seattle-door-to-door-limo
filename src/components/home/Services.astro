@@ -1,0 +1,536 @@
+---
+// Services: pinned horizontal gallery on desktop, native snap carousel on touch / small screens.
+import Icon from '../Icon.astro';
+import { services, site, images } from '../../data/site';
+
+const pad = (n: number) => String(n).padStart(2, '0');
+// The chauffeur portrait is reserved for the Experience section; give Corporate its own sedan shot.
+const imageFor = (s: (typeof services)[number]) => (s.slug === 'corporate' ? images.studioSedan : s.image);
+---
+<section id="services" class="svc" data-svc aria-labelledby="svc-title">
+  <div class="svc__pin" data-svc-pin>
+    <div class="svc__track" data-svc-track>
+      <header class="svc__head">
+        <p class="eyebrow" data-reveal>Services</p>
+        <h2 id="svc-title" data-split>Every journey, <em>orchestrated.</em></h2>
+        <p class="lead" data-reveal data-delay="0.15">
+          Six ways we move Seattle, each timed to the minute and handled by a dedicated chauffeur from first call to final door.
+        </p>
+        <div class="svc__head-foot" data-reveal data-delay="0.25">
+          <span class="svc__hint" aria-hidden="true">
+            <span class="svc__hint-line"></span>
+            <span class="svc__hint-desk">Scroll to explore</span>
+            <span class="svc__hint-mouse">Drag or use the arrows</span>
+            <span class="svc__hint-touch">Swipe to explore</span>
+          </span>
+          <a href={site.phoneHref} class="svc__call">Or call {site.phone}</a>
+        </div>
+      </header>
+
+      <div class="svc__cards" data-svc-cards>
+        {services.map((s, i) => (
+          <article class="svc-card" data-svc-card aria-labelledby={`svc-${s.slug}`}>
+            <div class="svc-card__media">
+              <span class="svc-card__img" data-svc-par>
+                <img src={imageFor(s)} alt={`${s.title} with Seattle Door to Door Limo`} loading="lazy" decoding="async" width="900" height="1100" draggable="false" />
+              </span>
+              <span class="svc-card__num" aria-hidden="true">{pad(i + 1)}</span>
+            </div>
+            <div class="svc-card__body">
+              <p class="svc-card__kicker">{s.kicker}</p>
+              <h3 id={`svc-${s.slug}`} class="svc-card__title">{s.title}</h3>
+              <p class="svc-card__blurb">{s.blurb}</p>
+              <ul class="svc-card__points" role="list">
+                {s.points.map((p) => (
+                  <li><Icon name="check" /><span>{p}</span></li>
+                ))}
+              </ul>
+              <a href={`/book/?type=${s.slug}`} class="svc-card__cta" data-cursor="Reserve" aria-label={`Reserve ${s.title}`}>
+                <span>Reserve</span>
+                <span class="svc-card__cta-icon"><Icon name="arrow" /></span>
+              </a>
+            </div>
+          </article>
+        ))}
+      </div>
+    </div>
+
+    <div class="svc__progress">
+      <span class="svc__count" aria-hidden="true"><b data-svc-cur>01</b><i>/</i>{pad(services.length)}</span>
+      <span class="svc__bar" aria-hidden="true"><span class="svc__bar-fill" data-svc-bar></span></span>
+      <span class="svc__name" data-svc-name aria-hidden="true">{services[0].title}</span>
+      <span class="svc__nav">
+        <button type="button" class="svc__arrow" data-svc-prev aria-label="Previous service"><Icon name="arrow-left" /></button>
+        <button type="button" class="svc__arrow" data-svc-next aria-label="Next service"><Icon name="arrow" /></button>
+      </span>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* ---------- Base: native horizontal carousel (mobile, tablet, reduced motion) ---------- */
+  .svc {
+    position: relative;
+    padding-block: var(--section-y);
+    background: var(--ink);
+  }
+  .svc__pin { position: relative; isolation: isolate; }
+  .svc__pin::before {
+    content: '';
+    position: absolute;
+    left: 40%;
+    top: 50%;
+    width: 70vw;
+    height: 60vh;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(closest-side, rgba(201, 168, 106, 0.07), transparent);
+    pointer-events: none;
+    z-index: -1;
+  }
+  .svc__head {
+    width: min(100% - var(--gutter) * 2, var(--container));
+    margin: 0 auto clamp(2.2rem, 5vw, 3.5rem);
+    display: grid;
+    gap: 1.3rem;
+  }
+  .svc__head .lead { max-width: 46ch; text-wrap: pretty; }
+  .svc h2 :global(.split-line) { overflow: clip; }
+  .svc__head-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 0.8rem 1.6rem; margin-top: 0.4rem; }
+  .svc__hint { display: inline-flex; align-items: center; gap: 0.8rem; font-size: var(--fs-micro); font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ivory-2); }
+  .svc__hint-line { position: relative; width: 3.2rem; height: 1px; background: var(--line-strong); overflow: hidden; }
+  .svc__hint-line::after { content: ''; position: absolute; inset: 0; background: var(--gold); transform: translateX(-100%); animation: svc-hint 2.6s var(--ease-in-out) infinite; }
+  @keyframes svc-hint { 0% { transform: translateX(-100%); } 55%, 100% { transform: translateX(100%); } }
+  .svc__hint-desk, .svc__hint-mouse { display: none; }
+  /* Pointer users on the non-pinned carousel get arrow/drag copy instead of "swipe" */
+  @media (hover: hover) and (pointer: fine) {
+    .svc:not(.is-pinned) .svc__hint-touch { display: none; }
+    .svc:not(.is-pinned) .svc__hint-mouse { display: inline; }
+    .svc:not(.is-pinned) .svc__cards { cursor: grab; }
+    .svc:not(.is-pinned) .svc__cards.is-dragging { cursor: grabbing; scroll-snap-type: none; user-select: none; }
+    .svc__cards.is-dragging .svc-card { pointer-events: none; }
+  }
+  .svc__call { display: inline-flex; align-items: center; min-height: 44px; font-size: 0.86rem; color: var(--muted); border-bottom: 1px solid transparent; transition: color 0.3s; }
+  .svc__call:hover { color: var(--gold-2); }
+
+  .svc__cards {
+    display: flex;
+    gap: clamp(0.9rem, 2vw, 1.5rem);
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    padding-inline: max(var(--gutter), (100% - var(--container)) / 2);
+    scroll-padding-inline: max(var(--gutter), (100% - var(--container)) / 2);
+    padding-bottom: 0.5rem;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .svc__cards::-webkit-scrollbar { display: none; }
+
+  .svc-card {
+    position: relative;
+    flex: 0 0 min(82vw, 400px);
+    scroll-snap-align: start;
+    display: flex;
+    flex-direction: column;
+    border-radius: var(--radius-l);
+    border: 1px solid var(--line);
+    background: linear-gradient(180deg, var(--ink-3), var(--ink-2));
+    overflow: hidden;
+    isolation: isolate;
+    transition: border-color 0.6s var(--ease-out), transform 0.6s var(--ease-out);
+  }
+  .svc-card:hover { border-color: rgba(201, 168, 106, 0.38); }
+  .svc-card__media {
+    position: relative;
+    aspect-ratio: 4 / 3.3;
+    overflow: hidden;
+    background: var(--ink-3);
+    flex: none;
+  }
+  /* Wrapper carries the scroll parallax (GSAP); the img keeps its own scale so hover zoom still works */
+  .svc-card__img {
+    position: absolute;
+    top: 0;
+    left: -8%;
+    width: 116%;
+    height: 100%;
+  }
+  .svc-card__img img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    object-fit: cover;
+    transform: scale(1.04);
+    transition: transform 1.4s var(--ease-out), filter 1.2s var(--ease-out);
+    filter: saturate(0.9) brightness(0.92);
+    -webkit-user-drag: none;
+  }
+  .svc-card:hover .svc-card__img img { transform: scale(1.1); filter: saturate(1) brightness(1); }
+  .svc-card__media::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(90% 55% at 0% 0%, rgba(10, 10, 12, 0.68), rgba(10, 10, 12, 0) 62%),
+      linear-gradient(180deg, rgba(10, 10, 12, 0.5) 0%, rgba(10, 10, 12, 0) 34%),
+      linear-gradient(0deg, rgba(17, 17, 20, 0.95) 0%, rgba(17, 17, 20, 0) 42%);
+    pointer-events: none;
+  }
+  .svc-card__num {
+    position: absolute;
+    z-index: 1;
+    top: 0.9rem;
+    left: 1.3rem;
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: clamp(3rem, 5vw, 4.6rem);
+    font-variant-numeric: lining-nums;
+    font-feature-settings: 'lnum' 1;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    color: rgba(232, 211, 162, 0.16);
+    -webkit-text-stroke: 1.25px var(--gold-2);
+    text-shadow: 0 2px 18px rgba(0, 0, 0, 0.35);
+    transition: color 0.6s var(--ease-out);
+  }
+  .svc-card:hover .svc-card__num { color: rgba(232, 211, 162, 0.9); }
+
+  .svc-card__body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0.4rem clamp(1.25rem, 2vw, 1.75rem) clamp(1.25rem, 2vw, 1.6rem);
+    flex: 1;
+  }
+  .svc-card__kicker { font-size: 0.66rem; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; color: var(--gold); }
+  .svc-card__kicker { text-wrap: balance; }
+  .svc-card__title { font-size: clamp(1.75rem, 2.3vw, 2.15rem); line-height: 1.05; text-wrap: balance; }
+  .svc-card__blurb { font-size: 0.9rem; line-height: 1.6; color: var(--muted); }
+  .svc-card__points { display: grid; gap: 0.45rem; padding: 0.9rem 0 0; margin: 0.1rem 0 0; border-top: 1px solid var(--line); list-style: none; }
+  .svc-card__points li { display: flex; align-items: flex-start; gap: 0.6rem; font-size: 0.84rem; line-height: 1.4; color: var(--ivory-2); }
+  .svc-card__points :global(svg) { width: 15px; height: 15px; flex: none; color: var(--gold); margin-top: 0.12em; stroke-width: 2; }
+
+  .svc-card__cta {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 52px;
+    padding: 0.35rem 0.35rem 0.35rem 1.2rem;
+    border-radius: 999px;
+    border: 1px solid var(--line-strong);
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ivory);
+    transition: border-color 0.5s var(--ease-out), background 0.5s var(--ease-out), color 0.5s var(--ease-out);
+  }
+  /* Stretch the link so the whole card is tappable */
+  .svc-card__cta::after { content: ''; position: absolute; inset: 0; z-index: 2; }
+  .svc-card__cta-icon {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: var(--gold-grad);
+    color: #17130b;
+    transition: transform 0.6s var(--ease-out);
+  }
+  .svc-card__cta-icon :global(svg) { width: 16px; height: 16px; }
+  .svc-card:hover .svc-card__cta { border-color: rgba(201, 168, 106, 0.55); background: rgba(201, 168, 106, 0.08); color: var(--gold-2); }
+  .svc-card:hover .svc-card__cta-icon { transform: rotate(-45deg); }
+  .svc-card__cta:focus-visible { outline-offset: 4px; }
+
+  /* Progress */
+  .svc__progress {
+    width: min(100% - var(--gutter) * 2, var(--container));
+    margin: clamp(1.4rem, 3vw, 2rem) auto 0;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 1.2rem;
+  }
+  .svc__count { font-family: var(--font-display); font-size: 1.2rem; color: var(--muted); font-variant-numeric: lining-nums tabular-nums; white-space: nowrap; }
+  .svc__count b { font-weight: 500; color: var(--ivory); }
+  .svc__count i { font-style: normal; margin-inline: 0.4em; color: var(--gold); opacity: 0.8; }
+  .svc__bar { position: relative; height: 1px; background: var(--line-strong); overflow: hidden; }
+  .svc__bar-fill { position: absolute; inset: 0; background: var(--gold-grad); transform-origin: left; transform: scaleX(0.1667); }
+  .svc__name { display: none; }
+  .svc__progress { grid-template-columns: auto 1fr auto; }
+  .svc__nav { display: inline-flex; gap: 0.5rem; }
+  .svc__arrow {
+    display: grid;
+    place-items: center;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    border: 1px solid var(--line-strong);
+    color: var(--ivory);
+    transition: border-color 0.4s var(--ease-out), color 0.4s var(--ease-out), background 0.4s var(--ease-out), opacity 0.3s;
+  }
+  .svc__arrow :global(svg) { width: 17px; height: 17px; }
+  .svc__arrow:hover { border-color: var(--gold); color: var(--gold-2); background: rgba(201, 168, 106, 0.08); }
+  .svc__arrow:disabled { opacity: 0.35; pointer-events: none; }
+  @media (max-width: 599px) { .svc__nav { display: none; } .svc__progress { grid-template-columns: auto 1fr; } }
+
+  /* ---------- Desktop pinned horizontal gallery (class added by JS) ---------- */
+  .svc.is-pinned { padding-block: 0; }
+  .svc.is-pinned .svc__pin {
+    height: 100vh;
+    height: 100svh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-top: calc(var(--header-h) * 0.55);
+    padding-bottom: 5.2rem;
+  }
+  .svc.is-pinned .svc__track {
+    display: flex;
+    align-items: center;
+    width: max-content;
+    padding-left: max(var(--gutter), (100vw - var(--container)) / 2);
+    padding-right: max(var(--gutter), (100vw - var(--container)) / 2);
+    will-change: transform;
+  }
+  .svc.is-pinned .svc__head {
+    width: clamp(380px, 33vw, 500px);
+    margin: 0 clamp(3rem, 6vw, 7rem) 0 0;
+    flex: none;
+  }
+  .svc.is-pinned .svc__hint-desk { display: inline; }
+  .svc.is-pinned .svc__hint-touch { display: none; }
+  .svc.is-pinned .svc__cards {
+    overflow: visible;
+    padding: 0;
+    gap: clamp(1.25rem, 1.8vw, 2rem);
+    scroll-snap-type: none;
+  }
+  .svc.is-pinned .svc-card {
+    flex: 0 0 clamp(340px, 27vw, 410px);
+    height: min(calc(100svh - 190px), 680px);
+    --svc-card-h: min(calc(100svh - 190px), 680px);
+  }
+  /* Fixed image height (same on every card) so kicker + title share one top line;
+     points + CTA are anchored to the bottom of the card. */
+  .svc.is-pinned .svc-card__media {
+    aspect-ratio: auto;
+    flex: none;
+    height: max(140px, calc(var(--svc-card-h) - 25rem));
+    min-height: 0;
+  }
+  .svc.is-pinned .svc-card__title { font-size: clamp(1.6rem, 2vw, 2rem); }
+  .svc.is-pinned .svc-card__body { gap: 0.7rem; }
+  .svc.is-pinned .svc-card__points { margin-top: auto; }
+  @media (max-width: 1199px) {
+    /* Narrower pinned cards: keep the longest kicker on one line */
+    .svc.is-pinned .svc-card__kicker { font-size: 0.62rem; letter-spacing: 0.12em; }
+  }
+  .svc.is-pinned .svc-card__cta { margin-top: 0.35rem; }
+  .svc.is-pinned .svc__progress {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 2.1rem;
+    margin: 0 auto;
+    grid-template-columns: auto 1fr 17rem;
+    gap: 1.6rem;
+  }
+  .svc.is-pinned .svc__nav { display: none; }
+  .svc.is-pinned .svc__name {
+    display: block;
+    min-width: 0;
+    text-align: right;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: var(--fs-micro);
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ivory-2);
+    white-space: nowrap;
+  }
+
+  @media (min-width: 1024px) {
+    .svc-card { flex-basis: 380px; }
+  }
+  @media (max-height: 760px) {
+    .svc.is-pinned .svc-card__blurb { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  }
+</style>
+
+<script>
+  import gsap from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  const root = document.querySelector<HTMLElement>('[data-svc]');
+  if (root) {
+    const pin = root.querySelector<HTMLElement>('[data-svc-pin]')!;
+    const track = root.querySelector<HTMLElement>('[data-svc-track]')!;
+    const scroller = root.querySelector<HTMLElement>('[data-svc-cards]')!;
+    const cards = Array.from(root.querySelectorAll<HTMLElement>('[data-svc-card]'));
+    const bar = root.querySelector<HTMLElement>('[data-svc-bar]')!;
+    const cur = root.querySelector<HTMLElement>('[data-svc-cur]')!;
+    const nameEl = root.querySelector<HTMLElement>('[data-svc-name]')!;
+    const titles = cards.map((c) => c.querySelector('h3')?.textContent || '');
+    const total = cards.length;
+
+    let index = -1;
+    const setIndex = (i: number) => {
+      i = Math.max(0, Math.min(total - 1, i));
+      if (i === index) return;
+      index = i;
+      cur.textContent = String(i + 1).padStart(2, '0');
+      nameEl.textContent = titles[i];
+    };
+    const setProgress = (p: number) => { bar.style.transform = `scaleX(${Math.max(1 / total, p)})`; };
+    setIndex(0);
+
+    // Carousel arrows (non-pinned layouts)
+    const prev = root.querySelector<HTMLButtonElement>('[data-svc-prev]')!;
+    const next = root.querySelector<HTMLButtonElement>('[data-svc-next]')!;
+    const step = (dir: number) => {
+      const gap = parseFloat(getComputedStyle(scroller).columnGap) || 16;
+      scroller.scrollBy({ left: dir * (cards[0].offsetWidth + gap), behavior: 'smooth' });
+    };
+    prev.addEventListener('click', () => step(-1));
+    next.addEventListener('click', () => step(1));
+    const syncArrows = () => {
+      const max = scroller.scrollWidth - scroller.clientWidth - 2;
+      prev.disabled = scroller.scrollLeft <= 2;
+      next.disabled = scroller.scrollLeft >= max;
+    };
+    syncArrows();
+
+    // Mouse drag-to-scroll for the non-pinned carousel (touch keeps native swipe)
+    let drag: { x: number; left: number; moved: boolean } | null = null;
+    const blockClick = (ev: Event) => { ev.preventDefault(); ev.stopPropagation(); };
+    scroller.addEventListener('pointerdown', (e) => {
+      if (e.pointerType !== 'mouse' || e.button !== 0 || root.classList.contains('is-pinned')) return;
+      drag = { x: e.clientX, left: scroller.scrollLeft, moved: false };
+    });
+    window.addEventListener('pointermove', (e) => {
+      if (!drag) return;
+      const dx = e.clientX - drag.x;
+      if (!drag.moved) {
+        if (Math.abs(dx) < 6) return;
+        drag.moved = true;
+        scroller.classList.add('is-dragging');
+      }
+      scroller.scrollLeft = drag.left - dx;
+    });
+    window.addEventListener('pointerup', () => {
+      if (!drag) return;
+      const moved = drag.moved;
+      drag = null;
+      if (!moved) return;
+      // Settle on the nearest card, then restore snapping
+      const padL = parseFloat(getComputedStyle(scroller).paddingLeft) || 0;
+      const base = scroller.getBoundingClientRect().left + padL;
+      let target = scroller.scrollLeft;
+      let best = Infinity;
+      cards.forEach((c) => {
+        const d = c.getBoundingClientRect().left - base;
+        if (Math.abs(d) < best) { best = Math.abs(d); target = scroller.scrollLeft + d; }
+      });
+      scroller.scrollTo({ left: target, behavior: 'smooth' });
+      window.setTimeout(() => scroller.classList.remove('is-dragging'), 450);
+      scroller.addEventListener('click', blockClick, { capture: true, once: true });
+      window.setTimeout(() => scroller.removeEventListener('click', blockClick, { capture: true }), 60);
+    });
+
+    // Native carousel progress (mobile / tablet / reduced motion)
+    let raf = 0;
+    scroller.addEventListener('scroll', () => {
+      if (root.classList.contains('is-pinned')) return;
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const max = scroller.scrollWidth - scroller.clientWidth;
+        const p = max > 0 ? scroller.scrollLeft / max : 0;
+        setProgress(p);
+        setIndex(Math.round(p * (total - 1)));
+        syncArrows();
+      });
+    }, { passive: true });
+
+    const mm = gsap.matchMedia();
+    mm.add('(min-width: 1024px) and (prefers-reduced-motion: no-preference)', () => {
+      root.classList.add('is-pinned');
+      scroller.scrollLeft = 0;
+      const distance = () => Math.max(0, track.scrollWidth - window.innerWidth);
+
+      const tween = gsap.to(track, {
+        x: () => -distance(),
+        ease: 'none',
+        // Counter and bar read from the same (scrubbed) progress, so they always agree.
+        onUpdate() {
+          const p = this.progress();
+          setProgress(p);
+          setIndex(Math.round(p * (total - 1)));
+        },
+        scrollTrigger: {
+          trigger: pin,
+          start: 'top top',
+          end: () => '+=' + distance(),
+          pin: true,
+          scrub: 0.9,
+          anticipatePin: 1,
+          invalidateOnRefresh: true,
+        },
+      });
+
+      cards.forEach((card) => {
+        const par = card.querySelector<HTMLElement>('[data-svc-par]');
+        if (!par) return;
+        gsap.fromTo(par, { xPercent: 5 }, {
+          xPercent: -5,
+          ease: 'none',
+          scrollTrigger: { trigger: card, containerAnimation: tween, start: 'left right', end: 'right left', scrub: true },
+        });
+      });
+
+      // Keyboard focus: the browser would scroll the overflow:hidden pin sideways on top of the
+      // GSAP transform. Keep the pin at scrollLeft 0 and instead move the page so the focused card
+      // is scrubbed into the centre of the viewport.
+      const resetPinScroll = () => {
+        if (pin.scrollLeft) pin.scrollLeft = 0;
+        if (pin.scrollTop) pin.scrollTop = 0;
+      };
+      let focusRaf = 0;
+      const onFocusIn = (e: FocusEvent) => {
+        if (!root.classList.contains('is-pinned')) return;
+        const st = tween.scrollTrigger;
+        const d = distance();
+        if (!st || !d) return;
+        const card = (e.target as HTMLElement).closest<HTMLElement>('[data-svc-card]');
+        const x = card ? gsap.utils.clamp(0, d, card.offsetLeft - (window.innerWidth - card.offsetWidth) / 2) : 0;
+        const y = st.start + (x / d) * (st.end - st.start);
+        cancelAnimationFrame(focusRaf);
+        // Run after the browser's own focus scroll so ours wins
+        focusRaf = requestAnimationFrame(() => {
+          resetPinScroll();
+          if (window.lenis) window.lenis.scrollTo(y, { immediate: true, force: true });
+          else window.scrollTo({ top: y, behavior: 'instant' as ScrollBehavior });
+        });
+      };
+      pin.addEventListener('scroll', resetPinScroll);
+      root.addEventListener('focusin', onFocusIn);
+
+      return () => {
+        pin.removeEventListener('scroll', resetPinScroll);
+        root.removeEventListener('focusin', onFocusIn);
+        cancelAnimationFrame(focusRaf);
+        resetPinScroll();
+        root.classList.remove('is-pinned');
+        gsap.set(track, { clearProps: 'transform' });
+        setProgress(0);
+        setIndex(0);
+      };
+    });
+  }
+</script>

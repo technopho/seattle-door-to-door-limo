@@ -1,0 +1,711 @@
+---
+import Icon from '../Icon.astro';
+import { fleet, images, site } from '../../data/site';
+
+// Short display marks for the large outlined typography behind the stage.
+const marks: Record<string, string> = {
+  s550: 'S550',
+  escalade: 'Escalade',
+  electric: 'Model S',
+  stretch: 'Stretch',
+  'party-sprinter': 'Party',
+  sprinter: 'Sprinter',
+};
+
+// Short names for the primary CTA ("Reserve the S550"); the full name stays in the h3.
+const shorts: Record<string, string> = {
+  s550: 'S550',
+  escalade: 'Escalade',
+  electric: 'Model S',
+  stretch: 'Stretch',
+  'party-sprinter': 'Party Sprinter',
+  sprinter: 'Sprinter',
+};
+
+// PLACEHOLDER stage photography. Some shared site photos don't depict the vehicle named beside them
+// (the stretch shows a sedan, the party coach a plain van, the Model S a coupe), which reads as an error
+// at hero size. Until the client supplies real fleet photos, these vehicle-accurate stock images stand in.
+const U = (id: string) => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=1600&q=80`;
+const stageImage: Record<string, string> = {
+  electric: U('photo-1620891549027-942fdc95d3f5'),
+  stretch: U('photo-1775292690711-2f57b433f699'),
+  'party-sprinter': U('photo-1545185105-a81262517cf4'),
+};
+// Per-photo focal point (object-position) so the subject survives the 16:9 and 4:3 crops.
+const focus: Record<string, string> = {
+  s550: '50% 18%',
+  stretch: '50% 62%',
+  electric: '50% 70%',
+};
+
+// Group-size filters, derived from real capacity: a vehicle "fits" when it seats the top of the range.
+// Matches are ordered tightest-first so the automatic pick is always the closest fit.
+const groups = [
+  { key: '1-3', label: '1–3', min: 1, max: 3 },
+  { key: '4-6', label: '4–6', min: 4, max: 6 },
+  { key: '7-14', label: '7–14', min: 7, max: 14 },
+  { key: '15+', label: '15+', min: 15, max: 15 },
+].map((g) => ({
+  ...g,
+  fits: fleet
+    .filter((v) => v.passengers >= g.max)
+    .sort((a, b) => a.passengers - b.passengers)
+    .map((v) => v.id),
+}));
+
+const pad = (n: number) => String(n).padStart(2, '0');
+const first = fleet[0];
+const alt = (v: (typeof fleet)[number]) => `${v.name}, ${v.category.toLowerCase()} for up to ${v.passengers} passengers, Seattle Door to Door Limo`;
+const imgOf = (v: (typeof fleet)[number]) => stageImage[v.id] ?? v.image;
+const isStudio = (v: (typeof fleet)[number]) => imgOf(v) === images.sprinterStudio;
+
+const payload = fleet.map((v) => ({
+  id: v.id,
+  name: v.name,
+  category: v.category,
+  passengers: v.passengers,
+  luggage: v.luggage,
+  bestFor: v.bestFor,
+  features: v.features,
+  mark: marks[v.id] ?? v.category,
+  short: shorts[v.id] ?? v.name,
+}));
+---
+<section id="fleet" class="section fs" aria-labelledby="fleet-title">
+  <div class="container">
+    <header class="section-head section-head--split fs__head">
+      <div class="fs__head-l">
+        <p class="eyebrow" data-reveal="fade">The Fleet</p>
+        <h2 id="fleet-title" data-split>Choose your <em>arrival.</em></h2>
+      </div>
+      <div class="fs__head-r" data-reveal data-delay="0.15">
+        <p class="lead">From a whisper-quiet executive sedan to a twenty-guest party coach. Tell us how many are riding, pick the vehicle that fits the moment, and reserve it in under a minute.</p>
+      </div>
+    </header>
+
+    <div class="fs__layout" data-fs-root>
+      <!-- Selector column -->
+      <div class="fs__select">
+        <div class="fs__filters" data-reveal>
+          <p class="fs__filters-label" id="fleet-filter-label"><Icon name="users" /> Group size</p>
+          <div class="fs__filter-row" role="group" aria-labelledby="fleet-filter-label">
+            {groups.map((g) => (
+              <button type="button" class="fs__filter" aria-pressed="false" data-fs-group={g.key} data-fs-paxv={g.min} data-fs-fits={g.fits.join(',')}>
+                {g.label}
+              </button>
+            ))}
+          </div>
+          <p class="sr-only" aria-live="polite" data-fs-status></p>
+        </div>
+
+        <div class="fs__rail" role="tablist" aria-label="Vehicles" aria-orientation="vertical" data-fs-rail data-stagger="0.06">
+          {fleet.map((v, i) => (
+            <button
+              type="button"
+              role="tab"
+              id={`fleet-tab-${v.id}`}
+              class:list={['fs__tab', i === 0 && 'is-active']}
+              aria-selected={i === 0 ? 'true' : 'false'}
+              aria-controls="fleet-stage"
+              tabindex={i === 0 ? 0 : -1}
+              data-index={i}
+              data-id={v.id}
+            >
+              <span class="fs__tab-idx" aria-hidden="true">{pad(i + 1)}</span>
+              <span class="fs__tab-text">
+                <span class="fs__tab-cat">{v.category}<span class="fs__tab-best" aria-hidden="true">Best fit</span></span>
+                <span class="fs__tab-name">{v.name}</span>
+              </span>
+              <span class="fs__tab-pax"><Icon name="users" /> <span><span class="sr-only">up to </span>{v.passengers}</span></span>
+            </button>
+          ))}
+        </div>
+
+        <p class="fs__help" data-reveal>
+          Not sure which fits? <a href={site.phoneHref} class="fs__help-link">Call {site.phone}</a> and we&rsquo;ll match the vehicle to your group.
+        </p>
+      </div>
+
+      <!-- Stage column -->
+      <div class="fs__stage" id="fleet-stage" role="tabpanel" aria-labelledby={`fleet-tab-${first.id}`} data-fs-stage>
+        <div class="fs__ghost-wrap" aria-hidden="true">
+          <span class="fs__ghost" data-fs-ghost>{marks[first.id]}</span>
+        </div>
+
+        <div class:list={['fs__frame', isStudio(first) && 'is-studio']} data-reveal="scale" data-fs-frame>
+          {fleet.map((v, i) => (
+            <figure class:list={['fs__slide', i === 0 && 'is-active', isStudio(v) && 'fs__slide--studio']} data-fs-slide={i} aria-hidden={i === 0 ? undefined : 'true'} style={focus[v.id] ? `--pos:${focus[v.id]}` : undefined}>
+              <img src={imgOf(v)} alt={alt(v)} loading={i === 0 ? 'eager' : 'lazy'} decoding="async" width="1600" height="1000" />
+              {isStudio(v) && <span class="fs__floor" aria-hidden="true"></span>}
+            </figure>
+          ))}
+          <span class="fs__wipe" aria-hidden="true" data-fs-wipe></span>
+          <div class="fs__frame-tag" aria-hidden="true">
+            <span class="fs__frame-idx" data-fs-tag-idx>01</span><span class="fs__frame-sep"></span><span data-fs-tag-cat>{first.category}</span>
+          </div>
+          <div class="fs__frame-count" aria-hidden="true"><span data-fs-tag-n>01</span> / {pad(fleet.length)}</div>
+        </div>
+
+        <div class="fs__info">
+          <div class="fs__info-main">
+            <h3 class="fs__name" data-fs-name>{first.name}</h3>
+            <dl class="fs__specs">
+              <div class="fs__spec fs__spec--pax">
+                <dt>Passengers</dt>
+                <dd><span class="fs__num" data-fs-pax>{pad(first.passengers)}</span></dd>
+              </div>
+              <div class="fs__spec">
+                <dt>Luggage</dt>
+                <dd><span class="fs__num fs__num--s" data-fs-lug>{pad(first.luggage)}</span><span class="fs__unit">bags</span></dd>
+              </div>
+              <div class="fs__spec fs__spec--best">
+                <dt>Best for</dt>
+                <dd data-fs-best>{first.bestFor}</dd>
+              </div>
+            </dl>
+          </div>
+          <div class="fs__info-side">
+            <ul class="fs__feats" role="list" data-fs-feats>
+              {first.features.map((f) => (
+                <li class="chip fs__feat"><Icon name="check" /><span>{f}</span></li>
+              ))}
+            </ul>
+            <div class="fs__cta">
+              <a href={`/book/?vehicle=${first.id}`} class="btn btn--gold btn--lg fs__reserve" data-magnetic="0.2" data-fs-cta>
+                <span data-fs-cta-label>Reserve the {shorts[first.id] ?? first.name}</span> <Icon name="arrow" />
+              </a>
+              <a href="/fleet/" class="link-underline fs__all">Explore the full fleet <Icon name="arrow-up-right" size={14} /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script is:inline type="application/json" data-fs-data set:html={JSON.stringify(payload)}></script>
+</section>
+
+<style>
+  .fs { overflow: clip; }
+  .fs__head { margin-bottom: clamp(2.5rem, 5vw, 4rem); }
+  .fs__head-l { display: grid; gap: 1.2rem; }
+  .fs__head-r { display: grid; gap: 1.4rem; justify-items: start; }
+
+  .fs__layout {
+    display: grid;
+    grid-template-columns: minmax(290px, 360px) minmax(0, 1fr);
+    gap: clamp(2rem, 5vw, 5rem);
+    align-items: start;
+  }
+
+  /* ---------- Filters ---------- */
+  .fs__filters { display: grid; gap: 0.9rem; margin-bottom: 1.6rem; }
+  .fs__filters-label {
+    display: inline-flex; align-items: center; gap: 0.55rem;
+    font-size: var(--fs-micro); font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted);
+  }
+  .fs__filters-label :global(svg) { width: 15px; height: 15px; color: var(--gold); }
+  .fs__filter-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .fs__filter {
+    min-height: 44px; min-width: 64px; padding: 0 1rem;
+    border-radius: 999px; border: 1px solid var(--line-strong);
+    font-size: 0.86rem; font-weight: 600; letter-spacing: 0.04em; color: var(--ivory-2);
+    background: rgba(255, 255, 255, 0.02);
+    transition: color 0.4s var(--ease-out), border-color 0.4s var(--ease-out), background 0.4s var(--ease-out), box-shadow 0.4s var(--ease-out);
+    font-variant-numeric: lining-nums;
+  }
+  .fs__filter:hover { border-color: rgba(232, 211, 162, 0.5); color: var(--ivory); }
+  .fs__filter[aria-pressed='true'] {
+    color: #17130b; border-color: transparent; background: var(--gold-grad); box-shadow: var(--gold-glow);
+  }
+
+  /* ---------- Rail ---------- */
+  .fs__rail { display: grid; border-top: 1px solid var(--line); }
+  .fs__tab {
+    position: relative;
+    display: grid;
+    grid-template-columns: 2.2rem 1fr auto;
+    align-items: center;
+    gap: 0.9rem;
+    width: 100%;
+    min-height: 82px;
+    padding: 0.9rem 0.4rem 0.9rem 0;
+    text-align: left;
+    border-bottom: 1px solid var(--line);
+    color: var(--ivory-2);
+    transition: opacity 0.5s var(--ease-out), color 0.4s;
+  }
+  .fs__tab::before {
+    content: '';
+    position: absolute; left: 0; right: 0; bottom: -1px; height: 1px;
+    background: var(--gold-grad);
+    transform: scaleX(0); transform-origin: left;
+    transition: transform 0.9s var(--ease-out);
+  }
+  .fs__tab::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(90deg, rgba(201, 168, 106, 0.08), transparent 70%);
+    opacity: 0; transition: opacity 0.5s var(--ease-out);
+    pointer-events: none; border-radius: 6px;
+  }
+  .fs__tab:hover::after { opacity: 0.6; }
+  .fs__tab.is-active::after { opacity: 1; }
+  .fs__tab.is-active::before { transform: scaleX(1); }
+  .fs__tab-idx { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em; color: var(--muted-2); transition: color 0.4s; }
+  .fs__tab-text { display: grid; gap: 0.15rem; min-width: 0; transition: transform 0.6s var(--ease-out); }
+  .fs__tab-cat { display: flex; align-items: center; gap: 0.6rem; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); transition: color 0.4s; }
+  .fs__tab-best {
+    display: inline-flex; align-items: center;
+    padding: 0.2rem 0.5rem; border-radius: 999px;
+    font-size: 0.56rem; letter-spacing: 0.18em; color: #17130b; background: var(--gold-grad);
+    opacity: 0; transform: translateX(-6px);
+    transition: opacity 0.5s var(--ease-out), transform 0.6s var(--ease-out);
+  }
+  .fs__tab.is-best .fs__tab-best { opacity: 1; transform: none; }
+  .fs__tab-name {
+    font-family: var(--font-display); font-size: clamp(1.3rem, 1.6vw, 1.6rem); line-height: 1.1; color: var(--ivory-2);
+    transition: color 0.4s;
+  }
+  .fs__tab-pax { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .fs__tab-pax :global(svg) { width: 15px; height: 15px; }
+  .fs__tab:hover .fs__tab-name { color: var(--ivory); }
+  .fs__tab:hover .fs__tab-text { transform: translateX(4px); }
+  .fs__tab.is-active .fs__tab-idx,
+  .fs__tab.is-active .fs__tab-cat { color: var(--gold); }
+  .fs__tab.is-active .fs__tab-name { color: var(--ivory); }
+  .fs__tab.is-active .fs__tab-text { transform: translateX(6px); }
+  .fs__tab.is-active .fs__tab-pax { color: var(--ivory-2); }
+  .fs__tab > * { transition: opacity 0.5s var(--ease-out); }
+  .fs__tab.is-dim > * { opacity: 0.3; }
+  .fs__tab.is-dim:hover > *, .fs__tab.is-dim:focus-visible > * { opacity: 0.7; }
+  .fs__tab.is-fit .fs__tab-idx { color: var(--gold-2); }
+  .fs__tab:focus-visible { outline-offset: -2px; }
+
+  .fs__help { margin-top: 1.6rem; font-size: 0.9rem; color: var(--muted); max-width: 34ch; }
+  .fs__help-link { color: var(--ivory); border-bottom: 1px solid rgba(232, 211, 162, 0.4); transition: color 0.3s, border-color 0.3s; }
+  .fs__help-link:hover { color: var(--gold-2); border-color: var(--gold-2); }
+
+  /* ---------- Stage ---------- */
+  .fs__stage { position: relative; min-width: 0; }
+  .fs__ghost-wrap {
+    position: relative; z-index: 0;
+    height: calc(var(--ghost-size) * 0.52);
+    --ghost-size: clamp(5rem, 12.5vw, 13rem);
+    overflow: visible;
+    pointer-events: none;
+  }
+  .fs__ghost {
+    position: absolute; left: -0.05em; top: calc(var(--ghost-size) * -0.3);
+    display: block;
+    font-family: var(--font-display);
+    font-size: var(--ghost-size);
+    line-height: 1;
+    letter-spacing: -0.02em;
+    white-space: nowrap;
+    color: transparent;
+    -webkit-text-stroke: 1px rgba(232, 211, 162, 0.28);
+    will-change: transform, opacity, filter;
+  }
+
+  .fs__frame {
+    position: relative; z-index: 1;
+    aspect-ratio: 16 / 9.4;
+    border-radius: var(--radius-l);
+    overflow: hidden;
+    background: var(--ink-3);
+    isolation: isolate;
+    box-shadow: 0 40px 80px -40px rgba(0, 0, 0, 0.8), 0 0 0 1px var(--line);
+  }
+  .fs__slide {
+    position: absolute; inset: 0;
+    margin: 0;
+    clip-path: inset(0% 0% 0% 100%);
+    background: var(--ink-3);
+  }
+  .fs__slide.is-active { clip-path: inset(0% 0% 0% 0%); z-index: 1; }
+  .fs__slide img { width: 100%; height: 100%; object-fit: cover; object-position: var(--pos, 50% 50%); will-change: transform; }
+  .fs__slide:not(.fs__slide--studio)::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background:
+      linear-gradient(180deg, rgba(10, 10, 12, 0.45) 0%, rgba(10, 10, 12, 0) 28%, rgba(10, 10, 12, 0) 62%, rgba(10, 10, 12, 0.55) 100%);
+  }
+  /* White studio photo: presented on an ivory cyclorama so it reads as intentional */
+  .fs__slide--studio {
+    background:
+      radial-gradient(120% 90% at 50% 38%, #fbf8f2 0%, #f1ece2 55%, #e2dacb 100%);
+  }
+  .fs__slide--studio img {
+    position: relative; z-index: 1;
+    object-fit: contain;
+    padding: 9% 8% 7%;
+    mix-blend-mode: multiply;
+  }
+  .fs__slide--studio::before {
+    content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none;
+    box-shadow: inset 0 0 0 10px rgba(255, 255, 255, 0.0), inset 0 0 120px rgba(120, 100, 70, 0.18);
+  }
+  .fs__floor {
+    position: absolute; left: 14%; right: 14%; bottom: 9%; height: 12%;
+    background: radial-gradient(50% 50% at 50% 50%, rgba(60, 48, 30, 0.28), rgba(60, 48, 30, 0) 70%);
+    filter: blur(6px);
+  }
+
+  .fs__wipe {
+    position: absolute; top: 0; bottom: 0; left: 0; z-index: 50;
+    width: 1px;
+    background: linear-gradient(180deg, transparent, var(--gold-2) 30%, var(--gold) 70%, transparent);
+    box-shadow: 0 0 24px 2px rgba(232, 211, 162, 0.55);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .fs__frame-tag, .fs__frame-count {
+    position: absolute; z-index: 60;
+    display: inline-flex; align-items: center; gap: 0.7rem;
+    padding: 0.55rem 0.95rem;
+    border-radius: 999px;
+    font-size: 0.68rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--ivory);
+    background: rgba(12, 12, 14, 0.5);
+    border: 1px solid rgba(243, 238, 228, 0.14);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+  .fs__frame-tag { left: 1.1rem; top: 1.1rem; }
+  /* On the ivory studio panel, translucent glass turns muddy: switch the labels to solid obsidian. */
+  .fs__frame.is-studio :is(.fs__frame-tag, .fs__frame-count) {
+    background: rgba(17, 17, 20, 0.86);
+    border-color: transparent;
+    color: var(--ivory);
+    backdrop-filter: none; -webkit-backdrop-filter: none;
+  }
+  .fs__frame-idx { color: var(--gold-2); }
+  .fs__frame-sep { width: 1.4rem; height: 1px; background: rgba(232, 211, 162, 0.6); }
+  .fs__frame-count { right: 1.1rem; bottom: 1.1rem; font-variant-numeric: tabular-nums; color: var(--ivory-2); }
+
+  /* ---------- Info ---------- */
+  .fs__info {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+    gap: 2rem 3rem;
+    padding-top: clamp(1.8rem, 3vw, 2.6rem);
+  }
+  .fs__info-main { display: grid; gap: 1.4rem; align-content: start; }
+  .fs__name { font-size: clamp(1.9rem, 2.8vw, 2.7rem); line-height: 1.05; }
+  .fs__specs { display: grid; grid-template-columns: auto auto 1fr; gap: 1.6rem; align-items: stretch; }
+  .fs__spec { display: grid; gap: 0.7rem; align-content: start; }
+  .fs__spec dt { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); }
+  .fs__spec dd { margin: 0; display: flex; align-items: baseline; gap: 0.4rem; }
+  .fs__spec--pax { padding-right: 1.6rem; border-right: 1px solid var(--line); }
+  .fs__num {
+    font-family: var(--font-display);
+    font-size: clamp(3.6rem, 5vw, 4.8rem);
+    line-height: 0.85;
+    font-variant-numeric: lining-nums tabular-nums;
+    background: var(--gold-grad);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    display: inline-block;
+  }
+  .fs__num--s { font-size: clamp(2.2rem, 3vw, 2.8rem); background: none; color: var(--ivory); -webkit-text-fill-color: var(--ivory); }
+  .fs__unit { font-size: 0.82rem; color: var(--muted); }
+  .fs__spec--best { padding-left: 1.6rem; border-left: 1px solid var(--line); }
+  .fs__spec--best dd { font-size: 0.95rem; line-height: 1.45; color: var(--ivory-2); display: block; max-width: 24ch; }
+
+  .fs__info-side { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.6rem; align-content: start; }
+  .fs__feats { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0; list-style: none; }
+  .fs__feat { min-height: 38px; padding-inline: 0.85rem 1rem; font-size: 0.8rem; }
+  .fs__feat :global(svg) { width: 14px; height: 14px; color: var(--gold); }
+  .fs__cta { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.8rem; min-width: 0; }
+  .fs__cta > * { min-width: 0; }
+  .fs__reserve { max-width: 100%; }
+  .fs__reserve span { overflow: hidden; text-overflow: ellipsis; }
+
+  /* ---------- Tablet / mobile ---------- */
+  @media (max-width: 1100px) {
+    .fs__info { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 900px) {
+    .fs__layout { grid-template-columns: 1fr; gap: 1.6rem; }
+    .fs__select { min-width: 0; }
+    .fs__filters { margin-bottom: 1rem; }
+    .fs__help { display: none; }
+
+    .fs__rail {
+      display: flex; gap: 0.5rem;
+      border-top: 0;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      scrollbar-width: none;
+      margin-inline: calc(var(--gutter) * -1);
+      padding: 0.2rem var(--gutter) 0.4rem;
+      scroll-padding-inline: var(--gutter);
+      -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 var(--gutter), #000 calc(100% - var(--gutter)), transparent 100%);
+      mask-image: linear-gradient(90deg, transparent 0, #000 var(--gutter), #000 calc(100% - var(--gutter)), transparent 100%);
+    }
+    .fs__rail::-webkit-scrollbar { display: none; }
+    .fs__tab {
+      flex: none;
+      width: auto;
+      display: inline-flex; gap: 0.6rem;
+      min-height: 48px;
+      padding: 0 1.1rem;
+      border: 1px solid var(--line-strong);
+      border-radius: 999px;
+      scroll-snap-align: start;
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .fs__tab::before, .fs__tab::after, .fs__tab-idx, .fs__tab-cat { display: none; }
+    .fs__tab-name { font-family: var(--font-sans); font-size: 0.84rem; font-weight: 600; white-space: nowrap; }
+    .fs__tab:hover .fs__tab-text, .fs__tab.is-active .fs__tab-text { transform: none; }
+    .fs__tab.is-active { border-color: rgba(232, 211, 162, 0.7); background: rgba(201, 168, 106, 0.12); }
+    .fs__tab.is-active .fs__tab-pax { color: var(--gold-2); }
+    .fs__tab.is-fit { border-color: rgba(232, 211, 162, 0.38); }
+    .fs__tab.is-best:not(.is-active) { border-color: rgba(232, 211, 162, 0.6); }
+
+    /* The outlined ghost type would sit half-hidden between the chips and the photo: drop it on small screens. */
+    .fs__ghost-wrap { display: none; }
+    .fs__frame { aspect-ratio: 4 / 3; border-radius: var(--radius); }
+    /* Label moves to the bottom so it never covers faces at the top of the photo; the counter duplicates the chip row. */
+    .fs__frame-tag { left: 0.8rem; top: auto; bottom: 0.8rem; padding: 0.45rem 0.8rem; font-size: 0.6rem; }
+    .fs__frame-count { display: none; }
+    .fs__slide:not(.fs__slide--studio) img { object-position: var(--pos-m, var(--pos, 50% 20%)); }
+  }
+  @media (max-width: 560px) {
+    .fs__specs { grid-template-columns: auto 1fr; gap: 1.2rem 1.4rem; }
+    .fs__spec--best { grid-column: 1 / -1; padding-left: 0; border-left: 0; padding-top: 1.1rem; border-top: 1px solid var(--line); }
+    .fs__spec--best dd { max-width: none; }
+    .fs__cta { flex-direction: column; align-items: stretch; gap: 1.2rem; }
+    .fs__reserve { padding-inline: 1.4rem; }
+    .fs__all { align-self: center; min-height: 44px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fs__tab-text, .fs__tab-best { transition: none; }
+  }
+</style>
+
+<script>
+  import gsap from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  type V = { id: string; name: string; category: string; passengers: number; luggage: number; bestFor: string; features: string[]; mark: string; short: string };
+
+  const root = document.querySelector<HTMLElement>('[data-fs-root]');
+  const dataEl = document.querySelector<HTMLScriptElement>('[data-fs-data]');
+  if (root && dataEl) initFleet(root, JSON.parse(dataEl.textContent || '[]') as V[]);
+
+  function initFleet(root: HTMLElement, data: V[]) {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const tabs = Array.from(root.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+    const filters = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-fs-group]'));
+    const rail = root.querySelector<HTMLElement>('[data-fs-rail]')!;
+    const stage = root.querySelector<HTMLElement>('[data-fs-stage]')!;
+    const slides = Array.from(root.querySelectorAll<HTMLElement>('[data-fs-slide]'));
+    const wipe = root.querySelector<HTMLElement>('[data-fs-wipe]')!;
+    const frame = root.querySelector<HTMLElement>('[data-fs-frame]')!;
+    const ghost = root.querySelector<HTMLElement>('[data-fs-ghost]')!;
+    const nameEl = root.querySelector<HTMLElement>('[data-fs-name]')!;
+    const paxEl = root.querySelector<HTMLElement>('[data-fs-pax]')!;
+    const lugEl = root.querySelector<HTMLElement>('[data-fs-lug]')!;
+    const bestEl = root.querySelector<HTMLElement>('[data-fs-best]')!;
+    const featsEl = root.querySelector<HTMLElement>('[data-fs-feats]')!;
+    const cta = root.querySelector<HTMLAnchorElement>('[data-fs-cta]')!;
+    const ctaLabel = root.querySelector<HTMLElement>('[data-fs-cta-label]')!;
+    const tagIdx = root.querySelector<HTMLElement>('[data-fs-tag-idx]')!;
+    const tagN = root.querySelector<HTMLElement>('[data-fs-tag-n]')!;
+    const tagCat = root.querySelector<HTMLElement>('[data-fs-tag-cat]')!;
+    const status = root.querySelector<HTMLElement>('[data-fs-status]')!;
+    const featTpl = featsEl.querySelector('li')!.cloneNode(true) as HTMLElement;
+
+    let current = 0;
+    let z = 10;
+    let pax: number | null = null;
+    let paxVal = data[0].passengers;
+    let lugVal = data[0].luggage;
+    const pad = (n: number) => String(Math.round(n)).padStart(2, '0');
+    const HIDE_R = 'inset(0% 0% 0% 100%)';
+    const HIDE_L = 'inset(0% 100% 0% 0%)';
+    const SHOW = 'inset(0% 0% 0% 0%)';
+    slides.forEach((s, k) => gsap.set(s, { clipPath: k === 0 ? SHOW : HIDE_R, zIndex: k === 0 ? z : 0 }));
+
+    // Warm the remaining images once the section approaches, so wipes never reveal a blank frame.
+    const warm = () => slides.forEach((s) => { const img = s.querySelector('img'); if (img) img.loading = 'eager'; });
+    if ('IntersectionObserver' in window) {
+      const io = new IntersectionObserver((entries) => { if (entries.some((e) => e.isIntersecting)) { warm(); io.disconnect(); } }, { rootMargin: '600px 0px' });
+      io.observe(root);
+    } else warm();
+
+    function updateHref() {
+      // Never pre-fill more guests than the selected vehicle seats.
+      const p = pax ? Math.min(pax, data[current].passengers) : null;
+      cta.href = `/book/?vehicle=${encodeURIComponent(data[current].id)}${p ? `&pax=${p}` : ''}`;
+    }
+
+    function swapText(el: HTMLElement, text: string, delay = 0) {
+      if (reduce) { el.textContent = text; return; }
+      gsap.killTweensOf(el);
+      gsap.timeline({ delay })
+        .to(el, { opacity: 0, y: -10, filter: 'blur(6px)', duration: 0.22, ease: 'power2.in' })
+        .add(() => { el.textContent = text; })
+        .fromTo(el, { opacity: 0, y: 14, filter: 'blur(6px)' }, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.8, ease: 'expo.out' });
+    }
+
+    function tweenNum(el: HTMLElement, from: number, to: number) {
+      if (reduce || from === to) { el.textContent = pad(to); return; }
+      const o = { v: from };
+      gsap.killTweensOf(o);
+      gsap.fromTo(el, { yPercent: to > from ? 18 : -18, opacity: 0.4 }, { yPercent: 0, opacity: 1, duration: 0.9, ease: 'expo.out', overwrite: 'auto' });
+      gsap.to(o, { v: to, duration: 0.9, ease: 'expo.out', onUpdate: () => { el.textContent = pad(o.v); } });
+    }
+
+    function renderFeats(list: string[]) {
+      const build = () => {
+        featsEl.replaceChildren(...list.map((f) => {
+          const li = featTpl.cloneNode(true) as HTMLElement;
+          li.querySelector('span')!.textContent = f;
+          return li;
+        }));
+      };
+      if (reduce) { build(); return; }
+      const old = featsEl.children;
+      gsap.killTweensOf(old);
+      gsap.to(old, {
+        opacity: 0, y: -8, duration: 0.2, stagger: 0.02, ease: 'power2.in',
+        onComplete: () => {
+          build();
+          gsap.fromTo(featsEl.children, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.8, stagger: 0.06, ease: 'expo.out' });
+        },
+      });
+    }
+
+    function animateGhost(text: string, dir: number) {
+      if (reduce) { ghost.textContent = text; return; }
+      gsap.killTweensOf(ghost);
+      gsap.timeline()
+        .to(ghost, { opacity: 0, xPercent: -6 * dir, filter: 'blur(10px)', duration: 0.3, ease: 'power2.in' })
+        .add(() => { ghost.textContent = text; })
+        .fromTo(ghost, { opacity: 0, xPercent: 8 * dir, filter: 'blur(10px)' }, { opacity: 1, xPercent: 0, filter: 'blur(0px)', duration: 1.3, ease: 'expo.out' });
+    }
+
+    function wipeTo(i: number, dir: number) {
+      const next = slides[i];
+      const prev = slides[current];
+      next.style.zIndex = String(++z);
+      frame.classList.toggle('is-studio', next.classList.contains('fs__slide--studio'));
+      slides.forEach((s, k) => { s.classList.toggle('is-active', k === i); s.setAttribute('aria-hidden', k === i ? 'false' : 'true'); });
+      if (reduce) {
+        slides.forEach((s, k) => gsap.set(s, { clipPath: k === i ? SHOW : HIDE_R }));
+        return;
+      }
+      const nextImg = next.querySelector('img');
+      const prevImg = prev.querySelector('img');
+      gsap.killTweensOf(next);
+      gsap.fromTo(next, { clipPath: dir > 0 ? HIDE_R : HIDE_L }, {
+        clipPath: SHOW, duration: 1.15, ease: 'power4.inOut',
+        onComplete: () => {
+          if (slides.indexOf(next) !== current) return;
+          slides.forEach((s) => { if (s !== next) { gsap.killTweensOf(s); gsap.set(s, { clipPath: HIDE_R }); } });
+        },
+      });
+      if (nextImg) gsap.fromTo(nextImg, { scale: 1.16, xPercent: 4 * dir }, { scale: 1, xPercent: 0, duration: 1.7, ease: 'expo.out', overwrite: 'auto' });
+      if (prevImg && prev !== next) gsap.to(prevImg, { scale: 1.06, xPercent: -6 * dir, duration: 1.15, ease: 'power4.inOut', overwrite: 'auto' });
+      const w = frame.clientWidth;
+      gsap.killTweensOf(wipe);
+      gsap.fromTo(wipe, { x: dir > 0 ? w : 0, opacity: 1 }, { x: dir > 0 ? 0 : w, duration: 1.15, ease: 'power4.inOut' });
+      gsap.to(wipe, { opacity: 0, duration: 0.4, delay: 0.95 });
+    }
+
+    function select(i: number, opts: { focus?: boolean } = {}) {
+      if (i === current) return;
+      const v = data[i];
+      const dir = i > current ? 1 : -1;
+
+      tabs.forEach((t, k) => {
+        const on = k === i;
+        t.classList.toggle('is-active', on);
+        t.setAttribute('aria-selected', on ? 'true' : 'false');
+        t.tabIndex = on ? 0 : -1;
+      });
+      stage.setAttribute('aria-labelledby', tabs[i].id);
+      if (opts.focus) tabs[i].focus({ preventScroll: true });
+      scrollRailTo(tabs[i]);
+
+      wipeTo(i, dir);
+      current = i;
+
+      animateGhost(v.mark, dir);
+      swapText(nameEl, v.name);
+      swapText(bestEl, v.bestFor, 0.05);
+      swapText(tagCat, v.category);
+      tagIdx.textContent = pad(i + 1);
+      tagN.textContent = pad(i + 1);
+      tweenNum(paxEl, paxVal, v.passengers);
+      tweenNum(lugEl, lugVal, v.luggage);
+      paxVal = v.passengers;
+      lugVal = v.luggage;
+      renderFeats(v.features);
+      ctaLabel.textContent = `Reserve the ${v.short}`;
+      updateHref();
+    }
+
+    function scrollRailTo(tab: HTMLElement) {
+      if (rail.scrollWidth <= rail.clientWidth + 2) return;
+      const left = tab.offsetLeft - rail.clientWidth / 2 + tab.offsetWidth / 2;
+      rail.scrollTo({ left: Math.max(0, left), behavior: reduce ? 'auto' : 'smooth' });
+    }
+
+    tabs.forEach((t, i) => {
+      t.addEventListener('click', () => select(i));
+      t.addEventListener('keydown', (e) => {
+        const k = e.key;
+        let n = -1;
+        if (k === 'ArrowDown' || k === 'ArrowRight') n = (i + 1) % tabs.length;
+        else if (k === 'ArrowUp' || k === 'ArrowLeft') n = (i - 1 + tabs.length) % tabs.length;
+        else if (k === 'Home') n = 0;
+        else if (k === 'End') n = tabs.length - 1;
+        if (n < 0) return;
+        e.preventDefault();
+        select(n, { focus: true });
+        tabs[n].focus({ preventScroll: true });
+      });
+    });
+
+    // Rail orientation follows layout (vertical list on desktop, horizontal chips on mobile).
+    const mq = window.matchMedia('(max-width: 900px)');
+    const setOrientation = () => rail.setAttribute('aria-orientation', mq.matches ? 'horizontal' : 'vertical');
+    setOrientation();
+    mq.addEventListener?.('change', setOrientation);
+
+    filters.forEach((f) => {
+      f.addEventListener('click', () => {
+        const on = f.getAttribute('aria-pressed') !== 'true';
+        filters.forEach((o) => o.setAttribute('aria-pressed', o === f && on ? 'true' : 'false'));
+        const fits = on ? (f.dataset.fsFits || '').split(',') : null;
+        pax = on ? Number(f.dataset.fsPaxv) : null;
+        const best = fits?.[0] ?? null; // fits are ordered tightest-first
+        tabs.forEach((t) => {
+          const id = t.dataset.id || '';
+          const fit = !fits || fits.includes(id);
+          t.classList.toggle('is-dim', !fit);
+          t.classList.toggle('is-fit', !!fits && fit);
+          t.classList.toggle('is-best', id === best);
+        });
+        if (fits && best) {
+          const n = fits.length;
+          const idx = data.findIndex((d) => d.id === best);
+          const label = f.textContent?.trim();
+          status.textContent = `${n === data.length ? 'All' : n} vehicle${n === 1 ? ' seats' : 's seat'} ${label} guests. Closest fit: ${data[idx].name}.`;
+          if (idx >= 0 && idx !== current) select(idx);
+          else scrollRailTo(tabs[current]);
+        } else {
+          status.textContent = 'Showing all vehicles.';
+        }
+        updateHref();
+      });
+    });
+
+    window.addEventListener('resize', () => { gsap.set(wipe, { opacity: 0 }); }, { passive: true });
+  }
+</script>

@@ -1,0 +1,319 @@
+---
+// Experience: the five-step Door-to-Door Standard, a scroll-drawn timeline beside a sticky portrait.
+import Icon from '../Icon.astro';
+import { site, images } from '../../data/site';
+
+const steps = [
+  {
+    title: 'Reserve in 60 seconds',
+    text: 'Book online or call us at any hour. Tell us where, when and who, and we take it from there.',
+    chip: { icon: 'calendar', label: 'Online or by phone, 24/7' },
+  },
+  {
+    title: 'Confirmed by a real person',
+    text: 'A dispatcher, not a bot, confirms your ride within minutes. Your chauffeur’s name, vehicle and contact follow by text.',
+    chip: { icon: 'chat', label: 'Chauffeur details by text' },
+  },
+  {
+    title: 'Tracked & on time',
+    text: 'We monitor your flight live and dispatch around Seattle traffic, so the plan bends to you, never the other way around.',
+    chip: { icon: 'plane', label: 'Live flight monitoring' },
+  },
+  {
+    title: 'Met at the curb',
+    text: 'Your chauffeur is waiting with your name in hand. Luggage handled, doors opened, not a moment spent searching.',
+    chip: { icon: 'suitcase', label: 'Meet & greet' },
+  },
+  {
+    title: 'Arrive composed',
+    text: 'Wi-Fi, chilled water and a cabin set to your temperature. Step out exactly as relaxed as you stepped in.',
+    chip: { icon: 'wifi', label: 'Wi-Fi, water & climate set to you' },
+  },
+];
+
+const standard = ['Licensed & background-checked', 'Suited & discreet', 'Local route experts', 'Safety-first driving'];
+const pad = (n: number) => String(n).padStart(2, '0');
+---
+<section id="experience" class="exp section" data-exp aria-labelledby="exp-title">
+  <div class="container">
+    <header class="section-head section-head--split exp__head">
+      <div class="exp__head-main">
+        <p class="eyebrow" data-reveal>The Experience</p>
+        <h2 id="exp-title" data-split>The Door-to-Door <em>Standard</em></h2>
+      </div>
+      <p class="lead" data-reveal data-delay="0.15">
+        Five promises we keep on every ride, from the moment you reserve to the moment you step out. No surprises, only the quiet confidence of a ride that simply works.
+      </p>
+    </header>
+
+    <div class="exp__grid">
+      <div class="exp__visual">
+        <div class="exp__frame">
+          <div class="media media--shade exp__media" data-reveal="scale">
+            <img src={images.waterfront} alt="Downtown Seattle and the waterfront at dusk" loading="lazy" decoding="async" width="1000" height="1250" />
+          </div>
+          <div class="exp__badge" aria-hidden="true">
+            <span class="exp__badge-label">Est.</span>
+            <span class="exp__badge-num">{site.since}</span>
+            <span class="exp__badge-label">Seattle</span>
+          </div>
+          <div class="exp__card glass" data-reveal data-delay="0.35">
+            <p class="exp__card-title">The chauffeur standard</p>
+            <ul class="exp__card-list" role="list">
+              {standard.map((s) => (
+                <li><span class="exp__check"><Icon name="check" /></span>{s}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="exp__timeline" data-exp-timeline>
+        <span class="exp__rail" aria-hidden="true" data-exp-rail><span class="exp__rail-fill" data-exp-fill></span></span>
+        <ol class="exp__steps" role="list">
+          {steps.map((s, i) => (
+            <li class="exp-step" data-exp-step>
+              <span class="exp-step__node" data-exp-node aria-hidden="true"><span>{pad(i + 1)}</span></span>
+              <div class="exp-step__body" data-reveal>
+                <p class="exp-step__label">Step {pad(i + 1)}</p>
+                <h3 class="exp-step__title">{s.title}</h3>
+                <p class="exp-step__text">{s.text}</p>
+                <span class="chip exp-step__chip"><Icon name={s.chip.icon} />{s.chip.label}</span>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </div>
+
+    <div class="exp__cta" data-reveal>
+      <p class="exp__cta-title display">Your chauffeur is <em>ready when you are.</em></p>
+      <div class="exp__cta-actions">
+        <a href="/book/" class="btn btn--gold btn--lg" data-magnetic>Reserve your ride <Icon name="arrow" /></a>
+        <p class="exp__call">Prefer to talk? <a href={site.phoneHref} data-cursor="Call">Call {site.phone}</a></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .exp {
+    background:
+      radial-gradient(55% 45% at 12% 30%, rgba(201, 168, 106, 0.07), transparent 70%),
+      linear-gradient(180deg, var(--ink) 0%, var(--ink-2) 22%, var(--ink-2) 78%, var(--ink) 100%);
+  }
+  .exp__head-main { display: grid; gap: 1.3rem; }
+  /* overflow: clip keeps the word mask but lets italic words sit on the true text baseline */
+  .exp h2 :global(.split-line) { overflow: clip; }
+  .exp__head .lead { justify-self: end; }
+
+  .exp__grid { display: grid; gap: clamp(3rem, 7vw, 4rem); }
+  @media (min-width: 1024px) {
+    .exp__grid { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: clamp(4rem, 7vw, 8rem); align-items: start; }
+    .exp__visual { position: sticky; top: calc(var(--header-h) + 1.25rem); }
+  }
+
+  /* ---------- Visual ---------- */
+  .exp__frame { position: relative; }
+  /* Landscape crop below desktop so the photo never swallows the screen before the steps */
+  .exp__media {
+    aspect-ratio: 4 / 3;
+    border-radius: var(--radius-l);
+  }
+  @media (max-width: 639px) { .exp__media { aspect-ratio: 5 / 4; } }
+  @media (min-width: 1024px) {
+    .exp__media { aspect-ratio: auto; height: min(calc(100vh - var(--header-h) - 3rem), 760px); }
+  }
+  .exp__media img { transform-origin: 50% 40%; object-position: 58% 50%; }
+  .exp__badge {
+    position: absolute;
+    top: 1.2rem;
+    right: 1.2rem;
+    z-index: 2;
+    display: grid;
+    justify-items: center;
+    align-content: center;
+    gap: 0.25rem;
+    width: 104px;
+    height: 104px;
+    border-radius: 50%;
+    border: 1px solid rgba(232, 211, 162, 0.45);
+    background: rgba(10, 10, 12, 0.5);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    text-align: center;
+  }
+  .exp__badge-num { font-family: var(--font-display); font-style: italic; font-size: 2rem; line-height: 0.95; background: var(--gold-grad); -webkit-background-clip: text; background-clip: text; color: transparent; padding-right: 0.04em; }
+  @media (max-width: 639px) { .exp__badge { width: 88px; height: 88px; top: 0.9rem; right: 0.9rem; } .exp__badge-num { font-size: 1.65rem; } }
+  .exp__badge-label { font-size: 0.56rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ivory-2); line-height: 1.5; }
+
+  .exp__card {
+    position: relative;
+    z-index: 2;
+    margin: -5.5rem 1rem 0;
+    padding: 1.4rem 1.4rem 1.5rem;
+    border-radius: var(--radius);
+    box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.8);
+  }
+  @media (min-width: 640px) {
+    .exp__card { position: absolute; left: 1.4rem; bottom: 1.4rem; margin: 0; width: min(330px, calc(100% - 2.8rem)); }
+  }
+  @media (min-width: 1024px) {
+    .exp__card { left: auto; right: -2.2rem; bottom: 2.4rem; }
+  }
+  .exp__card-title {
+    font-family: var(--font-display);
+    font-size: 1.45rem;
+    font-style: italic;
+    color: var(--ivory);
+    margin-bottom: 0.9rem;
+    padding-bottom: 0.8rem;
+    border-bottom: 1px solid var(--line);
+  }
+  .exp__card-list { display: grid; gap: 0.7rem; }
+  .exp__card-list li { display: flex; align-items: center; gap: 0.75rem; font-size: 0.9rem; color: var(--ivory-2); }
+  .exp__check { display: grid; place-items: center; flex: none; width: 24px; height: 24px; border-radius: 50%; border: 1px solid rgba(201, 168, 106, 0.5); color: var(--gold-2); }
+  .exp__check :global(svg) { width: 12px; height: 12px; stroke-width: 2.2; }
+
+  /* ---------- Timeline ---------- */
+  .exp__timeline { position: relative; padding-top: 0.5rem; }
+  .exp__steps { position: relative; display: grid; gap: clamp(2.6rem, 5vw, 4.2rem); padding: 0; margin: 0; list-style: none; }
+  .exp__rail {
+    position: absolute;
+    left: calc(var(--node) / 2);
+    top: calc(var(--node) / 2 + 0.5rem);
+    bottom: 6rem;
+    width: 1px;
+    background: var(--line-strong);
+    transform: translateX(-0.5px);
+    pointer-events: none;
+  }
+  .exp__rail-fill {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, var(--gold-2), var(--gold) 60%, var(--gold-3));
+    box-shadow: 0 0 12px rgba(201, 168, 106, 0.55);
+    transform-origin: top;
+  }
+  .js .exp__rail-fill { transform: scaleY(0); }
+  .exp { --node: 46px; }
+  @media (min-width: 1024px) { .exp { --node: 54px; } }
+
+  .exp-step { position: relative; display: grid; grid-template-columns: var(--node) 1fr; gap: clamp(1.2rem, 2.5vw, 2.2rem); }
+  .exp-step__node {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: var(--node);
+    height: var(--node);
+    border-radius: 50%;
+    border: 1px solid var(--line-strong);
+    background: var(--ink-2);
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+    letter-spacing: 0.02em;
+    font-variant-numeric: lining-nums tabular-nums;
+    font-feature-settings: 'lnum' 1, 'tnum' 1;
+    color: var(--muted);
+    transition: color 0.7s var(--ease-out), border-color 0.7s var(--ease-out), box-shadow 0.7s var(--ease-out), background 0.7s var(--ease-out);
+  }
+  .exp-step__node::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 50%;
+    background: var(--gold-grad);
+    opacity: 0;
+    transform: scale(0.6);
+    transition: opacity 0.7s var(--ease-out), transform 0.7s var(--ease-out);
+  }
+  .exp-step__node span { position: relative; }
+  .exp-step.is-active .exp-step__node,
+  html:not(.js) .exp-step__node { color: #17130b; border-color: transparent; box-shadow: var(--gold-glow); }
+  .exp-step.is-active .exp-step__node::before,
+  html:not(.js) .exp-step__node::before { opacity: 1; transform: none; }
+
+  .exp-step__body { display: grid; gap: 0.7rem; padding-top: calc(var(--node) / 2 - 0.85rem); transition: opacity 0.8s var(--ease-out); }
+  /* Upcoming steps: headline dims, body copy stays readable */
+  .js .exp-step:not(.is-active) .exp-step__label,
+  .js .exp-step:not(.is-active) .exp-step__title { opacity: 0.45; }
+  .js .exp-step:not(.is-active) .exp-step__text,
+  .js .exp-step:not(.is-active) .exp-step__chip { opacity: 0.72; }
+  .exp-step__body > * { transition: opacity 0.8s var(--ease-out); }
+  .exp-step__label { font-size: var(--fs-micro); font-weight: 600; letter-spacing: 0.24em; text-transform: uppercase; color: var(--gold); }
+  .exp-step__title { font-size: clamp(1.75rem, 2.8vw, 2.5rem); line-height: 1.05; font-variant-numeric: lining-nums; }
+  .exp-step__text { color: var(--muted); max-width: 48ch; font-size: 0.98rem; }
+  .exp-step__chip { justify-self: start; margin-top: 0.3rem; }
+  .exp-step__chip :global(svg) { width: 14px; height: 14px; color: var(--gold); }
+
+  /* ---------- CTA ---------- */
+  .exp__cta {
+    display: grid;
+    gap: 1.8rem;
+    align-items: center;
+    margin-top: clamp(4.5rem, 9vw, 7.5rem);
+    padding-top: clamp(2.5rem, 5vw, 3.5rem);
+    border-top: 1px solid var(--line);
+  }
+  @media (min-width: 960px) { .exp__cta { grid-template-columns: 1fr auto; gap: 3rem; } }
+  .exp__cta-title { font-size: clamp(2rem, 3.6vw, 3.2rem); line-height: 1.05; max-width: 18ch; }
+  .exp__cta-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 2rem; }
+  .exp__call { font-size: 0.92rem; color: var(--muted); }
+  .exp__call a { display: inline-flex; align-items: center; min-height: 44px; color: var(--ivory); font-weight: 600; text-decoration: underline; text-decoration-color: rgba(201, 168, 106, 0.55); text-decoration-thickness: 1px; text-underline-offset: 6px; transition: color 0.3s, text-decoration-color 0.3s; }
+  .exp__call a:hover { color: var(--gold-2); text-decoration-color: var(--gold-2); }
+  @media (max-width: 520px) {
+    .exp__cta-actions .btn { width: 100%; }
+  }
+</style>
+
+<script>
+  import gsap from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  const root = document.querySelector<HTMLElement>('[data-exp]');
+  if (root) {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const list = root.querySelector<HTMLElement>('[data-exp-timeline]')!;
+    const rail = root.querySelector<HTMLElement>('[data-exp-rail]')!;
+    const fill = root.querySelector<HTMLElement>('[data-exp-fill]')!;
+    const steps = Array.from(root.querySelectorAll<HTMLElement>('[data-exp-step]'));
+    const nodes = steps.map((s) => s.querySelector<HTMLElement>('[data-exp-node]')!);
+
+    // Rail runs exactly from the first node's centre to the last node's centre.
+    const layoutRail = () => {
+      const base = list.getBoundingClientRect().top;
+      const a = nodes[0].getBoundingClientRect();
+      const b = nodes[nodes.length - 1].getBoundingClientRect();
+      const top = a.top + a.height / 2 - base;
+      rail.style.top = `${top}px`;
+      rail.style.bottom = 'auto';
+      rail.style.height = `${b.top + b.height / 2 - base - top}px`;
+    };
+    layoutRail();
+
+    if (reduce) {
+      steps.forEach((s) => s.classList.add('is-active'));
+      gsap.set(fill, { scaleY: 1 });
+    } else {
+      ScrollTrigger.addEventListener('refreshInit', layoutRail);
+      // Lower activation line on narrow screens so the step being read is lit
+      const line = window.innerWidth < 768 ? '75%' : '62%';
+      gsap.fromTo(fill, { scaleY: 0 }, {
+        scaleY: 1,
+        ease: 'none',
+        scrollTrigger: { trigger: rail, start: `top ${line}`, end: `bottom ${line}`, scrub: 0.5 },
+      });
+      nodes.forEach((node, i) => {
+        ScrollTrigger.create({
+          trigger: node,
+          start: `center ${line}`,
+          onEnter: () => steps[i].classList.add('is-active'),
+          onLeaveBack: () => steps[i].classList.remove('is-active'),
+        });
+      });
+    }
+  }
+</script>

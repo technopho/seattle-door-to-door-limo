@@ -1,0 +1,9 @@
+// Cloudflare Workers static-assets deploy (used by "Workers & Pages → Import a repository").
+// Build command: npm run build   ·   Deploy command: npx wrangler deploy
+{
+  "name": "seattle-door-to-door-limo",
+  "compatibility_date": "2025-09-01",
+  "assets": {
+    "directory": "./dist"
+  }
+}

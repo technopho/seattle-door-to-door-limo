@@ -1,0 +1,87 @@
+---
+import Logo from './Logo.astro';
+import Icon from './Icon.astro';
+import { site, services, fleet, areas } from '../data/site';
+const year = new Date().getFullYear();
+---
+<footer class="footer">
+  <div class="container">
+    <div class="footer__cta">
+      <p class="eyebrow">Available 24 hours, 7 days</p>
+      <h2 class="footer__title" data-split>Your chauffeur <em>is waiting.</em></h2>
+      <div class="footer__cta-actions" data-reveal>
+        <a href="/book/" class="btn btn--gold btn--lg" data-magnetic>Reserve your ride <Icon name="arrow" /></a>
+        <a href={site.phoneHref} class="btn btn--ghost btn--lg"><Icon name="phone" /> {site.phone}</a>
+      </div>
+    </div>
+
+    <div class="footer__grid">
+      <div class="footer__brand">
+        <Logo />
+        <p class="muted small">Seattle’s private chauffeur service since {site.since}. Airport, corporate, weddings and nights out, handled door to door.</p>
+        <div class="footer__social">
+          <a href="#" aria-label="Instagram"><Icon name="instagram" /></a>
+          <a href="#" aria-label="Facebook"><Icon name="facebook" /></a>
+          <a href={site.smsHref} aria-label="Text us"><Icon name="chat" /></a>
+        </div>
+      </div>
+      <div>
+        <p class="footer__h">Services</p>
+        <ul role="list">{services.map((s) => <li><a href="/#services">{s.title}</a></li>)}</ul>
+      </div>
+      <div>
+        <p class="footer__h">Fleet</p>
+        <ul role="list">{fleet.map((v) => <li><a href={`/fleet/#${v.id}`}>{v.name}</a></li>)}</ul>
+      </div>
+      <div>
+        <p class="footer__h">Service Areas</p>
+        <ul role="list">{areas.map((a) => <li><a href="/#areas">{a.city}, WA</a></li>)}</ul>
+      </div>
+      <div>
+        <p class="footer__h">Contact</p>
+        <ul role="list">
+          <li><a href={site.phoneHref}>{site.phone}</a></li>
+          <li><a href={`mailto:${site.email}`}>{site.email}</a></li>
+          <li class="muted">{site.region}</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer__word" aria-hidden="true">Door <em>to</em> Door</div>
+
+    <div class="footer__legal">
+      <span>© {year} {site.name}. All rights reserved.</span>
+      <span class="footer__legal-links"><a href="#">Privacy</a><a href="#">Terms</a></span>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .footer { position: relative; padding-top: var(--section-y); background: linear-gradient(180deg, var(--ink) 0%, #0d0c0a 100%); border-top: 1px solid var(--line); overflow: hidden; }
+  .footer::before { content: ''; position: absolute; left: 50%; top: -30%; width: 120vw; height: 70%; transform: translateX(-50%); background: radial-gradient(closest-side, rgba(201, 168, 106, 0.12), transparent); pointer-events: none; }
+  .footer__cta { position: relative; display: grid; justify-items: center; text-align: center; gap: 1.6rem; padding-bottom: clamp(4rem, 9vw, 7rem); border-bottom: 1px solid var(--line); }
+  .footer__title { font-size: var(--fs-h1); }
+  .footer__cta-actions { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; }
+  .footer__grid { display: grid; grid-template-columns: 1.6fr repeat(4, 1fr); gap: 2.5rem; padding-block: clamp(3.5rem, 7vw, 5rem); }
+  .footer__brand { display: grid; gap: 1.2rem; align-content: start; max-width: 32ch; }
+  .footer__social { display: flex; gap: 0.6rem; }
+  .footer__social a { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--line-strong); transition: background 0.3s, color 0.3s, border-color 0.3s; }
+  .footer__social a:hover { background: var(--gold); color: var(--ink); border-color: var(--gold); }
+  .footer__social svg { width: 18px; height: 18px; }
+  .footer__h { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: var(--gold); margin-bottom: 1.1rem; }
+  .footer ul { display: grid; gap: 0.6rem; font-size: 0.9rem; color: var(--ivory-2); }
+  .footer ul a { transition: color 0.3s; }
+  .footer ul a:hover { color: var(--gold-2); }
+  .footer__word { font-family: var(--font-display); font-size: clamp(4rem, 17vw, 16rem); line-height: 0.85; text-align: center; letter-spacing: -0.03em; white-space: nowrap; background: linear-gradient(180deg, rgba(243, 238, 228, 0.14), rgba(243, 238, 228, 0)); -webkit-background-clip: text; background-clip: text; color: transparent; user-select: none; }
+  .footer__word em { font-style: italic; }
+  .footer__legal { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; padding-block: 1.6rem 2rem; border-top: 1px solid var(--line); font-size: 0.8rem; color: var(--muted); }
+  .footer__legal-links { display: flex; gap: 1.4rem; }
+  .footer__legal a:hover { color: var(--ivory); }
+  @media (max-width: 1000px) { .footer__grid { grid-template-columns: 1fr 1fr; } .footer__brand { grid-column: 1 / -1; } }
+  @media (max-width: 760px) {
+    .footer { padding-bottom: 76px; }
+    .footer__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2.5rem 1.5rem; }
+    .footer__grid > div:last-child { grid-column: 1 / -1; }
+    .footer ul a { overflow-wrap: anywhere; }
+  }
+</style>

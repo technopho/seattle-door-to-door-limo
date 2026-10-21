@@ -1,0 +1,206 @@
+---
+import Icon from '../Icon.astro';
+import { fleet } from '../../data/site';
+import { meta, isStudio, maxPax } from './fleetMeta';
+---
+<section class="section surface-2 cmp" id="compare" aria-labelledby="cmp-title">
+  <div class="container">
+    <div class="section-head section-head--split">
+      <div class="cmp__head">
+        <p class="eyebrow" data-reveal="fade">At a glance</p>
+        <h2 id="cmp-title" data-split><span>Compare</span> <span>the</span> <em>collection.</em></h2>
+      </div>
+      <p class="lead" data-reveal data-delay="0.15">Capacity, luggage and the moments each vehicle was made for, side by side. Every option is chauffeur-driven and detailed before every ride.</p>
+    </div>
+
+    <div class="cmp__wrap" data-reveal>
+      <table class="cmp__table">
+        <caption class="sr-only">Seattle Door to Door Limo fleet comparison: passengers, luggage, best use and signature amenity for each vehicle.</caption>
+        <thead>
+          <tr>
+            <th scope="col">Vehicle</th>
+            <th scope="col">Passengers</th>
+            <th scope="col">Luggage</th>
+            <th scope="col">Best for</th>
+            <th scope="col">Signature amenity</th>
+            <th scope="col"><span class="sr-only">Reserve</span></th>
+          </tr>
+        </thead>
+        <tbody data-cmp-body>
+          {fleet.map((v) => {
+            const m = meta[v.id];
+            return (
+              <tr>
+                <th scope="row" class="cmp__veh">
+                  <a href={`#${v.id}`} class="cmp__vlink">
+                    <span class:list={['cmp__thumb', isStudio(v) && 'cmp__thumb--studio', m.grade && 'cmp__thumb--grade']}>
+                      <img src={v.image} alt="" loading="lazy" decoding="async" style={m.position ? `object-position:${m.position}` : undefined} />
+                    </span>
+                    <span class="cmp__vtext">
+                      <span class="cmp__cat">{v.category}</span>
+                      <span class="cmp__name">{m.make} {m.model}</span>
+                    </span>
+                  </a>
+                </th>
+                <td data-label="Passengers">
+                  <span class="cmp__num">{v.passengers}</span> <span class="cmp__unit cmp__mo">guests</span>
+                  <span class="cmp__bar" aria-hidden="true"><i style={`--w:${(v.passengers / maxPax).toFixed(3)}`}></i></span>
+                </td>
+                <td data-label="Luggage"><span class="cmp__num">{v.luggage}</span> <span class="cmp__unit">bags</span></td>
+                <td data-label="Best for" class="cmp__text">{v.bestFor}</td>
+                <td data-label="Signature amenity" class="cmp__sig"><Icon name="sparkle" /> {m.signature}</td>
+                <td class="cmp__go">
+                  <a href={`/book/?vehicle=${v.id}`} class="cmp__btn" aria-label={`Reserve the ${m.make} ${m.model}`}>
+                    <span class="cmp__btn-t">Reserve</span> <Icon name="arrow" />
+                  </a>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+    <p class="cmp__note muted small" data-reveal="fade">Capacities are maximums for comfort.</p>
+  </div>
+</section>
+
+<script>
+  import gsap from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+  gsap.registerPlugin(ScrollTrigger);
+  const bars = document.querySelectorAll<HTMLElement>('.cmp__bar i');
+  const body = document.querySelector('[data-cmp-body]');
+  if (bars.length && body && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    gsap.set(bars, { scaleX: 0 });
+    ScrollTrigger.create({
+      trigger: body,
+      start: 'top 85%',
+      once: true,
+      onEnter: () => gsap.to(bars, { scaleX: 1, duration: 1.6, ease: 'expo.out', stagger: 0.08, delay: 0.3 }),
+    });
+  }
+</script>
+
+<style>
+  .cmp__head { display: grid; gap: 1.2rem; }
+  .cmp__head h2 :global(.split-line) { vertical-align: top; }
+  .cmp__head h2 :global(em .split-word) { background: var(--gold-grad); -webkit-background-clip: text; background-clip: text; color: transparent; padding-right: 0.06em; }
+  .cmp__wrap { border-top: 1px solid var(--line-strong); }
+  .cmp__table { width: 100%; border-collapse: collapse; text-align: left; }
+  .cmp__table thead th {
+    padding: 1.1rem 1rem 1.1rem 0;
+    font-size: 0.64rem;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--line);
+  }
+  .cmp__table tbody tr { position: relative; transition: background 0.5s var(--ease-out); }
+  .cmp__table tbody tr:hover { background: linear-gradient(90deg, rgba(201, 168, 106, 0.06), rgba(201, 168, 106, 0) 70%); }
+  .cmp__table tbody th, .cmp__table tbody td { padding: 1.35rem 1.2rem 1.35rem 0; border-bottom: 1px solid var(--line); vertical-align: middle; font-weight: 400; }
+  .cmp__table tbody tr > :first-child { padding-left: 0.4rem; }
+
+  .cmp__vlink { display: flex; align-items: center; gap: 1.1rem; }
+  .cmp__thumb { position: relative; flex: none; width: 104px; aspect-ratio: 16 / 10; border-radius: 10px; overflow: hidden; background: var(--ink-3); border: 1px solid var(--line); }
+  .cmp__thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform 1.2s var(--ease-out); }
+  .cmp__thumb--studio { background: radial-gradient(120% 100% at 50% 30%, #fbf8f2, #e6dece); border-color: rgba(232, 211, 162, 0.35); }
+  .cmp__thumb--studio img { object-fit: contain; padding: 6% 8%; mix-blend-mode: multiply; }
+  .cmp__table tbody tr:hover .cmp__thumb img { transform: scale(1.08); }
+  .cmp__vtext { display: grid; gap: 0.2rem; }
+  .cmp__cat { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold); }
+  .cmp__name { font-family: var(--font-display); font-size: 1.55rem; line-height: 1.1; color: var(--ivory); transition: color 0.4s; }
+  .cmp__vlink:hover .cmp__name { color: var(--gold-2); }
+
+  .cmp__num { font-family: var(--font-display); font-size: 2rem; line-height: 1; color: var(--ivory); font-variant-numeric: lining-nums; }
+  .cmp__unit { font-size: 0.8rem; color: var(--muted); }
+  .cmp__mo { display: none; }
+  .cmp__thumb--grade img { filter: brightness(0.8) contrast(1.08) saturate(0.7); }
+  .cmp__bar { display: block; width: 92px; height: 2px; margin-top: 0.55rem; border-radius: 2px; background: var(--line); overflow: hidden; }
+  .cmp__bar i { display: block; height: 100%; width: calc(var(--w) * 100%); background: var(--gold-grad); transform-origin: left; }
+  .cmp__text { color: var(--ivory-2); font-size: 0.92rem; max-width: 26ch; }
+  .cmp__sig { color: var(--ivory-2); font-size: 0.92rem; white-space: nowrap; }
+  .cmp__sig :global(svg) { display: inline-block; width: 15px; height: 15px; margin-right: 0.35rem; vertical-align: -2px; color: var(--gold); }
+  .cmp__go { text-align: right; }
+  .cmp__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    padding: 0 1.1rem;
+    border-radius: 999px;
+    border: 1px solid var(--line-strong);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ivory);
+    white-space: nowrap;
+    transition: background 0.4s var(--ease-out), color 0.4s, border-color 0.4s;
+  }
+  .cmp__btn :global(svg) { width: 14px; height: 14px; transition: transform 0.4s var(--ease-out); }
+  .cmp__btn:hover { background: var(--gold-grad); color: #17130b; border-color: transparent; }
+  .cmp__btn:hover :global(svg) { transform: translateX(3px); }
+  .cmp__note { margin-top: 1.6rem; }
+
+  @media (max-width: 1100px) and (min-width: 861px) {
+    .cmp__sig { white-space: normal; }
+    .cmp__thumb { width: 80px; }
+    .cmp__name { font-size: 1.3rem; }
+  }
+
+  /* Mobile: compact cards (the vehicle rows above carry the full detail) */
+  @media (max-width: 860px) {
+    .cmp__wrap { border-top: 0; }
+    .cmp__table, .cmp__table tbody { display: block; }
+    .cmp__table thead { display: none; }
+    .cmp__table tbody { display: grid; gap: 0.7rem; }
+    .cmp__table tbody tr {
+      display: grid;
+      grid-template-columns: auto auto minmax(0, 1fr) auto;
+      grid-template-areas: 'veh veh veh go' 'pax lug sig sig';
+      align-items: center;
+      column-gap: 0;
+      row-gap: 0.85rem;
+      padding: 0.85rem 0.9rem 0.95rem;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.01));
+    }
+    .cmp__table tbody tr:hover { background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.01)); }
+    .cmp__table tbody th, .cmp__table tbody td { display: block; padding: 0; border: 0; }
+    .cmp__veh { grid-area: veh; min-width: 0; }
+    .cmp__vlink { gap: 0.85rem; }
+    .cmp__thumb { width: 84px; border-radius: 8px; }
+    .cmp__name { font-size: 1.35rem; }
+    .cmp__go { grid-area: go; justify-self: end; }
+    .cmp__btn { width: 44px; height: 44px; min-height: 44px; padding: 0; border-color: rgba(201, 168, 106, 0.5); color: var(--gold-2); }
+    .cmp__btn-t { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    .cmp__btn :global(svg) { width: 16px; height: 16px; }
+
+    /* one inline stat row: 10 guests · 4 bags · Bar service */
+    .cmp__table tbody td[data-label='Passengers'] { grid-area: pax; }
+    .cmp__table tbody td[data-label='Luggage'] { grid-area: lug; }
+    .cmp__table tbody td[data-label='Signature amenity'] { grid-area: sig; min-width: 0; }
+    .cmp__table tbody td[data-label='Best for'] { display: none; }
+    .cmp__table tbody td[data-label='Passengers'], .cmp__table tbody td[data-label='Luggage'], .cmp__table tbody td.cmp__sig {
+      display: flex;
+      align-items: baseline;
+      gap: 0.3rem;
+      font-size: 0.82rem;
+      white-space: nowrap;
+    }
+    .cmp__table tbody td[data-label='Luggage'], .cmp__table tbody td.cmp__sig { padding-left: 0.75rem; margin-left: 0.75rem; border-left: 1px solid var(--line); }
+    .cmp__table tbody td.cmp__sig { display: block; overflow: hidden; text-overflow: ellipsis; color: var(--ivory-2); line-height: 1.6; }
+    .cmp__sig :global(svg) { flex: none; margin-right: 0.1rem; vertical-align: 0; }
+    .cmp__num { font-size: 1.35rem; }
+    .cmp__unit { font-size: 0.78rem; }
+    .cmp__mo { display: inline; }
+    .cmp__bar { display: none; }
+  }
+  @media (max-width: 370px) {
+    .cmp__table tbody td[data-label='Luggage'], .cmp__table tbody td.cmp__sig { padding-left: 0.55rem; margin-left: 0.55rem; }
+    .cmp__table tbody td.cmp__sig { font-size: 0.78rem; }
+  }
+</style>

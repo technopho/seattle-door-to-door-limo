@@ -1,0 +1,1060 @@
+---
+import Base from '../../layouts/Base.astro';
+import Icon from '../../components/Icon.astro';
+import { fleet, site } from '../../data/site';
+
+// Vehicles ordered by capacity so the grid reads small -> large.
+const vehicles = [...fleet].sort((a, b) => a.passengers - b.passengers || a.luggage - b.luggage);
+
+const serviceTypes = [
+  { value: 'airport', label: 'Airport transfer', sub: 'SeaTac · Paine Field', icon: 'plane' },
+  { value: 'p2p', label: 'Point-to-point', sub: 'Door to door, one way', icon: 'route' },
+  { value: 'hourly', label: 'Hourly', sub: 'As directed, chauffeur on call', icon: 'hourglass' },
+  { value: 'weddings', label: 'Wedding', sub: 'Couple, party & guests', icon: 'rings' },
+  { value: 'events', label: 'Special event', sub: 'Prom, concerts, nights out', icon: 'glass' },
+  { value: 'cruise', label: 'Cruise terminal', sub: 'Pier 66 · Pier 91', icon: 'ship' },
+  { value: 'corporate', label: 'Corporate', sub: 'Executives & roadshows', icon: 'briefcase' },
+];
+
+const addons = [
+  { value: 'child-seat', label: 'Child seat' },
+  { value: 'meet-greet', label: 'Meet & greet sign' },
+  { value: 'champagne', label: 'Champagne on ice' },
+  { value: 'extra-luggage', label: 'Extra luggage' },
+  { value: 'red-carpet', label: 'Red carpet' },
+];
+
+const places = [
+  'Seattle-Tacoma International Airport (SEA)',
+  'Paine Field Airport (PAE)',
+  'Boeing Field (BFI)',
+  'Pier 66, Bell Street Cruise Terminal',
+  'Pier 91, Smith Cove Cruise Terminal',
+  'Downtown Seattle',
+  'Downtown Bellevue',
+  'Kirkland',
+  'Redmond',
+  'Tacoma',
+  'Everett',
+  'Woodinville Wine Country',
+];
+
+const airlines = ['Alaska Airlines', 'Delta Air Lines', 'United Airlines', 'American Airlines', 'Southwest Airlines', 'JetBlue', 'Hawaiian Airlines', 'Air Canada', 'British Airways', 'Lufthansa', 'Emirates', 'Japan Airlines'];
+
+const steps = ['Trip', 'Vehicle', 'Details', 'Review'];
+const trust = [
+  { icon: 'shield', text: 'Licensed & insured' },
+  { icon: 'calendar', text: 'Free cancellation up to 24h' },
+  { icon: 'clock', text: 'Confirmed in minutes' },
+  { icon: 'star', text: `${site.rating.score} · ${site.rating.count} reviews` },
+];
+---
+<Base title="Reserve Your Ride | Seattle Door to Door Limo" footer={false}>
+  <div class="bk-bg" aria-hidden="true">
+    <span class="bk-bg__glow bk-bg__glow--a"></span>
+    <span class="bk-bg__glow bk-bg__glow--b"></span>
+    <span class="bk-bg__glow bk-bg__glow--c"></span>
+    <span class="bk-bg__grid"></span>
+  </div>
+
+  <section class="bk" data-booking>
+    <div class="container">
+      <header class="bk-head">
+        <div class="bk-head__main">
+          <p class="eyebrow" data-reveal="fade">Reservations · 24/7</p>
+          <h1 class="bk-head__title" data-split>Reserve your <em>ride</em></h1>
+        </div>
+        <div class="bk-head__aside" data-reveal data-delay="0.2">
+          <p class="lead">Four quick steps. A real concierge confirms within minutes.</p>
+          <p class="bk-head__proof">
+            <span class="stars" aria-hidden="true"><Icon name="star" /><Icon name="star" /><Icon name="star" /><Icon name="star" /><Icon name="star" /></span>
+            <span><strong>{site.rating.score}</strong> from {site.rating.count} reviews · Since {site.since}</span>
+          </p>
+        </div>
+      </header>
+
+      <div class="bk-layout" data-layout>
+        <!-- ================= Wizard ================= -->
+        <div class="bk-main" data-reveal data-delay="0.1">
+          <form class="bk-wizard card" data-wizard novalidate aria-labelledby="bk-wizard-title">
+            <h2 id="bk-wizard-title" class="sr-only">Reservation request</h2>
+
+            <div class="bk-restore" data-restore hidden>
+              <Icon name="sparkle" />
+              <p>Welcome back. We kept your trip details.</p>
+              <button type="button" class="bk-restore__btn" data-restart>Start fresh</button>
+            </div>
+
+            <nav class="bk-progress" aria-label="Booking steps">
+              <span class="bk-progress__track" aria-hidden="true"><span class="bk-progress__reach" data-progress-reach></span><span class="bk-progress__fill" data-progress-fill></span></span>
+              <ol role="list" class="bk-progress__list">
+                {steps.map((label, i) => (
+                  <li class="bk-progress__item" data-progress-item={i + 1}>
+                    <button type="button" class="bk-progress__btn" data-goto={i + 1} disabled={i > 0} aria-current={i === 0 ? 'step' : undefined}>
+                      <span class="bk-progress__dot" aria-hidden="true">
+                        <span class="bk-progress__num">{i + 1}</span>
+                        <Icon name="check" class="bk-progress__tick" />
+                      </span>
+                      <span class="bk-progress__label"><span class="sr-only">Step {i + 1}: </span>{label}</span>
+                    </button>
+                  </li>
+                ))}
+              </ol>
+            </nav>
+
+            <div class="bk-viewport" data-viewport>
+              <!-- ---------- Step 1: Trip ---------- -->
+              <fieldset class="bk-step" data-step="1">
+                <legend class="sr-only">Step 1 of 4: Trip</legend>
+                <div class="bk-step__head" data-anim>
+                  <p class="bk-step__kicker">Step 1 of 4 · Trip</p>
+                  <h3 class="bk-step__title" tabindex="-1">Where are we <em>taking you?</em></h3>
+                </div>
+
+                <div class="bk-group" data-anim>
+                  <p class="bk-group__label" id="lbl-type">Service</p>
+                  <div class="bk-types" role="radiogroup" aria-labelledby="lbl-type" aria-describedby="err-type" data-group="type">
+                    {serviceTypes.map((t) => (
+                      <label class="bk-type">
+                        <input type="radio" name="type" value={t.value} class="bk-hide-input" />
+                        <span class="bk-type__icon"><Icon name={t.icon} /></span>
+                        <span class="bk-type__text">
+                          <span class="bk-type__title">{t.label}</span>
+                          <span class="bk-type__sub">{t.sub}</span>
+                        </span>
+                        <span class="bk-tick" aria-hidden="true"><Icon name="check" /></span>
+                      </label>
+                    ))}
+                    <a class="bk-type bk-type--talk" href={site.phoneHref}>
+                      <span class="bk-type__icon"><Icon name="phone" /></span>
+                      <span class="bk-type__text">
+                        <span class="bk-type__title">Something else?</span>
+                        <span class="bk-type__sub">Talk to a concierge</span>
+                      </span>
+                    </a>
+                  </div>
+                  <p class="bk-err" id="err-type" data-err="type"></p>
+                </div>
+
+                <!-- Airport direction sits right under the service, before any address is typed -->
+                <div class="bk-cond" data-when="airport" hidden>
+                  <div class="bk-group">
+                    <p class="bk-group__label" id="lbl-direction">Your flight is</p>
+                    <div class="bk-seg bk-seg--dir" role="radiogroup" aria-labelledby="lbl-direction">
+                      <label class="bk-seg__opt"><input type="radio" name="direction" value="departing" class="bk-hide-input" /><span><Icon name="plane" class="bk-seg__plane" /> Departing Seattle</span></label>
+                      <label class="bk-seg__opt"><input type="radio" name="direction" value="arriving" class="bk-hide-input" checked /><span><Icon name="plane" class="bk-seg__plane bk-seg__plane--land" /> Arriving in Seattle</span></label>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="bk-group" data-anim>
+                  <p class="bk-group__label">Route</p>
+                  <div class="bk-route" data-route>
+                    <span class="bk-route__line" aria-hidden="true"></span>
+                    <div class="bk-route__row" data-row="from">
+                      <span class="bk-route__marker bk-route__marker--start" aria-hidden="true"></span>
+                      <div class="bk-route__field">
+                        <label class="bk-route__label" for="f-from">Pickup</label>
+                        <input class="bk-route__input" id="f-from" name="from" type="text" autocomplete="off" list="bk-places" placeholder="Address, hotel or airport" aria-describedby="err-from" data-ph="from" />
+                      </div>
+                    </div>
+                    <div class="bk-stops" data-stops></div>
+                    <div class="bk-route__row" data-row="to">
+                      <span class="bk-route__marker bk-route__marker--end" aria-hidden="true"></span>
+                      <div class="bk-route__field">
+                        <label class="bk-route__label" for="f-to" data-to-label>Drop-off</label>
+                        <input class="bk-route__input" id="f-to" name="to" type="text" autocomplete="off" list="bk-places" placeholder="Address, hotel or venue" aria-describedby="err-to" data-ph="to" />
+                      </div>
+                    </div>
+                    <button type="button" class="bk-route__swap" data-swap aria-label="Swap pickup and drop-off"><Icon name="swap" /></button>
+                  </div>
+                  <p class="bk-err" id="err-from" data-err="from"></p>
+                  <p class="bk-err" id="err-stops" data-err="stops"></p>
+                  <p class="bk-err" id="err-to" data-err="to"></p>
+                  <button type="button" class="bk-addstop" data-add-stop><Icon name="plus" /> Add a stop</button>
+                  <datalist id="bk-places">{places.map((p) => <option value={p} />)}</datalist>
+                </div>
+
+                <div class="bk-grid-2" data-anim>
+                  <div class="field">
+                    <label for="f-date">Pickup date</label>
+                    <input class="input" id="f-date" name="date" type="date" aria-describedby="err-date" />
+                    <p class="bk-err" id="err-date" data-err="date"></p>
+                  </div>
+                  <div class="field">
+                    <label for="f-time">Pickup time</label>
+                    <input class="input" id="f-time" name="time" type="time" step="300" aria-describedby="err-time" />
+                    <p class="bk-err" id="err-time" data-err="time"></p>
+                  </div>
+                </div>
+
+                <!-- Airport details -->
+                <div class="bk-cond" data-when="airport" hidden>
+                  <div class="bk-panel">
+                    <div class="bk-panel__head">
+                      <span class="bk-panel__icon"><Icon name="plane" /></span>
+                      <div>
+                        <p class="bk-panel__title">Flight details</p>
+                        <p class="bk-panel__note" data-flight-note>We track your flight in real time and adjust pickup automatically.</p>
+                      </div>
+                    </div>
+                    <div class="bk-grid-2">
+                      <div class="field">
+                        <label for="f-airline">Airline</label>
+                        <input class="input" id="f-airline" name="airline" type="text" list="bk-airlines" autocomplete="off" placeholder="e.g. Alaska Airlines" />
+                        <datalist id="bk-airlines">{airlines.map((a) => <option value={a} />)}</datalist>
+                      </div>
+                      <div class="field">
+                        <label for="f-flight">Flight number <span class="bk-opt" data-flight-opt hidden>(optional)</span></label>
+                        <input class="input" id="f-flight" name="flight" type="text" autocomplete="off" autocapitalize="characters" placeholder="e.g. AS 1234" aria-describedby="err-flight" />
+                        <p class="bk-err" id="err-flight" data-err="flight"></p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Hourly -->
+                <div class="bk-cond" data-when="hourly" hidden>
+                  <div class="bk-panel bk-panel--row">
+                    <div class="bk-panel__head">
+                      <span class="bk-panel__icon"><Icon name="hourglass" /></span>
+                      <div>
+                        <p class="bk-panel__title" id="lbl-hours">Hours with your chauffeur</p>
+                        <p class="bk-panel__note">Minimum 2 hours. Extend on the day if plans change.</p>
+                      </div>
+                    </div>
+                    <div class="bk-stepper" data-stepper>
+                      <button type="button" class="bk-stepper__btn" data-dec aria-label="Fewer hours"><Icon name="minus" /></button>
+                      <input class="bk-stepper__val" type="number" name="hours" id="f-hours" value="3" min="2" max="12" inputmode="numeric" aria-labelledby="lbl-hours" />
+                      <button type="button" class="bk-stepper__btn" data-inc aria-label="More hours"><Icon name="plus" /></button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Round trip -->
+                <div class="bk-cond" data-when="not-hourly" data-anim>
+                  <label class="bk-switch">
+                    <input type="checkbox" name="roundTrip" role="switch" class="bk-hide-input" />
+                    <span class="bk-switch__track" aria-hidden="true"><span class="bk-switch__thumb"></span></span>
+                    <span class="bk-switch__text"><strong>Round trip</strong><span>Add a return ride with the same chauffeur service</span></span>
+                  </label>
+                  <div class="bk-cond" data-when="round" hidden>
+                    <div class="bk-grid-2 bk-return">
+                      <div class="field">
+                        <label for="f-rdate">Return date</label>
+                        <input class="input" id="f-rdate" name="returnDate" type="date" aria-describedby="err-returnDate" />
+                        <p class="bk-err" id="err-returnDate" data-err="returnDate"></p>
+                      </div>
+                      <div class="field">
+                        <label for="f-rtime">Return time</label>
+                        <input class="input" id="f-rtime" name="returnTime" type="time" step="300" aria-describedby="err-returnTime" />
+                        <p class="bk-err" id="err-returnTime" data-err="returnTime"></p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </fieldset>
+
+              <!-- ---------- Step 2: Vehicle ---------- -->
+              <fieldset class="bk-step" data-step="2" hidden>
+                <legend class="sr-only">Step 2 of 4: Vehicle</legend>
+                <div class="bk-step__head" data-anim>
+                  <p class="bk-step__kicker">Step 2 of 4 · Vehicle</p>
+                  <h3 class="bk-step__title" tabindex="-1">Choose your <em>vehicle</em></h3>
+                </div>
+
+                <div class="bk-party" data-anim>
+                  <div class="bk-party__item">
+                    <span class="bk-party__icon"><Icon name="users" /></span>
+                    <span class="bk-party__label" id="lbl-pax">Passengers</span>
+                    <div class="bk-stepper" data-stepper>
+                      <button type="button" class="bk-stepper__btn" data-dec aria-label="Fewer passengers"><Icon name="minus" /></button>
+                      <input class="bk-stepper__val" type="number" name="pax" id="f-pax" value="2" min="1" max="20" inputmode="numeric" aria-labelledby="lbl-pax" />
+                      <button type="button" class="bk-stepper__btn" data-inc aria-label="More passengers"><Icon name="plus" /></button>
+                    </div>
+                  </div>
+                  <div class="bk-party__item">
+                    <span class="bk-party__icon"><Icon name="suitcase" /></span>
+                    <span class="bk-party__label" id="lbl-lug">Luggage</span>
+                    <div class="bk-stepper" data-stepper>
+                      <button type="button" class="bk-stepper__btn" data-dec aria-label="Fewer bags"><Icon name="minus" /></button>
+                      <input class="bk-stepper__val" type="number" name="luggage" id="f-lug" value="2" min="0" max="20" inputmode="numeric" aria-labelledby="lbl-lug" />
+                      <button type="button" class="bk-stepper__btn" data-inc aria-label="More bags"><Icon name="plus" /></button>
+                    </div>
+                  </div>
+                </div>
+
+                <p class="bk-fit" data-anim aria-live="polite"><span data-fit-text>All vehicles seat your party.</span> <a href={site.phoneHref} class="bk-fit__link">Larger group? Call us</a></p>
+
+                <div class="bk-vehicles" role="radiogroup" aria-label="Vehicle" aria-describedby="err-vehicle" data-group="vehicle" data-anim>
+                  {vehicles.map((v) => (
+                    <label class:list={['bk-vehicle', v.id === 'sprinter' && 'is-studio']} data-vehicle={v.id} data-cap={v.passengers} data-lug={v.luggage}>
+                      <input type="radio" name="vehicle" value={v.id} class="bk-hide-input" />
+                      <span class="bk-vehicle__media">
+                        <img src={v.image} alt={`${v.name}, ${v.category.toLowerCase()}`} loading="lazy" decoding="async" width="640" height="400" />
+                        <span class="bk-vehicle__badge" data-rec hidden>Recommended</span>
+                      </span>
+                      <span class="bk-tick" aria-hidden="true"><Icon name="check" /></span>
+                      <span class="bk-vehicle__body">
+                        <span class="bk-vehicle__cat">{v.category}</span>
+                        <span class="bk-vehicle__name">{v.name}</span>
+                        <span class="bk-vehicle__specs">
+                          <span><Icon name="users" /> {v.passengers} <span class="sr-only">passengers</span></span>
+                          <span><Icon name="suitcase" /> {v.luggage} <span class="sr-only">bags</span></span>
+                        </span>
+                        <span class="bk-vehicle__feats">{v.features.slice(0, 2).map((f) => f.replace(/ /g, '\u00a0')).join('\u00a0· ')}</span>
+                        <span class="bk-vehicle__note" data-cap-note hidden>Seats up to {v.passengers}</span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+                <p class="bk-err" id="err-vehicle" data-err="vehicle"></p>
+              </fieldset>
+
+              <!-- ---------- Step 3: Details ---------- -->
+              <fieldset class="bk-step" data-step="3" hidden>
+                <legend class="sr-only">Step 3 of 4: Details</legend>
+                <div class="bk-step__head" data-anim>
+                  <p class="bk-step__kicker">Step 3 of 4 · Details</p>
+                  <h3 class="bk-step__title" tabindex="-1">Who are we <em>driving?</em></h3>
+                </div>
+
+                <div class="field" data-anim>
+                  <label for="f-name">Full name</label>
+                  <input class="input" id="f-name" name="name" type="text" autocomplete="name" placeholder="As it should appear on the reservation" aria-describedby="err-name" />
+                  <p class="bk-err" id="err-name" data-err="name"></p>
+                </div>
+                <div class="bk-grid-2" data-anim>
+                  <div class="field">
+                    <label for="f-phone">Mobile phone</label>
+                    <input class="input" id="f-phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="(206) 555-0123" aria-describedby="err-phone" />
+                    <p class="bk-err" id="err-phone" data-err="phone"></p>
+                  </div>
+                  <div class="field">
+                    <label for="f-email">Email</label>
+                    <input class="input" id="f-email" name="email" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" aria-describedby="err-email" />
+                    <p class="bk-err" id="err-email" data-err="email"></p>
+                  </div>
+                </div>
+                <div class="field" data-anim>
+                  <label for="f-lead">Lead passenger <span class="bk-opt">(if different, optional)</span></label>
+                  <input class="input" id="f-lead" name="leadName" type="text" autocomplete="off" placeholder="Who should your chauffeur ask for?" />
+                </div>
+
+                <div class="bk-group" data-anim>
+                  <p class="bk-group__label" id="lbl-contact">How should we confirm?</p>
+                  <div class="bk-seg bk-seg--3" role="radiogroup" aria-labelledby="lbl-contact">
+                    <label class="bk-seg__opt"><input type="radio" name="contact" value="call" class="bk-hide-input" /><span><Icon name="phone" /> Call</span></label>
+                    <label class="bk-seg__opt"><input type="radio" name="contact" value="text" class="bk-hide-input" checked /><span><Icon name="chat" /> Text</span></label>
+                    <label class="bk-seg__opt"><input type="radio" name="contact" value="email" class="bk-hide-input" /><span><Icon name="mail" /> Email</span></label>
+                  </div>
+                </div>
+
+                <div class="bk-group" data-anim>
+                  <p class="bk-group__label" id="lbl-addons">Little luxuries <span class="bk-opt">(optional)</span></p>
+                  <div class="bk-chips" role="group" aria-labelledby="lbl-addons">
+                    {addons.map((a) => (
+                      <label class="bk-chip">
+                        <input type="checkbox" name="addons" value={a.value} class="bk-hide-input" />
+                        <span class="bk-chip__box" aria-hidden="true"><Icon name="plus" class="bk-chip__plus" /><Icon name="check" class="bk-chip__check" /></span>
+                        {a.label}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div class="field" data-anim>
+                  <label for="f-req">Special requests <span class="bk-opt">(optional)</span></label>
+                  <textarea class="input bk-textarea" id="f-req" name="requests" rows="3" placeholder="Occasion, accessibility needs, preferred music, anything we should know"></textarea>
+                </div>
+              </fieldset>
+
+              <!-- ---------- Step 4: Review ---------- -->
+              <fieldset class="bk-step" data-step="4" hidden>
+                <legend class="sr-only">Step 4 of 4: Review</legend>
+                <div class="bk-step__head" data-anim>
+                  <p class="bk-step__kicker">Step 4 of 4 · Review</p>
+                  <h3 class="bk-step__title" tabindex="-1">Review &amp; <em>reserve</em></h3>
+                </div>
+                <div class="bk-review" data-review data-anim></div>
+                <div class="bk-consent-wrap" data-anim>
+                  <div class="bk-consent-row">
+                    <label class="bk-consent">
+                      <input type="checkbox" name="consent" class="bk-hide-input" aria-describedby="err-consent" />
+                      <span class="bk-consent__box" aria-hidden="true"><Icon name="check" /></span>
+                      <span class="bk-consent__text">I agree to the booking terms</span>
+                    </label>
+                    <button type="button" class="bk-consent__view" data-terms-open aria-haspopup="dialog">View terms</button>
+                  </div>
+                  <p class="bk-err" id="err-consent" data-err="consent"></p>
+                </div>
+                <p class="bk-assure" data-anim><Icon name="shield" /> Nothing is charged now. Your concierge confirms the full rate before you commit.</p>
+              </fieldset>
+            </div>
+
+            <div class="bk-nav">
+              <p class="bk-nav__journey" data-nav-journey aria-hidden="true" hidden><span class="bk-nav__journey-k">Your journey</span> <span data-nav-journey-text></span></p>
+              <button type="button" class="btn btn--ghost bk-nav__back" data-back aria-label="Back to previous step"><Icon name="arrow-left" /> <span class="bk-nav__back-text">Back</span></button>
+              <p class="bk-nav__hint" data-hint>Takes about a minute</p>
+              <button type="submit" class="btn btn--gold bk-nav__next" data-next data-magnetic="0.2">
+                <span class="bk-nav__label" data-next-label>Continue</span>
+                <Icon name="arrow" />
+                <span class="bk-spinner" aria-hidden="true"></span>
+              </button>
+            </div>
+            <span class="bk-nav-sentinel" data-nav-sentinel aria-hidden="true"></span>
+            <p class="bk-err bk-err--submit" data-err="submit" role="alert"></p>
+            <p class="sr-only" aria-live="polite" data-announce></p>
+          </form>
+
+          <!-- ================= Success ================= -->
+          <section class="bk-success card" data-success hidden tabindex="-1" aria-labelledby="bk-success-title">
+            <div class="bk-success__mark" aria-hidden="true">
+              <span class="bk-success__ring"></span>
+              <svg viewBox="0 0 96 96" class="bk-success__svg">
+                <defs>
+                  <linearGradient id="bk-gold" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" stop-color="#e8d3a2" /><stop offset=".55" stop-color="#c9a86a" /><stop offset="1" stop-color="#8f7040" />
+                  </linearGradient>
+                </defs>
+                <circle cx="48" cy="48" r="44" class="bk-success__circle" data-draw />
+                <path d="M30 49.5 L42.5 62 L67 36" class="bk-success__path" data-draw />
+              </svg>
+            </div>
+            <p class="eyebrow bk-success__ref" data-s-anim>Reference <span data-ref>SDD-000000</span></p>
+            <h2 class="bk-success__title" id="bk-success-title" data-s-anim>Request <em>received</em></h2>
+            <p class="lead bk-success__lead" data-s-anim>A concierge will confirm <span data-confirm-by>by text</span> within minutes.</p>
+            <ol role="list" class="bk-next" data-s-anim aria-label="What happens next">
+              <li class="bk-next__item">
+                <span class="bk-next__n" aria-hidden="true">01</span>
+                <span class="bk-next__t">Concierge review</span>
+                <span class="bk-next__d">We check availability and prepare your full rate.</span>
+              </li>
+              <li class="bk-next__item">
+                <span class="bk-next__n" aria-hidden="true">02</span>
+                <span class="bk-next__t">Confirmation <span data-confirm-by-2>by text</span></span>
+                <span class="bk-next__d">Your rate and reservation, within minutes. Nothing is charged now.</span>
+              </li>
+              <li class="bk-next__item">
+                <span class="bk-next__n" aria-hidden="true">03</span>
+                <span class="bk-next__t">Chauffeur details</span>
+                <span class="bk-next__d">Your chauffeur’s name and vehicle, sent before pickup.</span>
+              </li>
+            </ol>
+            <div class="bk-success__summary" data-success-summary data-s-anim></div>
+            <div class="bk-success__actions" data-s-anim>
+              <a href={site.phoneHref} class="btn btn--gold" data-magnetic="0.2"><Icon name="phone" /> Call us</a>
+              <a href="/" class="btn btn--ghost">Back to home <Icon name="arrow" /></a>
+            </div>
+          </section>
+        </div>
+
+        <!-- ================= Summary ================= -->
+        <aside class="bk-sum glass" data-summary aria-label="Your journey" data-reveal data-delay="0.25">
+          <button type="button" class="bk-sum__toggle" data-sum-toggle aria-expanded="false" aria-controls="bk-sum-body">
+            <span class="bk-sum__toggle-text">
+              <span class="bk-sum__toggle-label">Your journey</span>
+              <span class="bk-sum__toggle-line" data-sum-compact>Start with your trip</span>
+            </span>
+            <span class="bk-sum__toggle-cta">Details <Icon name="chevron" /></span>
+          </button>
+
+          <div class="bk-sum__body" id="bk-sum-body" data-sum-body>
+            <div class="bk-sum__head">
+              <h2 class="bk-sum__title">Your <em>journey</em></h2>
+              <span class="bk-sum__live"><span class="bk-sum__pulse"></span>Live</span>
+            </div>
+
+            <div class="bk-sum__row bk-sum__service" data-sum-row="service">
+              <span class="bk-sum__svc-icon">
+                {serviceTypes.map((t) => <span data-sum-icon={t.value} hidden><Icon name={t.icon} /></span>)}
+                <span data-sum-icon="none"><Icon name="car" /></span>
+              </span>
+              <div>
+                <p class="bk-sum__k">Service</p>
+                <p class="bk-sum__v" data-sum="service">Choose a service</p>
+              </div>
+            </div>
+
+            <div class="bk-sum__row bk-sum__route" data-sum-row="route">
+              <span class="bk-sum__connector" aria-hidden="true"></span>
+              <div class="bk-sum__stop">
+                <span class="bk-sum__dot bk-sum__dot--start" aria-hidden="true"></span>
+                <p class="bk-sum__k">Pickup</p>
+                <p class="bk-sum__v" data-sum="from">Add pickup</p>
+              </div>
+              <div data-sum="stops"></div>
+              <div class="bk-sum__stop">
+                <span class="bk-sum__dot bk-sum__dot--end" aria-hidden="true"></span>
+                <p class="bk-sum__k">Drop-off</p>
+                <p class="bk-sum__v" data-sum="to">Add drop-off</p>
+              </div>
+            </div>
+
+            <div class="bk-sum__row bk-sum__pair">
+              <div data-sum-row="when">
+                <p class="bk-sum__k">When</p>
+                <p class="bk-sum__v" data-sum="when">Choose date &amp; time</p>
+                <p class="bk-sum__sub" data-sum="when-sub"></p>
+              </div>
+              <div data-sum-row="party">
+                <p class="bk-sum__k">Party</p>
+                <p class="bk-sum__v" data-sum="party">2 passengers</p>
+                <p class="bk-sum__sub" data-sum="party-sub">2 bags</p>
+              </div>
+            </div>
+
+            <div class="bk-sum__row bk-sum__vehicle" data-sum-row="vehicle">
+              <span class="bk-sum__thumb" data-sum="thumb"><Icon name="car" /></span>
+              <div>
+                <p class="bk-sum__k">Vehicle</p>
+                <p class="bk-sum__v" data-sum="vehicle">Select in step 2</p>
+                <p class="bk-sum__sub" data-sum="vehicle-sub"></p>
+              </div>
+            </div>
+
+            <div class="bk-sum__row" data-sum-row="addons" hidden>
+              <p class="bk-sum__k">Add-ons</p>
+              <div class="bk-sum__chips" data-sum="addons"></div>
+            </div>
+
+            <ul role="list" class="bk-sum__trust">
+              {trust.map((t) => <li><Icon name={t.icon} /> {t.text}</li>)}
+            </ul>
+
+            <a href={site.phoneHref} class="bk-sum__call">
+              <span class="bk-sum__call-icon"><Icon name="phone" /></span>
+              <span><span class="bk-sum__call-k">Prefer to talk?</span><span class="bk-sum__call-v">{site.phone}</span></span>
+              <Icon name="arrow" />
+            </a>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <!-- Booking terms (short version). TODO(content): link a full terms page once it exists. -->
+    <dialog class="bk-terms" data-terms aria-labelledby="bk-terms-title" data-lenis-prevent>
+      <div class="bk-terms__inner">
+        <button type="button" class="bk-terms__x" data-terms-close aria-label="Close terms"><Icon name="close" /></button>
+        <p class="eyebrow">Booking terms</p>
+        <h2 class="bk-terms__title" id="bk-terms-title">The <em>short</em> version</h2>
+        <ul role="list" class="bk-terms__list">
+          <li><Icon name="shield" /><span><strong>Nothing is charged now.</strong> Your concierge confirms the full rate before you commit.</span></li>
+          <li><Icon name="calendar" /><span><strong>Free cancellation</strong> up to 24 hours before pickup.</span></li>
+          <li><Icon name="clock" /><span><strong>Flights tracked live.</strong> Arrivals are met when you land, not when you were scheduled to.</span></li>
+          <li><Icon name="star" /><span><strong>Transparent quotes</strong> with no hidden fees.</span></li>
+        </ul>
+        <button type="button" class="btn btn--gold bk-terms__ok" data-terms-close>Understood</button>
+      </div>
+    </dialog>
+  </section>
+
+  <script>
+    import '../../scripts/booking.ts';
+  </script>
+</Base>
+
+<style is:global>
+  /* =====================================================================
+     Booking page (/book/). All selectors are namespaced with .bk-
+     ===================================================================== */
+
+  /* ---------- Ambient background ---------- */
+  .bk-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+  .bk-bg__glow { position: absolute; border-radius: 50%; will-change: transform; }
+  .bk-bg__glow--a { width: 70vmax; height: 70vmax; top: -38vmax; right: -22vmax; background: radial-gradient(closest-side, rgba(201, 168, 106, 0.2), rgba(201, 168, 106, 0.06) 55%, transparent 72%); animation: bk-drift-a 26s ease-in-out infinite alternate; }
+  .bk-bg__glow--b { width: 60vmax; height: 60vmax; bottom: -34vmax; left: -26vmax; background: radial-gradient(closest-side, rgba(232, 211, 162, 0.09), transparent 70%); animation: bk-drift-b 32s ease-in-out infinite alternate; }
+  .bk-bg__glow--c { width: 38vmax; height: 38vmax; top: 18vh; left: 30vw; background: radial-gradient(closest-side, rgba(165, 132, 74, 0.08), transparent 70%); animation: bk-drift-c 22s ease-in-out infinite alternate; }
+  .bk-bg__grid {
+    position: absolute; inset: 0;
+    background-image: linear-gradient(rgba(243, 238, 228, 0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(243, 238, 228, 0.035) 1px, transparent 1px);
+    background-size: 88px 88px;
+    mask-image: radial-gradient(80% 60% at 70% 0%, #000 0%, transparent 70%);
+    -webkit-mask-image: radial-gradient(80% 60% at 70% 0%, #000 0%, transparent 70%);
+  }
+  @keyframes bk-drift-a { to { transform: translate3d(-8vmax, 6vmax, 0) scale(1.08); } }
+  @keyframes bk-drift-b { to { transform: translate3d(10vmax, -6vmax, 0) scale(1.12); } }
+  @keyframes bk-drift-c { to { transform: translate3d(-12vw, 10vh, 0) scale(0.9); } }
+
+  /* ---------- Shell ---------- */
+  /* On the booking page itself, the site-wide "Reserve" CTAs only reload this page: the wizard owns the primary action. */
+  body:has([data-booking]) .mobile-bar { display: none !important; }
+  body:has([data-booking]) .header__actions .btn--gold { display: none !important; }
+
+  .bk { position: relative; z-index: 1; padding-top: calc(var(--header-h) + 1.75rem); padding-bottom: clamp(4rem, 8vw, 7rem); }
+  .bk-head { display: grid; grid-template-columns: 1.1fr 1fr; align-items: end; gap: 1.5rem 4rem; margin-bottom: 2rem; }
+  .bk-head__main { display: grid; gap: 1rem; }
+  .bk-head__title { font-size: clamp(2.4rem, 4.4vw, 4.2rem); }
+  .bk-head__aside { display: grid; gap: 0.9rem; justify-items: start; padding-bottom: 0.4rem; }
+  .bk-head__aside .lead { max-width: 40ch; }
+  .bk-head__proof { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; font-size: 0.82rem; color: var(--muted); }
+  .bk-head__proof strong { color: var(--ivory); font-weight: 700; }
+
+  .bk-layout { display: grid; grid-template-columns: minmax(0, 1.62fr) minmax(320px, 1fr); gap: clamp(1.5rem, 2.6vw, 2.5rem); align-items: start; }
+  .bk-layout.is-complete { grid-template-columns: minmax(0, 1fr); }
+  .bk-main { min-width: 0; }
+
+  .bk-wizard { padding: clamp(1.25rem, 3vw, 2.6rem); border-radius: var(--radius-l); background: linear-gradient(180deg, rgba(24, 24, 29, 0.82), rgba(14, 14, 17, 0.88)); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); box-shadow: 0 40px 120px -60px rgba(0, 0, 0, 0.9); }
+  .bk-wizard::before { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; padding: 1px; background: linear-gradient(160deg, rgba(232, 211, 162, 0.28), transparent 30%, transparent 70%, rgba(232, 211, 162, 0.12)); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
+
+  .bk [hidden] { display: none !important; }
+  .bk-hide-input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; pointer-events: none; }
+
+  /* ---------- Restore notice ---------- */
+  .bk-restore { display: flex; align-items: center; gap: 0.75rem; padding: 0.55rem 0.6rem 0.55rem 1rem; margin-bottom: 1.6rem; border: 1px solid rgba(201, 168, 106, 0.25); border-radius: 999px; background: rgba(201, 168, 106, 0.06); font-size: 0.84rem; color: var(--ivory-2); }
+  .bk-restore svg { width: 16px; height: 16px; color: var(--gold); flex: none; }
+  .bk-restore p { flex: 1; }
+  .bk-restore__btn { min-height: 44px; padding: 0 1rem; border-radius: 999px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold-2); transition: background 0.3s; }
+  .bk-restore__btn:hover { background: rgba(201, 168, 106, 0.12); }
+
+  /* ---------- Progress ---------- */
+  .bk-progress { position: relative; margin-bottom: clamp(1.8rem, 4vw, 2.8rem); }
+  .bk-progress__list { display: grid; grid-template-columns: repeat(4, 1fr); position: relative; z-index: 1; }
+  .bk-progress__track { position: absolute; top: 22px; left: 12.5%; right: 12.5%; height: 1px; background: var(--line-strong); }
+  .bk-progress__fill { position: absolute; inset: 0; background: var(--gold-grad); transform-origin: left; transform: scaleX(0); box-shadow: 0 0 12px rgba(201, 168, 106, 0.6); }
+  .bk-progress__reach { position: absolute; inset: 0; background: rgba(201, 168, 106, 0.38); transform-origin: left; transform: scaleX(0); }
+  .bk-progress__btn { display: grid; justify-items: center; gap: 0.55rem; width: 100%; min-height: 44px; padding: 0; color: var(--muted); }
+  .bk-progress__btn:disabled { cursor: default; }
+  .bk-progress__dot { position: relative; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line-strong); background: var(--ink-2); font-size: 0.82rem; font-weight: 700; transition: border-color 0.5s var(--ease-out), background 0.5s var(--ease-out), color 0.5s, box-shadow 0.5s; }
+  .bk-progress__tick { position: absolute; width: 18px; height: 18px; opacity: 0; transform: scale(0.6); transition: opacity 0.4s, transform 0.5s var(--ease-out); }
+  .bk-progress__num { transition: opacity 0.3s, transform 0.4s var(--ease-out); }
+  .bk-progress__label { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; transition: color 0.4s; }
+  .bk-progress__item.is-current .bk-progress__dot { border-color: var(--gold); color: var(--gold-2); box-shadow: 0 0 0 5px rgba(201, 168, 106, 0.12), 0 0 30px -6px rgba(201, 168, 106, 0.6); }
+  .bk-progress__item.is-current .bk-progress__label { color: var(--ivory); }
+  .bk-progress__item.is-done .bk-progress__dot { background: var(--gold-grad); border-color: transparent; color: #17130b; }
+  .bk-progress__item.is-done .bk-progress__num { opacity: 0; transform: scale(0.6); }
+  .bk-progress__item.is-done .bk-progress__tick { opacity: 1; transform: none; }
+  .bk-progress__item.is-done .bk-progress__label { color: var(--ivory-2); }
+  .bk-progress__btn:not(:disabled):hover .bk-progress__dot { box-shadow: 0 0 0 5px rgba(201, 168, 106, 0.16); }
+  .bk-progress__btn:not(:disabled):hover .bk-progress__label { color: var(--gold-2); }
+
+  /* ---------- Steps ---------- */
+  .bk-viewport { position: relative; }
+  .bk-viewport.is-animating { overflow: hidden; }
+  .bk-step { border: 0; padding: 0; min-width: 0; display: grid; gap: clamp(1.4rem, 2.6vw, 1.9rem); }
+  .bk-step[hidden] { display: none; }
+  .bk-step__head { display: grid; gap: 0.5rem; }
+  .bk-step__kicker { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold); }
+  .bk-step__title { font-size: clamp(1.9rem, 3.2vw, 2.7rem); line-height: 1.05; outline: none; }
+  .bk-group { display: grid; gap: 0.75rem; }
+  .bk-group__label { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
+  .bk-opt { text-transform: none; letter-spacing: 0.02em; font-weight: 500; color: var(--muted); }
+  .bk-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start; }
+  .bk .field { align-content: start; }
+  .bk-cond[hidden] { display: none; }
+  .bk-textarea { min-height: 110px; resize: vertical; line-height: 1.5; }
+
+  /* Errors */
+  .bk-err { display: none; align-items: center; gap: 0.45rem; font-size: 0.8rem; color: var(--err); line-height: 1.4; }
+  .bk-err.is-shown { display: flex; }
+  .bk-err.is-shown::before { content: '!'; display: grid; place-items: center; flex: none; width: 16px; height: 16px; border-radius: 50%; border: 1px solid currentColor; font-size: 0.62rem; font-weight: 800; }
+  .bk-err--submit.is-shown { margin-top: 1rem; justify-content: center; }
+
+  /* Selection tick (shared by type + vehicle cards) */
+  .bk-tick { position: absolute; top: 0.7rem; right: 0.7rem; z-index: 2; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--gold-grad); color: #17130b; opacity: 0; transform: scale(0.5); transition: opacity 0.35s, transform 0.5s var(--ease-out); }
+  .bk-tick svg { width: 13px; height: 13px; stroke-width: 2.4; }
+
+  /* ---------- Service type cards ---------- */
+  .bk-types { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.7rem; border-radius: var(--radius); }
+  .bk-types[aria-invalid='true'] .bk-type:not(.bk-type--talk) { border-color: rgba(229, 138, 122, 0.55); }
+  .bk-type { position: relative; display: grid; align-content: start; gap: 0.9rem; min-height: 132px; padding: 1rem; border: 1px solid var(--line); border-radius: 16px; background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.006)); cursor: pointer; transition: border-color 0.4s var(--ease-out), background 0.4s var(--ease-out), transform 0.5s var(--ease-out), box-shadow 0.5s var(--ease-out); -webkit-tap-highlight-color: transparent; }
+  .bk-type:hover { border-color: var(--line-strong); transform: translateY(-2px); }
+  .bk-type__icon { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--line-strong); color: var(--gold-2); transition: background 0.4s, color 0.4s, border-color 0.4s; }
+  .bk-type__icon svg { width: 20px; height: 20px; }
+  .bk-type__text { display: grid; gap: 0.2rem; }
+  .bk-type__title { font-size: 0.92rem; font-weight: 600; line-height: 1.25; color: var(--ivory); }
+  .bk-type__sub { font-size: 0.74rem; line-height: 1.35; color: var(--muted); }
+  .bk-type:has(input:checked) { border-color: rgba(201, 168, 106, 0.85); background: radial-gradient(130% 120% at 0% 0%, rgba(201, 168, 106, 0.17), rgba(201, 168, 106, 0.02) 65%); box-shadow: 0 0 0 1px rgba(201, 168, 106, 0.3), 0 22px 44px -28px rgba(201, 168, 106, 0.7); }
+  .bk-type:has(input:checked) .bk-type__icon { background: var(--gold-grad); border-color: transparent; color: #17130b; }
+  .bk-type:has(input:checked) .bk-tick { opacity: 1; transform: none; }
+  .bk-type:has(input:focus-visible) { outline: 2px solid var(--gold); outline-offset: 3px; }
+  .bk-type--talk { border-style: dashed; background: transparent; }
+  .bk-type--talk .bk-type__icon { color: var(--muted); }
+  .bk-type--talk:hover .bk-type__icon { color: var(--gold-2); border-color: var(--gold); }
+
+  /* ---------- Route card ---------- */
+  .bk-route { position: relative; border: 1px solid var(--line-strong); border-radius: 16px; background: rgba(10, 10, 12, 0.5); transition: border-color 0.3s, box-shadow 0.3s; }
+  .bk-route:focus-within { border-color: rgba(201, 168, 106, 0.7); box-shadow: 0 0 0 4px rgba(201, 168, 106, 0.1); }
+  .bk-route__line { position: absolute; left: 27px; top: 36px; bottom: 36px; width: 1px; background-image: linear-gradient(to bottom, var(--gold) 45%, transparent 45%); background-size: 1px 7px; opacity: 0.75; animation: bk-route-flow 1.6s linear infinite; }
+  @keyframes bk-route-flow { to { background-position: 0 7px; } }
+  .bk-route__row { position: relative; display: grid; grid-template-columns: 56px 1fr auto; align-items: center; min-height: 72px; }
+  .bk-route__row + .bk-route__row, .bk-stops .bk-route__row, .bk-stops + .bk-route__row { border-top: 1px solid var(--line); }
+  .bk-route__row:has([aria-invalid='true']) .bk-route__label { color: var(--err); }
+  .bk-route__marker { justify-self: center; position: relative; z-index: 1; width: 12px; height: 12px; border-radius: 50%; }
+  .bk-route__marker--start { background: var(--gold); box-shadow: 0 0 0 4px rgba(201, 168, 106, 0.18); }
+  .bk-route__marker--end { border-radius: 3px; background: var(--ink); border: 2px solid var(--gold); transform: rotate(45deg); width: 11px; height: 11px; }
+  .bk-route__marker--stop { width: 9px; height: 9px; background: var(--ink); border: 1.5px solid var(--gold-2); }
+  .bk-route__field { display: grid; gap: 0.15rem; padding: 0.7rem 64px 0.7rem 0; min-width: 0; }
+  .bk-route__label { font-size: 0.64rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); cursor: text; }
+  .bk-route__input { width: 100%; min-height: 30px; padding: 0; border: 0; background: transparent; font-size: 1rem; color: var(--ivory); outline: none; text-overflow: ellipsis; }
+  .bk-route__input::placeholder { color: var(--muted-2); }
+  .bk-route__input::-webkit-calendar-picker-indicator { display: none !important; }
+  .bk-route__swap { position: absolute; right: 14px; top: 50%; z-index: 2; display: grid; place-items: center; width: 44px; height: 44px; margin-top: -22px; border-radius: 50%; border: 1px solid var(--line-strong); background: var(--ink-3); color: var(--gold-2); transition: border-color 0.3s, background 0.3s, color 0.3s; }
+  .bk-route__swap:hover { border-color: var(--gold); background: var(--ink-4); }
+  .bk-route__swap svg { width: 18px; height: 18px; }
+  /* With stops, the swap control pins to the pickup row and the stop "remove" buttons line up beneath it. */
+  .bk-route:has(.bk-route__row--stop) .bk-route__swap { top: 36px; }
+  .bk-route:has(.bk-route__row--stop) [data-row='to'] .bk-route__field { padding-right: 1rem; }
+  .bk-stops .bk-route__field { padding-right: 0.5rem; }
+  .bk-route__remove { display: grid; place-items: center; width: 44px; height: 44px; margin-right: 14px; border-radius: 50%; color: var(--muted); transition: color 0.3s, background 0.3s; }
+  .bk-route__remove:hover { color: var(--ivory); background: rgba(255, 255, 255, 0.06); }
+  .bk-route__remove svg { width: 16px; height: 16px; }
+  .bk-addstop { justify-self: start; display: inline-flex; align-items: center; gap: 0.5rem; min-height: 44px; padding: 0 0.2rem; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold-2); transition: color 0.3s; }
+  .bk-addstop svg { width: 16px; height: 16px; transition: transform 0.4s var(--ease-out); }
+  .bk-addstop:hover svg { transform: rotate(90deg); }
+  .bk-addstop[hidden] { display: none; }
+
+  /* ---------- Panels (airport / hourly) ---------- */
+  .bk-panel { display: grid; gap: 1.1rem; padding: clamp(1rem, 2.4vw, 1.4rem); border: 1px solid var(--line); border-radius: 16px; background: linear-gradient(135deg, rgba(201, 168, 106, 0.07), rgba(255, 255, 255, 0.01) 55%); }
+  .bk-panel--row { grid-template-columns: 1fr auto; align-items: center; }
+  .bk-panel__head { display: flex; gap: 0.9rem; align-items: flex-start; }
+  .bk-panel__icon { display: grid; place-items: center; flex: none; width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgba(201, 168, 106, 0.4); color: var(--gold-2); }
+  .bk-panel__icon svg { width: 18px; height: 18px; }
+  .bk-panel__title { font-weight: 600; color: var(--ivory); }
+  .bk-panel__note { font-size: 0.82rem; color: var(--muted); line-height: 1.5; }
+
+  /* Segmented control */
+  .bk-seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border: 1px solid var(--line-strong); border-radius: 999px; background: rgba(10, 10, 12, 0.5); }
+  .bk-seg--3 { grid-template-columns: repeat(3, 1fr); }
+  .bk-seg__opt { position: relative; cursor: pointer; }
+  .bk-seg__opt span { display: flex; align-items: center; justify-content: center; gap: 0.5rem; min-height: 44px; padding: 0 0.8rem; border-radius: 999px; font-size: 0.84rem; font-weight: 600; color: var(--ivory-2); text-align: center; transition: background 0.4s var(--ease-out), color 0.3s; }
+  .bk-seg__opt svg { width: 16px; height: 16px; }
+  .bk-seg__opt:hover span { color: var(--ivory); }
+  .bk-seg__opt input:checked + span { background: var(--ivory); color: var(--ink); }
+  .bk-seg__opt input:focus-visible + span { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .bk-seg--dir { max-width: 520px; }
+  .bk-seg__opt .bk-seg__plane { width: 15px; height: 15px; transition: transform 0.6s var(--ease-out); }
+  .bk-seg__opt .bk-seg__plane--land { transform: rotate(90deg); }
+
+  /* Switch */
+  .bk-switch { position: relative; display: flex; align-items: center; gap: 1rem; min-height: 52px; cursor: pointer; }
+  .bk-switch__track { position: relative; flex: none; width: 52px; height: 30px; border-radius: 999px; border: 1px solid var(--line-strong); background: rgba(255, 255, 255, 0.04); transition: background 0.4s var(--ease-out), border-color 0.4s; }
+  .bk-switch__thumb { position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: var(--ivory-2); transition: transform 0.5s var(--ease-out), background 0.4s; }
+  .bk-switch input:checked + .bk-switch__track { background: var(--gold-grad); border-color: transparent; }
+  .bk-switch input:checked + .bk-switch__track .bk-switch__thumb { transform: translateX(22px); background: #17130b; }
+  .bk-switch input:focus-visible + .bk-switch__track { outline: 2px solid var(--gold); outline-offset: 3px; }
+  .bk-switch__text { display: grid; line-height: 1.35; }
+  .bk-switch__text strong { font-weight: 600; color: var(--ivory); }
+  .bk-switch__text span { font-size: 0.8rem; color: var(--muted); }
+  .bk-return { margin-top: 1rem; }
+
+  /* Stepper */
+  .bk-stepper { display: inline-grid; grid-template-columns: 44px 52px 44px; align-items: center; padding: 3px; border: 1px solid var(--line-strong); border-radius: 999px; background: rgba(10, 10, 12, 0.55); }
+  .bk-stepper__btn { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; color: var(--ivory); transition: background 0.3s, color 0.3s, opacity 0.3s; }
+  .bk-stepper__btn:hover:not(:disabled) { background: rgba(201, 168, 106, 0.14); color: var(--gold-2); }
+  .bk-stepper__btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .bk-stepper__btn svg { width: 16px; height: 16px; }
+  .bk-stepper__val { width: 100%; border: 0; background: transparent; text-align: center; font-family: var(--font-sans); font-size: 1.12rem; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1; color: var(--ivory); -moz-appearance: textfield; appearance: textfield; outline: none; }
+  .bk-stepper__val::-webkit-outer-spin-button, .bk-stepper__val::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .bk-stepper:focus-within { border-color: rgba(201, 168, 106, 0.6); }
+
+  /* ---------- Step 2: party + vehicles ---------- */
+  .bk-party { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+  .bk-party__item { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 0.8rem; padding: 0.6rem 0.6rem 0.6rem 1rem; border: 1px solid var(--line); border-radius: 999px; background: rgba(255, 255, 255, 0.02); }
+  .bk-party__icon { color: var(--gold-2); }
+  .bk-party__icon svg { width: 20px; height: 20px; }
+  .bk-party__label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ivory-2); }
+  .bk-fit { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.4rem 1rem; font-size: 0.84rem; color: var(--muted); margin-top: -0.4rem; }
+  .bk-fit__link { color: var(--gold-2); font-weight: 600; text-decoration: underline; text-decoration-color: rgba(232, 211, 162, 0.35); text-underline-offset: 4px; }
+
+  .bk-vehicles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.9rem; border-radius: var(--radius); }
+  .bk-vehicle { position: relative; display: grid; grid-template-rows: auto 1fr; overflow: hidden; border: 1px solid var(--line); border-radius: 18px; background: var(--ink-2); cursor: pointer; transition: border-color 0.45s var(--ease-out), box-shadow 0.5s var(--ease-out), transform 0.5s var(--ease-out), opacity 0.4s; -webkit-tap-highlight-color: transparent; }
+  .bk-vehicle:hover:not(.is-disabled) { border-color: var(--line-strong); transform: translateY(-3px); }
+  .bk-vehicle.is-flipping { transition: none; z-index: 1; }
+  .bk-vehicle__media { position: relative; display: block; aspect-ratio: 16 / 9.5; overflow: hidden; background: var(--ink-3); }
+  .bk-vehicle__media img { width: 100%; height: 100%; object-fit: cover; transition: transform 1.2s var(--ease-out), filter 0.5s; }
+  .bk-vehicle__media::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 55%, rgba(10, 10, 12, 0.55)); pointer-events: none; }
+  .bk-vehicle:hover:not(.is-disabled) .bk-vehicle__media img { transform: scale(1.05); }
+  .bk-vehicle.is-studio .bk-vehicle__media { background: radial-gradient(120% 90% at 50% 30%, #fbf8f2 0%, #ece5d8 70%, #e2d9c8 100%); }
+  .bk-vehicle.is-studio .bk-vehicle__media img { object-fit: contain; padding: 6% 9%; mix-blend-mode: multiply; }
+  .bk-vehicle.is-studio .bk-vehicle__media::after { background: linear-gradient(180deg, transparent 70%, rgba(10, 10, 12, 0.25)); }
+  .bk-vehicle__badge { position: absolute; left: 0.7rem; top: 0.7rem; z-index: 2; padding: 0.32rem 0.7rem; border-radius: 999px; background: var(--gold-grad); color: #17130b; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; box-shadow: 0 6px 20px -6px rgba(0, 0, 0, 0.6); }
+  .bk-vehicle__badge[hidden] { display: none; }
+  .bk-vehicle__body { display: grid; align-content: start; gap: 0.35rem; padding: 1rem 1.1rem 1.15rem; }
+  .bk-vehicle__cat { font-size: 0.64rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); }
+  .bk-vehicle__name { font-family: var(--font-display); font-size: 1.45rem; line-height: 1.1; color: var(--ivory); }
+  .bk-vehicle__specs { display: flex; gap: 1rem; margin-top: 0.2rem; font-size: 0.84rem; font-weight: 600; color: var(--ivory-2); }
+  .bk-vehicle__specs > span { display: inline-flex; align-items: center; gap: 0.4rem; }
+  .bk-vehicle__specs svg { width: 15px; height: 15px; color: var(--muted); }
+  .bk-vehicle__feats { font-size: 0.78rem; line-height: 1.45; color: var(--muted); }
+  .bk-vehicle__note { display: inline-flex; justify-self: start; margin-top: 0.3rem; padding: 0.25rem 0.6rem; border-radius: 999px; border: 1px solid var(--line-strong); font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; color: var(--ivory-2); }
+  .bk-vehicle__note[hidden] { display: none; }
+  .bk-vehicle:has(input:checked) { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold), 0 30px 60px -34px rgba(201, 168, 106, 0.75); }
+  .bk-vehicle:has(input:checked) .bk-tick { opacity: 1; transform: none; }
+  .bk-vehicle:has(input:focus-visible) { outline: 2px solid var(--gold); outline-offset: 3px; }
+  .bk-vehicle.is-disabled { cursor: not-allowed; opacity: 0.42; }
+  .bk-vehicle.is-disabled .bk-vehicle__media img { filter: grayscale(1) brightness(0.7); }
+  .bk-vehicles[aria-invalid='true'] .bk-vehicle:not(.is-disabled) { border-color: rgba(229, 138, 122, 0.5); }
+
+  /* ---------- Step 3: chips, consent ---------- */
+  .bk-chips { display: flex; flex-wrap: wrap; gap: 0.55rem; }
+  .bk-chip { position: relative; display: inline-flex; align-items: center; gap: 0.6rem; min-height: 46px; padding: 0 1.1rem 0 0.55rem; border: 1px solid var(--line-strong); border-radius: 999px; font-size: 0.86rem; font-weight: 500; color: var(--ivory-2); cursor: pointer; transition: border-color 0.35s, background 0.35s, color 0.35s; -webkit-tap-highlight-color: transparent; }
+  .bk-chip:hover { border-color: rgba(243, 238, 228, 0.32); color: var(--ivory); }
+  .bk-chip__box { position: relative; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: rgba(255, 255, 255, 0.05); color: var(--muted); transition: background 0.35s, color 0.35s; }
+  .bk-chip__box svg { position: absolute; width: 14px; height: 14px; transition: opacity 0.3s, transform 0.45s var(--ease-out); }
+  .bk-chip__check { opacity: 0; transform: scale(0.5) rotate(-30deg); stroke-width: 2.2; }
+  .bk-chip:has(input:checked) { border-color: rgba(201, 168, 106, 0.8); background: rgba(201, 168, 106, 0.1); color: var(--ivory); }
+  .bk-chip:has(input:checked) .bk-chip__box { background: var(--gold-grad); color: #17130b; }
+  .bk-chip:has(input:checked) .bk-chip__plus { opacity: 0; transform: scale(0.5) rotate(90deg); }
+  .bk-chip:has(input:checked) .bk-chip__check { opacity: 1; transform: none; }
+  .bk-chip:has(input:focus-visible) { outline: 2px solid var(--gold); outline-offset: 3px; }
+
+  .bk-consent-wrap { display: grid; gap: 0.6rem; }
+  .bk-consent-row { display: flex; align-items: stretch; border: 1px solid var(--line-strong); border-radius: 14px; background: rgba(10, 10, 12, 0.35); transition: border-color 0.35s, background 0.35s, box-shadow 0.35s; }
+  .bk-consent-row:has(input:checked) { border-color: rgba(201, 168, 106, 0.75); background: rgba(201, 168, 106, 0.07); box-shadow: 0 0 0 1px rgba(201, 168, 106, 0.18); }
+  .bk-consent-row:has(input[aria-invalid='true']) { border-color: rgba(229, 138, 122, 0.6); }
+  .bk-consent { position: relative; flex: 1; display: flex; align-items: center; gap: 0.85rem; min-height: 56px; padding: 0.65rem 0.9rem; cursor: pointer; font-size: 0.95rem; color: var(--ivory); -webkit-tap-highlight-color: transparent; }
+  .bk-consent__view { flex: none; display: inline-flex; align-items: center; min-height: 44px; margin: 6px; padding: 0 0.95rem; border-radius: 10px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold-2); transition: background 0.3s, color 0.3s; }
+  .bk-consent__view:hover { background: rgba(201, 168, 106, 0.12); }
+  .bk-consent__box { display: grid; place-items: center; flex: none; width: 26px; height: 26px; border-radius: 8px; border: 1px solid var(--line-strong); background: rgba(10, 10, 12, 0.5); color: #17130b; transition: background 0.35s, border-color 0.35s; }
+  .bk-consent__box svg { width: 15px; height: 15px; stroke-width: 2.4; opacity: 0; transform: scale(0.6); transition: opacity 0.3s, transform 0.45s var(--ease-out); }
+  .bk-consent input:checked + .bk-consent__box { background: var(--gold-grad); border-color: transparent; }
+  .bk-consent input:checked + .bk-consent__box svg { opacity: 1; transform: none; }
+  .bk-consent input:focus-visible + .bk-consent__box { outline: 2px solid var(--gold); outline-offset: 3px; }
+  .bk-consent input[aria-invalid='true'] + .bk-consent__box { border-color: var(--err); }
+
+  /* Terms dialog */
+  .bk-terms { width: min(480px, calc(100vw - 2rem)); max-height: calc(100dvh - 2rem); margin: auto; padding: 0; border: 1px solid var(--line-strong); border-radius: var(--radius-l); background: linear-gradient(180deg, #1a1a1f, #111114); color: var(--ivory); box-shadow: 0 50px 120px -40px rgba(0, 0, 0, 0.9); overflow: auto; }
+  .bk-terms::backdrop { background: rgba(6, 6, 8, 0.72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+  .bk-terms__inner { position: relative; display: grid; gap: 1rem; padding: clamp(1.5rem, 4vw, 2.2rem); }
+  .bk-terms__title { font-size: clamp(1.9rem, 4vw, 2.4rem); line-height: 1.05; }
+  .bk-terms__list { display: grid; gap: 0.85rem; margin: 0.3rem 0 0.4rem; }
+  .bk-terms__list li { display: flex; gap: 0.75rem; font-size: 0.9rem; line-height: 1.5; color: var(--ivory-2); }
+  .bk-terms__list strong { color: var(--ivory); font-weight: 600; }
+  .bk-terms__list svg { flex: none; width: 17px; height: 17px; margin-top: 0.15rem; color: var(--gold); }
+  .bk-terms__x { position: absolute; top: 0.75rem; right: 0.75rem; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; color: var(--muted); transition: color 0.3s, background 0.3s; }
+  .bk-terms__x:hover { color: var(--ivory); background: rgba(255, 255, 255, 0.06); }
+  .bk-terms__x svg { width: 18px; height: 18px; }
+  .bk-terms__ok { justify-self: start; }
+  .bk-assure { display: flex; align-items: flex-start; gap: 0.6rem; font-size: 0.82rem; color: var(--muted); line-height: 1.5; }
+  .bk-assure svg { width: 17px; height: 17px; flex: none; color: var(--gold); margin-top: 0.1rem; }
+
+  /* ---------- Review ---------- */
+  .bk-review { display: grid; gap: 0.8rem; }
+  .bk-review__block { padding: 1.1rem 1.25rem 1.2rem; border: 1px solid var(--line); border-radius: 16px; background: rgba(255, 255, 255, 0.018); }
+  .bk-review__head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 0.4rem; }
+  .bk-review__title { display: flex; align-items: center; gap: 0.6rem; font-family: var(--font-sans); font-size: 0.7rem; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold); }
+  .bk-review__edit { display: inline-flex; align-items: center; min-height: 44px; padding: 0 0.9rem; margin-right: -0.6rem; border-radius: 999px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ivory-2); transition: color 0.3s, background 0.3s; }
+  .bk-review__edit:hover { color: var(--gold-2); background: rgba(201, 168, 106, 0.1); }
+  .bk-review__list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.85rem 1.5rem; }
+  .bk-review__list > div { min-width: 0; }
+  .bk-review__list .is-wide { grid-column: 1 / -1; }
+  .bk-review__list dt { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.15rem; }
+  .bk-review__list dd { margin: 0; font-size: 0.95rem; color: var(--ivory); overflow-wrap: anywhere; line-height: 1.45; }
+  .bk-review__list dd .muted { color: var(--muted); }
+
+  /* ---------- Nav ---------- */
+  .bk-nav { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: clamp(1.8rem, 4vw, 2.6rem); padding-top: clamp(1.4rem, 3vw, 1.8rem); border-top: 1px solid var(--line); }
+  .bk-nav__journey { display: none; }
+  .bk-nav-sentinel { display: block; height: 1px; margin-top: -1px; pointer-events: none; }
+  .bk-nav__back.is-hidden { visibility: hidden; }
+  .bk-nav__hint { flex: 1; text-align: right; font-size: 0.8rem; color: var(--muted); }
+  .bk-nav__next { min-width: 190px; }
+  .bk-nav__next.is-final { min-height: 60px; padding: 0 2.2rem; }
+  .bk-spinner { position: absolute; left: 50%; top: 50%; width: 20px; height: 20px; margin: -10px 0 0 -10px; border-radius: 50%; border: 2px solid rgba(23, 19, 11, 0.25); border-top-color: #17130b; opacity: 0; animation: bk-spin 0.8s linear infinite; }
+  @keyframes bk-spin { to { transform: rotate(360deg); } }
+  .bk-nav__next.is-loading { pointer-events: none; }
+  .bk-nav__next.is-loading .bk-nav__label, .bk-nav__next.is-loading svg { opacity: 0; }
+  .bk-nav__next.is-loading .bk-spinner { opacity: 1; }
+
+  /* ---------- Summary ---------- */
+  .bk-sum { position: sticky; top: calc(70px + 1.25rem); border-radius: var(--radius-l); padding: clamp(1.3rem, 2.2vw, 1.8rem); background: linear-gradient(180deg, rgba(26, 25, 24, 0.7), rgba(14, 14, 17, 0.7)); }
+  .bk-sum__toggle { display: none; }
+  .bk-sum__head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; padding-bottom: 1.1rem; border-bottom: 1px solid var(--line); }
+  .bk-sum__title { font-size: 1.9rem; }
+  .bk-sum__live { display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); }
+  .bk-sum__pulse { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 0 0 rgba(201, 168, 106, 0.6); animation: bk-pulse 2.4s infinite; }
+  @keyframes bk-pulse { 70% { box-shadow: 0 0 0 8px rgba(201, 168, 106, 0); } 100% { box-shadow: 0 0 0 0 rgba(201, 168, 106, 0); } }
+  .bk-sum__row { position: relative; padding: 1rem 0; border-bottom: 1px solid var(--line); }
+  .bk-sum__row[hidden] { display: none; }
+  .bk-sum__k { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); }
+  .bk-sum__v { font-size: 0.95rem; color: var(--ivory); line-height: 1.4; overflow-wrap: anywhere; }
+  .bk-sum__v.is-empty { color: var(--muted-2); font-style: italic; font-family: var(--font-display); font-size: 1.08rem; }
+  .bk-sum__sub { font-size: 0.8rem; color: var(--muted); white-space: pre-line; line-height: 1.5; margin-top: 0.15rem; }
+  .bk-sum__sub:empty { display: none; }
+  .bk-sum__service { display: flex; gap: 0.9rem; align-items: center; }
+  .bk-sum__svc-icon { display: grid; place-items: center; flex: none; width: 42px; height: 42px; border-radius: 50%; border: 1px solid rgba(201, 168, 106, 0.45); color: var(--gold-2); }
+  .bk-sum__svc-icon svg { width: 19px; height: 19px; }
+  .bk-sum__svc-icon > span[hidden] { display: none; }
+  .bk-sum__route { display: grid; gap: 0.9rem; padding-left: 1.6rem; }
+  .bk-sum__connector { position: absolute; left: 5px; top: calc(1rem + 9px); bottom: calc(1rem + 2.4rem); width: 1px; background-image: radial-gradient(circle, var(--gold) 1px, transparent 1.4px); background-size: 1px 6px; background-repeat: repeat-y; }
+  .bk-sum__stop { position: relative; }
+  .bk-sum__dot { position: absolute; left: calc(-1.6rem + 1px); top: 4px; width: 9px; height: 9px; border-radius: 50%; }
+  .bk-sum__dot--start { background: var(--gold); box-shadow: 0 0 0 3px rgba(201, 168, 106, 0.2); }
+  .bk-sum__dot--end { border: 1.5px solid var(--gold); background: var(--ink); border-radius: 2px; transform: rotate(45deg); width: 8px; height: 8px; left: calc(-1.6rem + 1.5px); }
+  .bk-sum__dot--stop { border: 1.5px solid var(--gold-2); background: var(--ink); width: 7px; height: 7px; left: calc(-1.6rem + 2px); top: 5px; }
+  [data-sum='stops'] { display: grid; gap: 0.9rem; }
+  [data-sum='stops']:empty { display: none; }
+  .bk-sum__pair { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .bk-sum__vehicle { display: flex; align-items: center; gap: 0.9rem; }
+  .bk-sum__thumb { display: grid; place-items: center; flex: none; width: 84px; height: 56px; overflow: hidden; border-radius: 10px; border: 1px solid var(--line); background: var(--ink-3); color: var(--muted-2); }
+  .bk-sum__thumb svg { width: 24px; height: 24px; }
+  .bk-sum__thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .bk-sum__thumb.is-studio { background: radial-gradient(120% 90% at 50% 30%, #fbf8f2, #e6dfd2); }
+  .bk-sum__thumb.is-studio img { object-fit: contain; padding: 4px 6px; mix-blend-mode: multiply; }
+  .bk-sum__chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+  .bk-sum__chips .chip { font-size: 0.72rem; padding: 0.3rem 0.7rem; }
+  .bk-sum .bk-sum__trust { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem 0.9rem; padding: 1.1rem 0; border-bottom: 1px solid var(--line); }
+  .bk-sum__trust li { display: flex; align-items: flex-start; gap: 0.5rem; font-size: 0.76rem; line-height: 1.35; color: var(--ivory-2); }
+  .bk-sum__trust svg { width: 15px; height: 15px; flex: none; color: var(--gold); margin-top: 1px; }
+  .bk-sum__call { display: flex; align-items: center; gap: 0.85rem; margin-top: 1.1rem; padding: 0.7rem 1rem 0.7rem 0.7rem; min-height: 60px; border: 1px solid var(--line); border-radius: 999px; transition: border-color 0.4s, background 0.4s; }
+  .bk-sum__call:hover { border-color: rgba(201, 168, 106, 0.5); background: rgba(201, 168, 106, 0.06); }
+  .bk-sum__call > svg { width: 18px; height: 18px; margin-left: auto; color: var(--gold-2); transition: transform 0.4s var(--ease-out); }
+  .bk-sum__call:hover > svg { transform: translateX(4px); }
+  .bk-sum__call-icon { display: grid; place-items: center; flex: none; width: 42px; height: 42px; border-radius: 50%; background: var(--gold-grad); color: #17130b; }
+  .bk-sum__call-icon svg { width: 17px; height: 17px; }
+  .bk-sum__call-k { display: block; font-size: 0.7rem; color: var(--muted); letter-spacing: 0.04em; }
+  .bk-sum__call-v { display: block; font-weight: 700; letter-spacing: 0.02em; color: var(--ivory); }
+  .bk-sum__row::before { content: ''; position: absolute; inset: 0 -0.8rem; border-radius: 12px; background: linear-gradient(90deg, rgba(201, 168, 106, 0.14), transparent 75%); opacity: 0; pointer-events: none; }
+  .bk-sum__row.is-flash::before { animation: bk-row-flash 1.3s var(--ease-out); }
+  @keyframes bk-row-flash { 0% { opacity: 1; } 100% { opacity: 0; } }
+
+  /* ---------- Success ---------- */
+  .bk-success { display: grid; justify-items: center; text-align: center; gap: 1rem; max-width: 820px; margin-inline: auto; padding: clamp(2rem, 5vw, 3.6rem) clamp(1.25rem, 4vw, 3.2rem); border-radius: var(--radius-l); background: linear-gradient(180deg, rgba(24, 24, 29, 0.85), rgba(14, 14, 17, 0.9)); outline: none; }
+  .bk-success[hidden] { display: none; }
+  .bk-success__mark { position: relative; width: 104px; height: 104px; margin-bottom: 0.4rem; }
+  .bk-success__ring { position: absolute; inset: -14px; border-radius: 50%; background: radial-gradient(closest-side, rgba(201, 168, 106, 0.25), transparent); animation: bk-breathe 3.2s ease-in-out infinite; }
+  @keyframes bk-breathe { 50% { transform: scale(1.12); opacity: 0.6; } }
+  .bk-success__svg { position: relative; width: 100%; height: 100%; }
+  .bk-success__circle { fill: none; stroke: url(#bk-gold); stroke-width: 1.6; }
+  .bk-success__path { fill: none; stroke: url(#bk-gold); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+  .bk-success__ref span { color: var(--ivory); letter-spacing: 0.18em; }
+  .bk-success__ref::after { content: ''; width: 2.4rem; height: 1px; background: linear-gradient(90deg, var(--gold), transparent); }
+  .bk-success .bk-review__head { margin-bottom: 0.9rem; }
+  .bk-next { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.8rem; width: 100%; margin-top: 0.8rem; text-align: left; }
+  .bk-next__item { position: relative; display: grid; align-content: start; gap: 0.35rem; padding: 1.1rem 1.2rem 1.2rem; border: 1px solid var(--line); border-radius: 16px; background: linear-gradient(180deg, rgba(201, 168, 106, 0.06), rgba(255, 255, 255, 0.01) 60%); }
+  .bk-next__n { font-family: var(--font-display); font-style: italic; font-size: 1.5rem; line-height: 1; color: var(--gold-2); margin-bottom: 0.25rem; }
+  .bk-next__t { font-weight: 600; font-size: 0.95rem; color: var(--ivory); }
+  .bk-next__d { font-size: 0.82rem; line-height: 1.5; color: var(--muted); }
+  .bk-success__title { font-size: clamp(2.6rem, 5vw, 4.2rem); }
+  .bk-success__lead { margin-inline: auto; }
+  .bk-success__summary { width: 100%; margin-top: 0.8rem; text-align: left; }
+  .bk-success__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.8rem; margin-top: 1rem; }
+
+  /* ---------- Responsive ---------- */
+  /* Sticky summary never runs past the bottom of short laptop screens. */
+  @media (min-width: 1024px) {
+    .bk-sum { max-height: calc(100vh - 110px); overflow: auto; overscroll-behavior: contain; scrollbar-width: none; }
+    .bk-sum::-webkit-scrollbar { display: none; }
+    .bk-sum.has-more { -webkit-mask-image: linear-gradient(#000 calc(100% - 56px), rgba(0, 0, 0, 0.15)); mask-image: linear-gradient(#000 calc(100% - 56px), rgba(0, 0, 0, 0.15)); }
+  }
+  @media (min-width: 1024px) and (max-height: 880px) {
+    .bk-sum { padding: 1.15rem 1.4rem; }
+    .bk-sum__head { padding-bottom: 0.7rem; }
+    .bk-sum__title { font-size: 1.6rem; }
+    .bk-sum__row { padding-block: 0.65rem; }
+    .bk-sum__route { gap: 0.6rem; }
+    [data-sum='stops'] { gap: 0.6rem; }
+    .bk-sum__connector { top: calc(0.65rem + 9px); bottom: calc(0.65rem + 2.4rem); }
+    .bk-sum__svc-icon { width: 36px; height: 36px; }
+    .bk-sum__thumb { width: 64px; height: 44px; }
+    .bk-sum .bk-sum__trust { gap: 0.4rem 0.8rem; padding-block: 0.75rem; }
+    .bk-sum__trust li { font-size: 0.72rem; }
+    .bk-sum__call { margin-top: 0.75rem; min-height: 52px; padding: 0.45rem 0.9rem 0.45rem 0.45rem; }
+    .bk-sum__call-icon { width: 38px; height: 38px; }
+  }
+  @media (max-width: 1180px) {
+    .bk-types { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .bk-type { grid-template-columns: auto 1fr; align-items: center; min-height: 76px; gap: 0.8rem; padding: 0.85rem 2.4rem 0.85rem 0.85rem; }
+  }
+  @media (max-width: 1023px) {
+    .bk-layout { grid-template-columns: minmax(0, 1fr); }
+    .bk-head { grid-template-columns: 1fr; gap: 1.1rem; }
+    .bk-types { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .bk-type { grid-template-columns: 1fr; align-items: start; min-height: 128px; padding: 1rem; }
+
+    .bk-sum { position: relative; top: 0; padding: 0; overflow: hidden; }
+    .bk-sum__toggle { display: flex; align-items: center; justify-content: space-between; gap: 1rem; width: 100%; min-height: 68px; padding: 0.9rem 1.2rem; text-align: left; }
+    .bk-sum__toggle-text { display: grid; min-width: 0; }
+    .bk-sum__toggle-label { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold); }
+    .bk-sum__toggle-line { font-size: 0.92rem; color: var(--ivory); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bk-sum__toggle-cta { display: inline-flex; align-items: center; gap: 0.35rem; flex: none; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ivory-2); }
+    .bk-sum__toggle-cta svg { width: 16px; height: 16px; transition: transform 0.5s var(--ease-out); }
+    .bk-sum.is-open .bk-sum__toggle-cta svg { transform: rotate(180deg); }
+    .bk-sum__body { display: none; padding: 0 1.2rem 1.2rem; }
+    .bk-sum.is-open .bk-sum__body { display: block; }
+    .bk-sum__head { display: none; }
+    .bk-sum__service { border-top: 1px solid var(--line); }
+  }
+  @media (max-width: 760px) {
+    .bk { padding-bottom: calc(2rem + env(safe-area-inset-bottom)); }
+
+    /* Compact service tiles: icon + title rows keep Route and Date near the top. */
+    .bk-types { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; }
+    .bk-type { grid-template-columns: 32px minmax(0, 1fr); align-items: center; align-content: center; gap: 0.65rem; min-height: 60px; padding: 0.6rem 0.7rem; border-radius: 14px; }
+    .bk-type:hover { transform: none; }
+    .bk-type__icon { width: 32px; height: 32px; }
+    .bk-type__icon svg { width: 16px; height: 16px; }
+    .bk-type__title { font-size: 0.84rem; line-height: 1.22; }
+    .bk-type__sub { display: none; }
+    .bk-type .bk-tick { display: none; }
+    .bk-tick { top: 0.6rem; right: 0.6rem; width: 22px; height: 22px; }
+    .bk-seg--dir { max-width: none; }
+
+    /* Vehicles keep the full stacked photo so every car reads clearly. */
+    .bk-vehicles { grid-template-columns: 1fr; gap: 0.75rem; }
+    .bk-vehicle { border-radius: 16px; }
+    .bk-vehicle:hover:not(.is-disabled) { transform: none; }
+    .bk-vehicle__media { aspect-ratio: 2 / 1; }
+    .bk-vehicle__body { grid-template-columns: minmax(0, 1fr) auto; column-gap: 0.8rem; row-gap: 0.2rem; padding: 0.85rem 1rem 1rem; }
+    .bk-vehicle__cat { grid-column: 1 / -1; grid-row: 1; }
+    .bk-vehicle__feats { grid-column: 1 / -1; grid-row: 3; }
+    .bk-vehicle__note { grid-column: 1 / -1; grid-row: 4; }
+    .bk-vehicle__name { font-size: 1.3rem; grid-column: 1; grid-row: 2; }
+    .bk-vehicle__specs { grid-column: 2; grid-row: 2; align-self: center; margin-top: 0; font-size: 0.8rem; gap: 0.8rem; }
+    .bk-vehicle__feats { font-size: 0.74rem; line-height: 1.5; }
+    .bk-vehicle__badge { left: 0.6rem; top: 0.6rem; font-size: 0.58rem; padding: 0.3rem 0.6rem; letter-spacing: 0.12em; }
+
+    /* The wizard's own nav becomes the sticky action bar (the site-wide mobile bar is hidden here). */
+    .bk-nav { position: sticky; bottom: calc(8px + env(safe-area-inset-bottom)); z-index: 5; flex-wrap: wrap; gap: 0.4rem 0.6rem; margin: 1.5rem -0.45rem 0; padding: 0.5rem; border: 1px solid var(--line-strong); border-radius: 30px; background: rgba(14, 14, 17, 0.92); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: 0 18px 40px -18px rgba(0, 0, 0, 0.9); }
+    .bk-nav__journey { display: block; flex: 1 1 100%; order: -1; min-width: 0; padding: 0.15rem 0.6rem 0; font-size: 0.74rem; line-height: 1.35; color: var(--ivory-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bk-nav.is-docked .bk-nav__journey { display: none; }
+    .bk-nav__journey-k { margin-right: 0.35rem; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); }
+    .bk-nav .btn { min-height: 50px; }
+
+    /* Lighter compositing on phones. */
+    .bk-wizard, .bk-sum { backdrop-filter: none; -webkit-backdrop-filter: none; }
+    .bk-wizard { background: var(--ink-2); }
+    .bk-sum { background: var(--ink-2); }
+    .bk-bg__glow { animation: none; }
+    .bk-next { grid-template-columns: 1fr; gap: 0.6rem; }
+    .bk-next__item { grid-template-columns: auto 1fr; column-gap: 0.9rem; row-gap: 0.15rem; padding: 0.95rem 1rem; }
+    .bk-next__n { grid-row: span 2; margin: 0; font-size: 1.35rem; }
+  }
+  @media (max-width: 640px) {
+    .bk-wizard { padding: 1.15rem 1rem 1.25rem; border-radius: 22px; }
+    .bk-grid-2 { grid-template-columns: 1fr; gap: 1.1rem; }
+    .bk-step .bk-grid-2:has(input[type='date']) { grid-template-columns: 1fr 1fr; gap: 0.7rem; }
+    .bk-progress__label { font-size: 0.6rem; letter-spacing: 0.14em; }
+    .bk-progress__track { top: 20px; }
+    .bk-progress__dot { width: 40px; height: 40px; }
+    .bk-route__row { grid-template-columns: 44px 1fr auto; min-height: 68px; }
+    .bk-route__line { left: 21.5px; top: 34px; bottom: 34px; }
+    .bk-route__field { padding-right: 58px; }
+    .bk-route__swap { right: 10px; }
+    .bk-route:has(.bk-route__row--stop) .bk-route__swap { top: 34px; }
+    .bk-route__remove { margin-right: 10px; }
+    .bk-panel--row { grid-template-columns: 1fr; }
+    .bk-panel--row .bk-stepper { justify-self: start; }
+    .bk-party { grid-template-columns: 1fr; gap: 0.6rem; }
+    .bk-seg__opt span { font-size: 0.8rem; padding: 0 0.5rem; }
+    .bk-review__list { grid-template-columns: 1fr; gap: 0.7rem; }
+    .bk-review__block { padding: 0.9rem 1rem 1rem; }
+    .bk-nav__hint { display: none; }
+    .bk-nav__back { flex: 0 0 auto; width: 52px; padding: 0; }
+    .bk-nav__back svg { width: 18px; height: 18px; }
+    .bk-nav__back-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+    .bk-nav__next, .bk-nav__next.is-final { padding: 0 1.1rem; letter-spacing: 0.11em; }
+    .bk-nav__next.is-final { min-height: 56px; }
+    .bk-nav__back.is-hidden { display: none; }
+    .bk-nav__next { flex: 1; min-width: 0; }
+    .bk-sum .bk-sum__trust { grid-template-columns: 1fr; }
+    .bk-success__actions .btn { flex: 1 1 100%; }
+    .bk-consent { font-size: 0.9rem; padding: 0.6rem 0.75rem; gap: 0.7rem; }
+    .bk-consent__view { margin: 6px 6px 6px 0; padding: 0 0.75rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bk-bg__glow, .bk-route__line, .bk-success__ring, .bk-sum__pulse { animation: none !important; }
+  }
+</style>

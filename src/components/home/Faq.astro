@@ -1,0 +1,239 @@
+---
+import Icon from '../Icon.astro';
+import { site, faqs } from '../../data/site';
+
+const pad = (n: number) => String(n).padStart(2, '0');
+---
+<section id="faq" class="section faq" aria-labelledby="faq-title">
+  <div class="container faq__grid">
+    <aside class="faq__aside">
+      <div class="faq__sticky">
+        <p class="eyebrow" data-reveal="fade">FAQ</p>
+        <h2 id="faq-title" data-split>Questions, <em>answered.</em></h2>
+        <p class="lead faq__lead" data-reveal data-delay="0.1">Everything worth knowing before you ride, from booking to flight delays. Anything else, our team is a call away.</p>
+
+        <div class="faq__card glass" data-reveal data-delay="0.2">
+          <span class="faq__card-glow" aria-hidden="true"></span>
+          <p class="faq__card-kicker"><span class="faq__pulse" aria-hidden="true"></span> Reservations desk</p>
+          <h3 class="faq__card-title">Still deciding?<br /> Talk to a <em>real person</em>, 24/7.</h3>
+          <p class="faq__card-text">Quotes, availability, multi-vehicle events or a last-minute airport run. Ask us anything.</p>
+          <div class="faq__card-actions">
+            <a href={site.phoneHref} class="btn btn--gold" data-magnetic="0.2" data-cursor="Call"><Icon name="phone" /> Call {site.phone}</a>
+            <a href={site.smsHref} class="btn btn--ghost"><Icon name="chat" /> Text us</a>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="faq__list" data-faq data-stagger="0.07">
+      {faqs.map((f, i) => {
+        const open = i === 0;
+        return (
+          <div class:list={['faq__item', open && 'is-open']} data-faq-item>
+            <h3 class="faq__q">
+              <button
+                type="button"
+                class="faq__btn"
+                id={`faq-btn-${i}`}
+                aria-expanded={open ? 'true' : 'false'}
+                aria-controls={`faq-panel-${i}`}
+                data-faq-btn
+              >
+                <span class="faq__idx" aria-hidden="true">{pad(i + 1)}</span>
+                <span class="faq__qtext">{f.q}</span>
+                <span class="faq__icon" aria-hidden="true"><span></span><span></span></span>
+              </button>
+            </h3>
+            <div class="faq__panel" id={`faq-panel-${i}`} role="region" aria-labelledby={`faq-btn-${i}`}>
+              <div class="faq__panel-inner">
+                <p>{f.a}</p>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+      <p class="faq__more">
+        Ready when you are. <a href="/book/" class="link-underline">Reserve a ride <Icon name="arrow" size={14} /></a>
+      </p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .faq__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.2fr);
+    gap: clamp(3rem, 7vw, 7.5rem);
+    align-items: start;
+  }
+  .faq__aside { align-self: stretch; }
+  .faq__sticky {
+    position: sticky;
+    top: calc(var(--header-h) + 1.5rem);
+    display: grid;
+    gap: 1.4rem;
+    justify-items: start;
+  }
+  .faq__lead { max-width: 40ch; }
+
+  /* ---------- Contact card ---------- */
+  .faq__card {
+    position: relative;
+    overflow: hidden;
+    display: grid;
+    gap: 1rem;
+    margin-top: 1.2rem;
+    padding: clamp(1.6rem, 2.6vw, 2.2rem);
+    border-radius: var(--radius-l);
+    width: 100%;
+    max-width: 480px;
+  }
+  .faq__card-glow {
+    position: absolute; inset: auto -30% -60% auto; width: 80%; aspect-ratio: 1; pointer-events: none;
+    background: radial-gradient(closest-side, rgba(201, 168, 106, 0.22), rgba(201, 168, 106, 0));
+  }
+  .faq__card::before {
+    content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
+    background: linear-gradient(140deg, rgba(232, 211, 162, 0.45), rgba(232, 211, 162, 0) 40%, rgba(232, 211, 162, 0) 70%, rgba(232, 211, 162, 0.25));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+  }
+  .faq__card-kicker {
+    display: inline-flex; align-items: center; gap: 0.6rem;
+    font-size: 0.68rem; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold);
+  }
+  .faq__pulse { position: relative; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
+  .faq__pulse::after {
+    content: ''; position: absolute; inset: -4px; border-radius: 50%; border: 1px solid var(--ok);
+    animation: faq-pulse 2.2s var(--ease-out) infinite;
+  }
+  @keyframes faq-pulse { 0% { transform: scale(0.6); opacity: 1; } 100% { transform: scale(2); opacity: 0; } }
+  .faq__card-title { font-size: clamp(1.6rem, 2.2vw, 2rem); line-height: 1.12; text-wrap: initial; }
+  .faq__card-text { font-size: 0.92rem; color: var(--muted); max-width: 38ch; }
+  /* Side by side when there is room; when they wrap, each grows to the full row so they never read as two odd pills. */
+  .faq__card-actions { position: relative; display: flex; flex-wrap: wrap; gap: 0.7rem; margin-top: 0.4rem; }
+  .faq__card-actions .btn { flex: 1 1 auto; padding-inline: 1.3rem; }
+
+  /* ---------- Accordion ---------- */
+  .faq__list { border-top: 1px solid var(--line); }
+  .faq__item { position: relative; border-bottom: 1px solid var(--line); }
+  .faq__item::before {
+    content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px;
+    background: var(--gold-grad);
+    transform: scaleX(0); transform-origin: left;
+    transition: transform 0.9s var(--ease-out);
+  }
+  .faq__item.is-open::before { transform: scaleX(1); }
+  .faq__q { font: inherit; margin: 0; }
+  .faq__btn {
+    display: grid;
+    grid-template-columns: 2.6rem 1fr auto;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+    min-height: 88px;
+    padding: 1.4rem 0;
+    text-align: left;
+    color: var(--ivory-2);
+  }
+  .faq__idx { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; color: var(--muted-2); transition: color 0.4s; align-self: start; padding-top: 0.6rem; }
+  .faq__qtext {
+    font-family: var(--font-display);
+    font-size: clamp(1.4rem, 2vw, 1.9rem);
+    line-height: 1.15;
+    letter-spacing: -0.005em;
+    transition: color 0.4s, transform 0.6s var(--ease-out);
+  }
+  .faq__btn:hover .faq__qtext { color: var(--ivory); transform: translateX(4px); }
+  .faq__icon {
+    position: relative;
+    width: 44px; height: 44px; flex: none;
+    border-radius: 50%;
+    border: 1px solid var(--line-strong);
+    transition: transform 0.7s var(--ease-out), background 0.5s var(--ease-out), border-color 0.5s var(--ease-out);
+  }
+  .faq__icon span {
+    position: absolute; left: 50%; top: 50%;
+    width: 14px; height: 1.5px; margin: -0.75px 0 0 -7px;
+    background: var(--ivory);
+    border-radius: 2px;
+    transition: transform 0.7s var(--ease-out), background 0.5s;
+  }
+  .faq__icon span:last-child { transform: rotate(90deg); }
+  .faq__btn:hover .faq__icon { border-color: rgba(232, 211, 162, 0.6); }
+
+  .faq__item.is-open .faq__idx { color: var(--gold); }
+  .faq__item.is-open .faq__qtext { color: var(--ivory); }
+  .faq__item.is-open .faq__icon { transform: rotate(180deg); background: var(--gold-grad); border-color: transparent; box-shadow: var(--gold-glow); }
+  .faq__item.is-open .faq__icon span { background: #17130b; }
+  .faq__item.is-open .faq__icon span:last-child { transform: rotate(0deg); }
+
+  .faq__panel { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 0.7s var(--ease-out); }
+  .faq__panel-inner { overflow: hidden; min-height: 0; }
+  .faq__panel p {
+    padding: 0 3.6rem 1.8rem 3.6rem;
+    color: var(--muted);
+    font-size: 1rem;
+    line-height: 1.7;
+    max-width: 62ch;
+    transition: opacity 0.6s var(--ease-out), transform 0.7s var(--ease-out);
+  }
+  :global(.js) .faq__item:not(.is-open) .faq__panel { grid-template-rows: 0fr; }
+  :global(.js) .faq__item:not(.is-open) .faq__panel-inner { visibility: hidden; transition: visibility 0s linear 0.7s; }
+  :global(.js) .faq__item:not(.is-open) .faq__panel p { opacity: 0; transform: translateY(-8px); }
+  .faq__item.is-open .faq__panel p { color: var(--ivory-2); }
+
+  .faq__more { margin-top: 2.2rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 1.2rem; color: var(--muted); font-size: 0.95rem; }
+  .faq__more .link-underline { min-height: 44px; }
+
+  @media (max-width: 900px) {
+    .faq__grid { grid-template-columns: 1fr; gap: 0; }
+    .faq__aside, .faq__sticky { display: contents; }
+    .faq__sticky > .eyebrow { margin-bottom: 1.2rem; justify-self: start; }
+    .faq__sticky > h2 { margin-bottom: 1.2rem; }
+    .faq__lead { margin-bottom: 2.4rem; }
+    .faq__list { order: 4; }
+    .faq__card { order: 5; margin-top: 3rem; max-width: none; }
+    .faq__more { display: none; }
+  }
+  @media (max-width: 560px) {
+    .faq__btn { grid-template-columns: 1fr auto; min-height: 76px; padding: 1.15rem 0; gap: 0.9rem; }
+    .faq__idx { display: none; }
+    .faq__qtext { font-size: 1.38rem; }
+    .faq__panel p { padding: 0 0 1.5rem 0; font-size: 0.96rem; }
+    .faq__card-actions { display: grid; grid-template-columns: 1fr; }
+    .faq__card-actions .btn { width: 100%; }
+  }
+</style>
+
+<script>
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+  import gsap from 'gsap';
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  const list = document.querySelector<HTMLElement>('[data-faq]');
+  if (list) {
+    const items = Array.from(list.querySelectorAll<HTMLElement>('[data-faq-item]'));
+    let refreshTimer = 0;
+    const refresh = () => {
+      window.clearTimeout(refreshTimer);
+      refreshTimer = window.setTimeout(() => {
+        ScrollTrigger.refresh();
+        (window as any).lenis?.resize?.();
+      }, 750);
+    };
+
+    items.forEach((item) => {
+      const btn = item.querySelector<HTMLButtonElement>('[data-faq-btn]');
+      if (!btn) return;
+      btn.addEventListener('click', () => {
+        const open = btn.getAttribute('aria-expanded') !== 'true';
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        item.classList.toggle('is-open', open);
+        refresh();
+      });
+    });
+  }
+</script>

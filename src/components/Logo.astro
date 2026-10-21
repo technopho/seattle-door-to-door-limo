@@ -1,0 +1,36 @@
+---
+// Typeset wordmark with a Space Needle monogram (replaces the old blue PNG logo).
+interface Props { class?: string; compact?: boolean }
+const { class: cls = '', compact = false } = Astro.props;
+---
+<a href="/" class:list={['logo', cls, compact && 'logo--compact']} aria-label="Seattle Door to Door Limo — home" data-cursor="Home">
+  <svg class="logo__mark" viewBox="0 0 40 48" aria-hidden="true">
+    <defs>
+      <linearGradient id="lg-gold" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#e8d3a2" /><stop offset=".55" stop-color="#c9a86a" /><stop offset="1" stop-color="#8f7040" />
+      </linearGradient>
+    </defs>
+    <path d="M20 2 L21.4 15 L20 46 L18.6 15 Z" fill="url(#lg-gold)" />
+    <ellipse cx="20" cy="14" rx="11" ry="2.8" fill="none" stroke="url(#lg-gold)" stroke-width="1.6" />
+    <path d="M13 18 L17.5 46 M27 18 L22.5 46" stroke="url(#lg-gold)" stroke-width="1" fill="none" opacity=".7" />
+    <path d="M8 46 H32" stroke="url(#lg-gold)" stroke-width="1.2" />
+  </svg>
+  {!compact && (
+    <span class="logo__text">
+      <span class="logo__top">Seattle</span>
+      <span class="logo__name">Door <em>to</em> Door</span>
+      <span class="logo__sub">Limousine · Est. 2008</span>
+    </span>
+  )}
+</a>
+
+<style>
+  .logo { display: inline-flex; align-items: center; gap: 0.7rem; color: var(--ivory); }
+  .logo__mark { width: 30px; height: 38px; flex: none; transition: transform 0.6s var(--ease-out); }
+  .logo:hover .logo__mark { transform: translateY(-2px) scale(1.04); }
+  .logo__text { display: grid; line-height: 1; gap: 3px; }
+  .logo__top { font-size: 0.56rem; letter-spacing: 0.42em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .logo__name { font-family: var(--font-display); font-size: 1.42rem; letter-spacing: 0.01em; white-space: nowrap; }
+  .logo__name em { font-style: italic; color: var(--gold); }
+  .logo__sub { font-size: 0.5rem; letter-spacing: 0.36em; text-transform: uppercase; color: var(--gold); font-weight: 600; }
+</style>

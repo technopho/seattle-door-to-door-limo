@@ -1,0 +1,868 @@
+---
+// Home hero: cinematic Three.js "Seattle after dark" scene + headline + instant quote widget.
+import Icon from '../Icon.astro';
+import { site, images, fleet } from '../../data/site';
+
+// Smallest vehicle that seats the party, used for the live "suggested vehicle" hint.
+const capacity = [...fleet]
+  .sort((a, b) => a.passengers - b.passengers)
+  .map((v) => ({ id: v.id, name: v.name, pax: v.passengers }));
+
+const airports = [
+  { value: 'SeaTac International Airport (SEA)', label: 'SeaTac International (SEA)' },
+  { value: 'Paine Field (PAE)', label: 'Paine Field, Everett (PAE)' },
+  { value: 'Boeing Field (BFI)', label: 'Boeing Field / King County (BFI)' },
+];
+const hours = Array.from({ length: 11 }, (_, i) => i + 2);
+---
+<section class="hero" data-hero aria-label="Seattle luxury chauffeur service">
+  <div class="hero__stage" data-hero-stage aria-hidden="true">
+    <img class="hero__fallback" data-hero-fallback data-src={images.skyline} alt="" decoding="async" />
+    <canvas class="hero__canvas" data-hero-canvas></canvas>
+    <div class="hero__scrim"></div>
+  </div>
+
+  <div class="hero__inner container" data-hero-content>
+    <div class="hero__intro" data-hero-intro>
+      <p class="eyebrow hero__eyebrow" data-hero-in>Seattle · Bellevue · SeaTac — Since {site.since}</p>
+      <h1 class="hero__title display" data-split data-split-manual data-split-done="1" data-hero-title><span class="split-line" style="display:inline-block"><span class="split-word">Seattle,</span></span> <em><span class="split-line" style="display:inline-block"><span class="split-word">chauffeured.</span></span></em></h1>
+      <p class="lead hero__lead" data-hero-in>
+        Private chauffeurs and immaculate black cars for airport runs, executive travel and the nights that matter, across Seattle and the Eastside, 24/7.
+      </p>
+      <div class="hero__ctas" data-hero-in>
+        <a href="/book/" class="btn btn--gold btn--lg" data-magnetic>Reserve your ride <Icon name="arrow" /></a>
+        <a href={site.phoneHref} class="btn btn--ghost btn--lg" data-cursor="Call"><Icon name="phone" /> Call {site.phone}</a>
+      </div>
+      <ul class="hero__trust" role="list" data-hero-in>
+        <li class="hero__rating">
+          <span class="stars" aria-hidden="true">
+            <Icon name="star" /><Icon name="star" /><Icon name="star" /><Icon name="star" /><Icon name="star" />
+          </span>
+          <span><strong>{site.rating.score}</strong> · {site.rating.count} reviews</span>
+        </li>
+        <li><Icon name="shield" /> Licensed &amp; insured</li>
+        <li><Icon name="plane" /> Live flight tracking</li>
+      </ul>
+    </div>
+
+    <aside class="hero__quote" data-hero-in data-hero-quote aria-labelledby="quote-title">
+      <form class="quote glass" data-quote data-fleet={JSON.stringify(capacity)} action="/book/" method="get" novalidate>
+        <div class="quote__head">
+          <p class="quote__kicker"><span class="quote__live" aria-hidden="true"></span> Reserve in under a minute</p>
+          <h2 class="quote__title" id="quote-title">Get an instant quote</h2>
+        </div>
+
+        <div class="quote__tabs" role="tablist" aria-label="Trip type" data-quote-tabs>
+          <span class="quote__pill" data-quote-pill aria-hidden="true"></span>
+          <button type="button" role="tab" id="qt-p2p" aria-selected="true" aria-controls="quote-panel" data-type="p2p">Point-to-Point</button>
+          <button type="button" role="tab" id="qt-hourly" aria-selected="false" aria-controls="quote-panel" tabindex="-1" data-type="hourly">Hourly</button>
+          <button type="button" role="tab" id="qt-airport" aria-selected="false" aria-controls="quote-panel" tabindex="-1" data-type="airport">Airport</button>
+        </div>
+
+        <div class="quote__panel" id="quote-panel" role="tabpanel" aria-labelledby="qt-p2p" data-quote-panel>
+          <div class="qgroup qgroup--route" data-quote-route data-dir="to">
+            <label class="qrow qrow--from" data-row="from">
+              <span class="qrow__icon"><Icon name="pin" /></span>
+              <span class="qrow__body">
+                <span class="qrow__label" data-from-label>Pickup location</span>
+                <input class="qrow__input" type="text" name="from" placeholder="Address, hotel or venue" autocomplete="off" data-from />
+              </span>
+            </label>
+            <label class="qrow qrow--to" data-row="to" data-show="p2p">
+              <span class="qrow__icon"><Icon name="flag" /></span>
+              <span class="qrow__body">
+                <span class="qrow__label">Drop-off location</span>
+                <input class="qrow__input" type="text" name="to" placeholder="Where are you headed?" autocomplete="off" data-to />
+              </span>
+            </label>
+            <label class="qrow qrow--hours" data-row="hours" data-show="hourly" hidden>
+              <span class="qrow__icon"><Icon name="hourglass" /></span>
+              <span class="qrow__body">
+                <span class="qrow__label">Duration</span>
+                <select class="qrow__input" name="hours" data-hours>
+                  {hours.map((h) => <option value={h} selected={h === 3}>{h} hours</option>)}
+                </select>
+              </span>
+              <span class="qrow__chev"><Icon name="chevron" /></span>
+            </label>
+            <label class="qrow qrow--airport" data-row="airport" data-show="airport" hidden>
+              <span class="qrow__icon"><Icon name="plane" /></span>
+              <span class="qrow__body">
+                <span class="qrow__label" data-airport-label>Drop-off airport</span>
+                <select class="qrow__input" name="airport" data-airport>
+                  {airports.map((a) => <option value={a.value}>{a.label}</option>)}
+                </select>
+              </span>
+              <span class="qrow__chev"><Icon name="chevron" /></span>
+            </label>
+            <button type="button" class="qswap" data-show="airport" data-swap hidden aria-label="Swap to a pickup from the airport">
+              <Icon name="swap" />
+            </button>
+          </div>
+
+          <div class="qgroup qgroup--split">
+            <label class="qrow">
+              <span class="qrow__icon"><Icon name="calendar" /></span>
+              <span class="qrow__body">
+                <span class="qrow__label">Date</span>
+                <input class="qrow__input" type="date" name="date" data-date />
+              </span>
+            </label>
+            <label class="qrow">
+              <span class="qrow__icon"><Icon name="clock" /></span>
+              <span class="qrow__body">
+                <span class="qrow__label">Time</span>
+                <input class="qrow__input" type="time" name="time" step="900" data-time />
+              </span>
+            </label>
+          </div>
+
+          <div class="qgroup">
+            <div class="qrow qrow--pax">
+              <span class="qrow__icon"><Icon name="users" /></span>
+              <span class="qrow__body">
+                <span class="qrow__label" id="pax-label">Passengers</span>
+                <span class="qrow__pax"><output data-pax-out aria-live="polite" for="pax-input">2</output> <span class="qrow__hint" data-pax-hint></span></span>
+              </span>
+              <div class="stepper" role="group" aria-labelledby="pax-label">
+                <button type="button" class="stepper__btn" data-pax="-1" aria-label="Fewer passengers"><Icon name="minus" /></button>
+                <button type="button" class="stepper__btn" data-pax="1" aria-label="More passengers"><Icon name="plus" /></button>
+              </div>
+              <input type="hidden" name="pax" value="2" id="pax-input" data-pax-input />
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn--gold btn--lg btn--block quote__submit" data-magnetic="0.15">
+          See vehicles &amp; rates <Icon name="arrow" />
+        </button>
+        <p class="quote__note"><Icon name="check" /> Free cancellation up to 24h <span aria-hidden="true">·</span> Confirmed in minutes</p>
+      </form>
+    </aside>
+  </div>
+
+  <button type="button" class="hero__cue" data-hero-cue data-hero-in aria-label="Scroll to explore">
+    <span class="hero__cue-line" aria-hidden="true"></span>
+    <span class="hero__cue-text">Scroll</span>
+  </button>
+</section>
+
+<style>
+  /* ---------- Frame ---------- */
+  .hero {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    min-height: max(100svh, 760px);
+    overflow: hidden;
+    background: radial-gradient(120% 70% at 58% 58%, #1a1510 0%, #0b0c10 45%, var(--ink) 100%);
+  }
+  .hero__stage { position: absolute; inset: 0; z-index: -1; overflow: hidden; }
+  .hero__canvas { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; transition: opacity 2.2s var(--ease-out); }
+  .hero__stage.is-live .hero__canvas { opacity: 1; }
+  .hero__fallback {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 60% 50%;
+    opacity: 0;
+    filter: brightness(0.42) saturate(0.75) contrast(1.08);
+    transform: scale(1.04);
+    transition: opacity 1.4s var(--ease-out);
+  }
+  .hero__stage.is-fallback .hero__fallback { opacity: 1; }
+  .hero__stage.is-fallback .hero__canvas { display: none; }
+  .hero__scrim {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      linear-gradient(180deg, rgba(10, 10, 12, 0.6) 0%, rgba(10, 10, 12, 0) 20%),
+      radial-gradient(48% 36% at 20% 66%, rgba(10, 10, 12, 0.5) 0%, rgba(10, 10, 12, 0) 100%),
+      linear-gradient(90deg, rgba(10, 10, 12, 0.88) 0%, rgba(10, 10, 12, 0.6) 30%, rgba(10, 10, 12, 0) 58%),
+      linear-gradient(0deg, var(--ink) 0%, rgba(10, 10, 12, 0.55) 16%, rgba(10, 10, 12, 0) 42%);
+  }
+
+  .hero__inner {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(360px, 408px);
+    align-items: end;
+    gap: clamp(2rem, 5vw, 6rem);
+    padding-top: calc(var(--header-h) + 2.5rem);
+    padding-bottom: clamp(5.5rem, 10vh, 7.5rem);
+  }
+
+  /* ---------- Copy ---------- */
+  .hero__intro { max-width: 760px; }
+  .hero__eyebrow { margin-bottom: 1.6rem; text-shadow: 0 1px 12px rgba(0, 0, 0, 0.85); }
+  .hero__title {
+    font-size: var(--fs-hero);
+    line-height: 0.94;
+    letter-spacing: -0.025em;
+    text-shadow: 0 2px 40px rgba(0, 0, 0, 0.35);
+  }
+  .hero__title em { display: block; background: none; color: inherit; padding-right: 0; }
+  .hero__title :global(.split-line) { padding: 0 0.12em 0.16em 0; margin: 0 -0.12em -0.16em 0; }
+  .hero__title em :global(.split-word) {
+    background: var(--gold-grad);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    padding-right: 0.08em;
+    /* text-shadow would paint over a background-clipped gradient and muddy the gold */
+    text-shadow: none;
+  }
+  .hero__lead { margin-top: 1.7rem; max-width: 46ch; color: var(--ivory-2); }
+  .hero__ctas { display: flex; flex-wrap: wrap; gap: 0.85rem; margin-top: 2.2rem; }
+  .hero__trust {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.7rem 2rem;
+    margin-top: 2.2rem;
+    padding: 0;
+    font-size: 0.82rem;
+    color: var(--ivory-2);
+  }
+  /* column-gap only: no divider can be orphaned at the start of a wrapped line */
+  .hero__trust li { display: inline-flex; align-items: center; gap: 0.55rem; white-space: nowrap; }
+  .hero__trust :global(svg) { width: 17px; height: 17px; color: var(--gold); }
+  .hero__trust .stars :global(svg) { width: 13px; height: 13px; }
+  .hero__trust strong { color: var(--ivory); font-weight: 700; }
+
+  /* JS-driven intro: hidden until the preloader hands over (with a no-JS failsafe) */
+  :global(.js) .hero [data-hero-in],
+  :global(.js) .hero__title { opacity: 0; animation: hero-failsafe 0.01s linear 6s forwards; }
+  .hero.is-armed [data-hero-in],
+  .hero.is-armed .hero__title { animation: none; }
+  @keyframes hero-failsafe { to { opacity: 1; } }
+
+  /* ---------- Quote widget ---------- */
+  .hero__quote { position: relative; width: 100%; }
+  .quote {
+    position: relative;
+    display: grid;
+    gap: 1.05rem;
+    padding: clamp(1.25rem, 2vw, 1.75rem);
+    border-radius: var(--radius-l);
+    background: linear-gradient(180deg, rgba(22, 21, 24, 0.72), rgba(12, 12, 15, 0.78));
+    box-shadow: 0 50px 100px -40px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+  .quote::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: 12%;
+    right: 12%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(232, 211, 162, 0.75), transparent);
+  }
+  .quote__head { display: grid; gap: 0.35rem; }
+  .quote__kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+  .quote__live { width: 6px; height: 6px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 0 rgba(127, 200, 160, 0.6); animation: q-pulse 2.4s infinite; }
+  @keyframes q-pulse { 70% { box-shadow: 0 0 0 8px rgba(127, 200, 160, 0); } 100% { box-shadow: 0 0 0 0 rgba(127, 200, 160, 0); } }
+  .quote__title { font-size: clamp(1.75rem, 2.3vw, 2.15rem); line-height: 1.05; }
+
+  .quote__tabs {
+    position: relative;
+    display: flex;
+    padding: 4px;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.28);
+  }
+  .quote__tabs button {
+    position: relative;
+    z-index: 1;
+    flex: 1 1 auto;
+    min-height: 44px;
+    padding: 0 0.7rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--ivory-2);
+    white-space: nowrap;
+    transition: color 0.5s var(--ease-out);
+  }
+  .quote__tabs button:hover { color: var(--ivory); }
+  .quote__tabs button[aria-selected='true'] { color: #17130b; }
+  .quote__pill {
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    left: 0;
+    width: 0;
+    border-radius: 999px;
+    background: var(--gold-grad);
+    box-shadow: 0 6px 24px -8px rgba(201, 168, 106, 0.7);
+    transition: transform 0.65s var(--ease-out), width 0.65s var(--ease-out);
+  }
+  .quote__pill.no-anim { transition: none; }
+
+  .quote__panel { display: grid; gap: 0.7rem; }
+
+  /* Airport direction: a flight-search style swap on the route divider, so every tab keeps the
+     same two-row route group and the card never changes height. */
+  .qgroup--route { position: relative; }
+  .qswap {
+    position: absolute;
+    top: 50%;
+    right: 0.7rem;
+    z-index: 2;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    margin-top: -22px;
+    border-radius: 50%;
+    border: 1px solid rgba(201, 168, 106, 0.45);
+    background: #141317;
+    color: var(--gold-2);
+    box-shadow: 0 0 0 5px rgba(12, 12, 15, 0.9), 0 8px 24px -8px rgba(0, 0, 0, 0.8);
+    cursor: pointer;
+    transition: border-color 0.3s, background 0.3s, color 0.3s;
+  }
+  .qswap[hidden] { display: none; }
+  .qswap :global(svg) { width: 17px; height: 17px; transition: transform 0.7s var(--ease-out); }
+  .qswap:hover { border-color: var(--gold); background: #1b1913; }
+  .qswap:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+  .qgroup--route[data-dir='from'] .qswap :global(svg) { transform: rotate(180deg); }
+  .quote[data-type='airport'] .qgroup--route .qrow { padding-right: 4.1rem; }
+
+  .qgroup {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    border: 1px solid var(--line-strong);
+    border-radius: 14px;
+    background: var(--line-strong);
+    overflow: hidden;
+  }
+  .qgroup--split { display: grid; grid-template-columns: 1.15fr 1fr; }
+  .qrow {
+    position: relative;
+    display: grid;
+    grid-template-columns: 20px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.85rem;
+    min-height: 62px;
+    padding: 0.5rem 0.95rem;
+    background: rgba(12, 12, 15, 0.86);
+    cursor: text;
+    transition: background 0.3s;
+  }
+  .qrow[hidden] { display: none; }
+  .qrow::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 14px;
+    bottom: 14px;
+    width: 2px;
+    border-radius: 2px;
+    background: var(--gold);
+    transform: scaleY(0);
+    transition: transform 0.45s var(--ease-out);
+  }
+  .qrow:focus-within { background: rgba(18, 17, 20, 0.95); }
+  .qrow:focus-within::after { transform: scaleY(1); }
+  .qrow__icon { display: grid; place-items: center; color: var(--gold); }
+  .qrow__icon :global(svg) { width: 18px; height: 18px; }
+  .qrow__body { display: grid; gap: 0.1rem; min-width: 0; }
+  .qrow__label { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
+  .qrow__input {
+    width: 100%;
+    min-width: 0;
+    min-height: 26px;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--ivory);
+    font-size: 1rem;
+    font-weight: 500;
+    color-scheme: dark;
+  }
+  .qrow__input::placeholder { color: var(--muted); opacity: 1; }
+  select.qrow__input { appearance: none; cursor: pointer; padding-right: 0.5rem; }
+  select.qrow__input option { background: var(--ink-3); color: var(--ivory); }
+  /* Date/time: one icon (ours), and a tap anywhere on the row opens the native picker */
+  .qrow__input[type='date'],
+  .qrow__input[type='time'] { -webkit-appearance: none; appearance: none; cursor: pointer; text-align: left; }
+  .qrow__input::-webkit-calendar-picker-indicator {
+    position: absolute;
+    inset: 0;
+    width: auto;
+    height: auto;
+    margin: 0;
+    padding: 0;
+    opacity: 0;
+    cursor: pointer;
+    background: none;
+  }
+  .qrow__input::-webkit-date-and-time-value { text-align: left; margin: 0; }
+  .qrow__input::-webkit-datetime-edit { padding: 0; }
+  .qrow__chev { color: var(--muted); pointer-events: none; }
+  .qrow__chev :global(svg) { width: 16px; height: 16px; }
+  .qgroup--split .qrow { grid-template-columns: 18px minmax(0, 1fr); gap: 0.7rem; padding-right: 0.7rem; }
+  .qgroup--route[data-dir='from'] .qrow--airport { order: -1; }
+
+  .qrow--pax { cursor: default; }
+  .qrow__pax { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 0.45rem; min-width: 0; line-height: 1.35; }
+  .qrow__pax output { font-size: 1.05rem; font-weight: 700; color: var(--ivory); font-variant-numeric: tabular-nums; min-width: 1.2ch; }
+  .qrow__hint { font-size: 0.74rem; color: var(--muted); }
+  .stepper { display: flex; gap: 0.4rem; }
+  .stepper__btn {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1px solid var(--line-strong);
+    color: var(--ivory);
+    transition: border-color 0.3s, background 0.3s, color 0.3s, opacity 0.3s;
+  }
+  .stepper__btn :global(svg) { width: 16px; height: 16px; }
+  .stepper__btn:hover:not(:disabled) { border-color: var(--gold); color: var(--gold-2); background: rgba(201, 168, 106, 0.08); }
+  .stepper__btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .quote__submit { margin-top: 0.15rem; }
+  .quote__note {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    font-size: 0.74rem;
+    color: var(--muted);
+    text-align: center;
+  }
+  .quote__note :global(svg) { width: 14px; height: 14px; color: var(--ok); }
+
+  /* ---------- Scroll cue ---------- */
+  .hero__cue {
+    position: absolute;
+    left: 50%;
+    bottom: 1rem;
+    z-index: 2;
+    display: none;
+    justify-items: center;
+    gap: 0.7rem;
+    min-width: 44px;
+    padding: 0.4rem;
+    transform: translateX(-50%);
+    color: var(--muted);
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    transition: color 0.3s;
+  }
+  .hero__cue:hover { color: var(--gold-2); }
+  .hero__cue-text { padding-left: 0.32em; }
+  .hero__cue-line { position: relative; width: 1px; height: 40px; overflow: hidden; background: var(--line-strong); }
+  .hero__cue-line::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1px;
+    height: 100%;
+    background: linear-gradient(180deg, transparent, var(--gold-2));
+    animation: cue-drop 2.4s var(--ease-in-out) infinite;
+  }
+  @keyframes cue-drop {
+    0% { transform: translateY(-100%); }
+    60%, 100% { transform: translateY(100%); }
+  }
+
+  /* Scroll cue only where there is clear room under the content */
+  @media (min-width: 1200px) and (min-height: 860px) {
+    .hero__cue { display: grid; }
+    .hero__inner { padding-bottom: clamp(6.5rem, 12vh, 8.5rem); }
+  }
+
+  /* ---------- Laptop heights ---------- */
+  @media (min-width: 981px) and (max-height: 820px) {
+    .hero__inner { padding-top: calc(var(--header-h) + 1.5rem); padding-bottom: 4.8rem; }
+    .hero__eyebrow { margin-bottom: 1.1rem; }
+    .hero__lead { margin-top: 1.2rem; }
+    .hero__ctas, .hero__trust { margin-top: 1.6rem; }
+    .quote { gap: 0.8rem; }
+    .qrow { min-height: 56px; }
+  }
+
+  /* ---------- Small laptops / iPad landscape ---------- */
+  @media (min-width: 981px) and (max-width: 1200px) {
+    .hero__inner { grid-template-columns: minmax(0, 1fr) minmax(320px, 360px); gap: 2.5rem; }
+    .hero__title { font-size: clamp(4rem, 7.4vw, 5.6rem); }
+    .hero__lead { font-size: 1.02rem; }
+    .hero__ctas { flex-wrap: nowrap; gap: 0.7rem; }
+    .hero__ctas .btn { min-height: 54px; padding: 0 1.45rem; letter-spacing: 0.12em; }
+    .hero__trust { gap: 0.6rem 1.5rem; }
+    .quote { padding: 1.25rem; }
+    .quote__tabs button { padding: 0 0.5rem; letter-spacing: 0.07em; }
+    .qrow { padding-inline: 0.85rem; gap: 0.7rem; }
+    .qgroup--split .qrow { padding-inline: 0.75rem 0.5rem; gap: 0.55rem; }
+    .qgroup--split .qrow__input { font-size: 0.95rem; }
+  }
+
+  /* ---------- Tablet & mobile ---------- */
+  @media (max-width: 980px) {
+    .hero { display: block; min-height: 0; }
+    .hero__stage { inset: 0 0 auto 0; height: calc(100svh + 160px); }
+    .hero__stage::after {
+      content: '';
+      position: absolute;
+      inset: auto 0 0 0;
+      height: 220px;
+      background: linear-gradient(180deg, rgba(10, 10, 12, 0), var(--ink));
+    }
+    .hero__scrim {
+      background:
+        linear-gradient(180deg, rgba(10, 10, 12, 0.55) 0%, rgba(10, 10, 12, 0) 16%),
+        linear-gradient(180deg, rgba(10, 10, 12, 0) 24%, rgba(10, 10, 12, 0.72) 37%, rgba(10, 10, 12, 0.8) 56%, rgba(10, 10, 12, 0.9) 80%, rgba(10, 10, 12, 0.94) 100%);
+    }
+    .hero__inner { grid-template-columns: 1fr; gap: 0.5rem; padding-top: 0; padding-bottom: clamp(3rem, 8vw, 5rem); }
+    .hero__intro {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      min-height: 100svh;
+      max-width: 640px;
+      padding-top: calc(var(--header-h) + 1rem);
+      padding-bottom: 2.25rem;
+    }
+    .hero__quote { max-width: 560px; }
+    /* The eyebrow sits on the road's vanishing point here, so it gets a quiet backdrop */
+    .hero__eyebrow {
+      align-self: flex-start;
+      padding: 0.45rem 0.85rem;
+      border-radius: 999px;
+      background: rgba(10, 10, 12, 0.55);
+      -webkit-backdrop-filter: blur(6px);
+      backdrop-filter: blur(6px);
+      box-shadow: inset 0 0 0 1px rgba(201, 168, 106, 0.16);
+    }
+    .hero__eyebrow::before { display: none; }
+  }
+  @media (max-width: 560px) {
+    .hero__eyebrow { margin-bottom: 1.1rem; padding: 0.45rem 0.8rem; font-size: 0.62rem; letter-spacing: 0.2em; }
+    .hero__title { font-size: clamp(3.1rem, 14.5vw, 4rem); }
+    .hero__lead { margin-top: 1.15rem; font-size: 0.98rem; line-height: 1.6; }
+    .hero__ctas { flex-direction: column; margin-top: 1.6rem; gap: 0.65rem; }
+    .hero__ctas .btn { width: 100%; min-height: 54px; }
+    .hero__trust { margin-top: 1.4rem; gap: 0.55rem 1.25rem; font-size: 0.78rem; }
+    .hero__trust li.hero__rating { flex-basis: 100%; }
+    .quote { padding: 1.15rem; border-radius: 22px; }
+    .quote__tabs button { font-size: 0.7rem; letter-spacing: 0.08em; padding: 0 0.45rem; }
+    .qrow { padding-inline: 0.85rem; gap: 0.7rem; }
+    .qgroup--split .qrow { padding-inline: 0.75rem 0.5rem; gap: 0.55rem; }
+    .qgroup--split .qrow__input { font-size: 0.95rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js) .hero [data-hero-in], :global(.js) .hero__title { opacity: 1; animation: none; }
+    .hero__cue-line::after { animation: none; transform: none; }
+  }
+</style>
+
+<script>
+  import gsap from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+  import { splitWords } from '../../scripts/global';
+  import type { HeroScene } from '../../scripts/hero-scene';
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  const hero = document.querySelector<HTMLElement>('[data-hero]');
+  if (hero) initHero(hero);
+
+  function initHero(hero: HTMLElement) {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    const stage = hero.querySelector<HTMLElement>('[data-hero-stage]')!;
+    const canvas = hero.querySelector<HTMLCanvasElement>('[data-hero-canvas]')!;
+    const fallbackImg = hero.querySelector<HTMLImageElement>('[data-hero-fallback]')!;
+    const title = hero.querySelector<HTMLElement>('[data-hero-title]')!;
+    const content = hero.querySelector<HTMLElement>('[data-hero-content]')!;
+    const intro = hero.querySelector<HTMLElement>('[data-hero-intro]')!;
+    const quote = hero.querySelector<HTMLElement>('[data-hero-quote]')!;
+    const cue = hero.querySelector<HTMLElement>('[data-hero-cue]');
+    const ins = Array.from(hero.querySelectorAll<HTMLElement>('[data-hero-in]')).filter((el) => el !== quote && el !== cue);
+
+    /* ---------- Intro choreography (plays when the preloader hands over) ---------- */
+    hero.classList.add('is-armed');
+    const words = splitWords(title);
+    let scene: HeroScene | null = null;
+    let ready = false;
+
+    if (reduce) {
+      gsap.set([title, quote, cue, ...ins], { opacity: 1 });
+    } else {
+      gsap.set(words, { yPercent: 120, rotate: 4, transformOrigin: '0% 100%' });
+      gsap.set(title, { opacity: 1 });
+      gsap.set(ins, { opacity: 0, y: 26 });
+      gsap.set(quote, { opacity: 0, y: 40 });
+      if (cue) gsap.set(cue, { opacity: 0 });
+    }
+
+    const play = () => {
+      if (ready) return;
+      ready = true;
+      scene?.playIntro();
+      if (reduce) return;
+      const tl = gsap.timeline({ defaults: { ease: 'expo.out' } });
+      tl.to(ins[0], { opacity: 1, y: 0, duration: 1.2 }, 0.1)
+        .to(words, { yPercent: 0, rotate: 0, duration: 1.6, stagger: 0.09 }, 0.18)
+        .to(ins.slice(1), { opacity: 1, y: 0, duration: 1.3, stagger: 0.1 }, 0.55)
+        .to(quote, { opacity: 1, y: 0, duration: 1.6 }, 0.7);
+      if (cue) tl.to(cue, { opacity: 1, duration: 1.2, ease: 'power2.out' }, 1.3);
+    };
+    if (document.documentElement.classList.contains('is-ready')) play();
+    else document.addEventListener('sdd:ready', play, { once: true });
+
+    /* ---------- WebGL scene (code-split) with photographic fallback ---------- */
+    const showFallback = () => {
+      if (!fallbackImg.src && fallbackImg.dataset.src) fallbackImg.src = fallbackImg.dataset.src;
+      stage.classList.add('is-fallback');
+    };
+    const hasWebGL2 = (() => {
+      try {
+        return !!document.createElement('canvas').getContext('webgl2');
+      } catch {
+        return false;
+      }
+    })();
+    if (!hasWebGL2) showFallback();
+    else import('../../scripts/hero-scene')
+      .then(({ createHeroScene }) => {
+        scene = createHeroScene(canvas, {
+          reducedMotion: reduce,
+          onFirstFrame: () => stage.classList.add('is-live'),
+          onContextLost: showFallback,
+        });
+        if (!scene) return showFallback();
+        if (ready) scene.playIntro();
+        const io = new IntersectionObserver(([entry]) => scene?.setActive(entry.isIntersecting), { rootMargin: '80px' });
+        io.observe(stage);
+        if (!reduce) {
+          ScrollTrigger.create({
+            trigger: stage,
+            start: 'top top',
+            end: 'bottom top',
+            onUpdate: (self) => scene?.setScroll(self.progress),
+          });
+          if (finePointer) {
+            window.addEventListener('pointermove', (e) => {
+              scene?.setPointer((e.clientX / window.innerWidth) * 2 - 1, (e.clientY / window.innerHeight) * 2 - 1);
+            }, { passive: true });
+          }
+        }
+      })
+      .catch(showFallback);
+
+    /* ---------- Scroll: content lifts and dissolves as the camera pushes in ---------- */
+    if (!reduce) {
+      const mm = gsap.matchMedia();
+      mm.add('(min-width: 981px)', () => {
+        const tl = gsap.timeline({ scrollTrigger: { trigger: hero, start: 'top top', end: 'bottom top', scrub: 0.6 } });
+        tl.to(content, { y: -150, ease: 'none', duration: 1 }, 0).to(content, { opacity: 0, ease: 'power1.in', duration: 0.75 }, 0);
+        if (cue) tl.to(cue, { opacity: 0, duration: 0.15, ease: 'none' }, 0);
+      });
+      mm.add('(max-width: 980px)', () => {
+        gsap.to(intro, { y: -70, opacity: 0, ease: 'power1.in', scrollTrigger: { trigger: intro, start: 'top top', end: 'bottom 20%', scrub: 0.5 } });
+      });
+    }
+
+    cue?.addEventListener('click', () => {
+      const y = hero.offsetTop + hero.offsetHeight - 40;
+      if (window.lenis) window.lenis.scrollTo(y, { duration: 1.6 });
+      else window.scrollTo({ top: y, behavior: reduce ? 'auto' : 'smooth' });
+    });
+
+    initQuote(hero, reduce);
+  }
+
+  /* ---------- Quick quote widget ---------- */
+  function initQuote(hero: HTMLElement, reduce: boolean) {
+    const form = hero.querySelector<HTMLFormElement>('[data-quote]');
+    if (!form) return;
+    const tabs = Array.from(form.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+    const tablist = form.querySelector<HTMLElement>('[data-quote-tabs]')!;
+    const pill = form.querySelector<HTMLElement>('[data-quote-pill]')!;
+    const panel = form.querySelector<HTMLElement>('[data-quote-panel]')!;
+    const route = form.querySelector<HTMLElement>('[data-quote-route]')!;
+    const fromInput = form.querySelector<HTMLInputElement>('[data-from]')!;
+    const fromLabel = form.querySelector<HTMLElement>('[data-from-label]')!;
+    const airportLabel = form.querySelector<HTMLElement>('[data-airport-label]')!;
+    const swapBtn = form.querySelector<HTMLButtonElement>('[data-swap]')!;
+    const toInput = form.querySelector<HTMLInputElement>('[data-to]')!;
+    const hoursSel = form.querySelector<HTMLSelectElement>('[data-hours]')!;
+    const airportSel = form.querySelector<HTMLSelectElement>('[data-airport]')!;
+    const dateInput = form.querySelector<HTMLInputElement>('[data-date]')!;
+    const timeInput = form.querySelector<HTMLInputElement>('[data-time]')!;
+    const paxOut = form.querySelector<HTMLOutputElement>('[data-pax-out]')!;
+    const paxHint = form.querySelector<HTMLElement>('[data-pax-hint]')!;
+    const paxInput = form.querySelector<HTMLInputElement>('[data-pax-input]')!;
+    const paxBtns = Array.from(form.querySelectorAll<HTMLButtonElement>('[data-pax]'));
+    const fleet: { id: string; name: string; pax: number }[] = JSON.parse(form.dataset.fleet || '[]');
+
+    let type = 'p2p';
+    let dir: 'to' | 'from' = 'to';
+    let pax = 2;
+
+    /* Defaults: today, and a sensible pickup time ~2h out on the quarter hour */
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const ymd = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const now = new Date();
+    dateInput.value = ymd(now);
+    dateInput.min = ymd(now);
+    const t = new Date(now.getTime() + 2 * 3600 * 1000);
+    t.setMinutes(Math.ceil(t.getMinutes() / 15) * 15, 0, 0);
+    if (ymd(t) !== ymd(now)) dateInput.value = ymd(t);
+    timeInput.value = `${pad(t.getHours())}:${pad(t.getMinutes())}`;
+
+    /* A tap anywhere on the date/time row opens the native picker (not just the tiny indicator) */
+    [dateInput, timeInput].forEach((input) => {
+      input.closest('.qrow')?.addEventListener('click', () => {
+        try {
+          (input as HTMLInputElement & { showPicker?: () => void }).showPicker?.();
+        } catch {
+          /* picker already open or unsupported: native behaviour still applies */
+        }
+      });
+    });
+
+    /* Tabs + sliding gold pill */
+    const movePill = (animate: boolean) => {
+      const active = tabs.find((b) => b.dataset.type === type)!;
+      pill.classList.toggle('no-anim', !animate);
+      pill.style.width = `${active.offsetWidth}px`;
+      pill.style.transform = `translateX(${active.offsetLeft}px)`;
+    };
+
+    const labelFrom = () => {
+      if (type === 'airport') {
+        fromLabel.textContent = dir === 'to' ? 'Pickup address' : 'Drop-off address';
+        fromInput.placeholder = dir === 'to' ? 'Home, hotel or office' : 'Where are you headed?';
+        airportLabel.textContent = dir === 'to' ? 'Drop-off airport' : 'Pickup airport';
+        swapBtn.setAttribute('aria-label', dir === 'to' ? 'Swap to a pickup from the airport' : 'Swap to a drop-off at the airport');
+      } else {
+        fromLabel.textContent = 'Pickup location';
+        fromInput.placeholder = 'Address, hotel or venue';
+      }
+    };
+
+    const setType = (next: string, animate = true) => {
+      if (next === type && animate) return;
+      const h0 = panel.offsetHeight;
+      type = next;
+      form.dataset.type = type;
+      tabs.forEach((b) => {
+        const on = b.dataset.type === type;
+        b.setAttribute('aria-selected', String(on));
+        b.tabIndex = on ? 0 : -1;
+        if (on) panel.setAttribute('aria-labelledby', b.id);
+      });
+      form.querySelectorAll<HTMLElement>('[data-show]').forEach((el) => {
+        el.hidden = !(el.dataset.show || '').split(' ').includes(type);
+      });
+      labelFrom();
+      movePill(animate);
+      if (animate && !reduce) {
+        // All tabs share the same two-row route group, so this is a no-op guard against sub-pixel drift
+        const h1 = panel.offsetHeight;
+        if (Math.abs(h1 - h0) > 1) gsap.fromTo(panel, { height: h0 }, { height: h1, duration: 0.6, ease: 'expo.out', clearProps: 'height' });
+        const shown = Array.from(panel.querySelectorAll<HTMLElement>('[data-show]')).filter((el) => !el.hidden);
+        gsap.fromTo(shown, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.7, ease: 'expo.out', stagger: 0.05, clearProps: 'opacity,transform' });
+      }
+    };
+
+    tabs.forEach((b, i) => {
+      b.addEventListener('click', () => setType(b.dataset.type!));
+      b.addEventListener('keydown', (e) => {
+        if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft' && e.key !== 'Home' && e.key !== 'End') return;
+        e.preventDefault();
+        let j = i;
+        if (e.key === 'ArrowRight') j = (i + 1) % tabs.length;
+        if (e.key === 'ArrowLeft') j = (i - 1 + tabs.length) % tabs.length;
+        if (e.key === 'Home') j = 0;
+        if (e.key === 'End') j = tabs.length - 1;
+        tabs[j].focus();
+        setType(tabs[j].dataset.type!);
+      });
+    });
+    setType('p2p', false);
+    new ResizeObserver(() => movePill(false)).observe(tablist);
+    document.fonts?.ready.then(() => movePill(false));
+
+    /* Airport direction: swap pickup/drop-off in place (rows trade places, card height unchanged) */
+    swapBtn.addEventListener('click', () => {
+      const rows = Array.from(route.querySelectorAll<HTMLElement>('.qrow:not([hidden])'));
+      const before = rows.map((r) => r.getBoundingClientRect().top);
+      dir = dir === 'to' ? 'from' : 'to';
+      route.dataset.dir = dir;
+      labelFrom();
+      if (reduce) return;
+      rows.forEach((r, i) => {
+        const dy = before[i] - r.getBoundingClientRect().top;
+        gsap.fromTo(r, { y: dy, opacity: 0.35 }, { y: 0, opacity: 1, duration: 0.7, ease: 'expo.out', clearProps: 'opacity,transform' });
+      });
+    });
+
+    /* Passengers stepper + suggested vehicle */
+    const renderPax = () => {
+      paxOut.value = String(pax);
+      paxOut.textContent = String(pax);
+      paxInput.value = String(pax);
+      paxBtns[0].disabled = pax <= 1;
+      paxBtns[1].disabled = pax >= 20;
+      const fit = fleet.find((v) => v.pax >= pax);
+      paxHint.textContent = fit ? `· ${fit.name}` : '';
+    };
+    paxBtns.forEach((b) =>
+      b.addEventListener('click', () => {
+        pax = Math.min(20, Math.max(1, pax + Number(b.dataset.pax)));
+        renderPax();
+        if (!reduce) gsap.fromTo(paxOut, { yPercent: Number(b.dataset.pax) > 0 ? 40 : -40, opacity: 0 }, { yPercent: 0, opacity: 1, duration: 0.45, ease: 'expo.out' });
+      }),
+    );
+    renderPax();
+
+    /* Submit → booking flow (URL contract) */
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const params = new URLSearchParams();
+      params.set('type', type);
+      const addr = fromInput.value.trim();
+      let from = addr;
+      let to = '';
+      if (type === 'p2p') to = toInput.value.trim();
+      if (type === 'airport') {
+        if (dir === 'to') to = airportSel.value;
+        else { from = airportSel.value; to = addr; }
+      }
+      if (from) params.set('from', from);
+      if (to) params.set('to', to);
+      if (dateInput.value) params.set('date', dateInput.value);
+      if (timeInput.value) params.set('time', timeInput.value);
+      params.set('pax', String(pax));
+      if (type === 'hourly') params.set('hours', hoursSel.value);
+      window.location.href = `/book/?${params.toString()}`;
+    });
+  }
+</script>
