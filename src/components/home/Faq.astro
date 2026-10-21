@@ -87,21 +87,27 @@ const pad = (n: number) => String(n).padStart(2, '0');
     border-radius: var(--radius-l);
     width: 100%;
     max-width: 480px;
+    background: var(--bg-3);
+    box-shadow: 0 24px 60px -34px rgb(var(--fg-rgb) / 0.3);
   }
+  :global([data-theme='dark']) .faq__card { background: var(--glass); box-shadow: 0 30px 70px -40px rgb(0 0 0 / 0.7); }
+  /* Warm corner light: barely there on ivory, a champagne glow on onyx. */
   .faq__card-glow {
     position: absolute; inset: auto -30% -60% auto; width: 80%; aspect-ratio: 1; pointer-events: none;
-    background: radial-gradient(closest-side, rgba(201, 168, 106, 0.22), rgba(201, 168, 106, 0));
+    background: radial-gradient(closest-side, rgb(var(--accent-rgb) / 0.22), rgb(var(--accent-rgb) / 0));
+    opacity: 0.4;
   }
+  :global([data-theme='dark']) .faq__card-glow { opacity: 1; }
   .faq__card::before {
     content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
-    background: linear-gradient(140deg, rgba(232, 211, 162, 0.45), rgba(232, 211, 162, 0) 40%, rgba(232, 211, 162, 0) 70%, rgba(232, 211, 162, 0.25));
+    background: linear-gradient(140deg, rgb(var(--accent-2-rgb) / 0.4), rgb(var(--accent-2-rgb) / 0) 40%, rgb(var(--accent-2-rgb) / 0) 70%, rgb(var(--accent-2-rgb) / 0.22));
     -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
   }
   .faq__card-kicker {
     display: inline-flex; align-items: center; gap: 0.6rem;
-    font-size: 0.68rem; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold);
+    font-size: 0.68rem; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--accent);
   }
   .faq__pulse { position: relative; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
   .faq__pulse::after {
@@ -109,7 +115,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
     animation: faq-pulse 2.2s var(--ease-out) infinite;
   }
   @keyframes faq-pulse { 0% { transform: scale(0.6); opacity: 1; } 100% { transform: scale(2); opacity: 0; } }
-  .faq__card-title { font-size: clamp(1.6rem, 2.2vw, 2rem); line-height: 1.12; text-wrap: initial; }
+  .faq__card-title { font-size: clamp(1.5rem, 2vw, 1.85rem); line-height: 1.15; letter-spacing: -0.03em; text-wrap: initial; }
   .faq__card-text { font-size: 0.92rem; color: var(--muted); max-width: 38ch; }
   /* Side by side when there is room; when they wrap, each grows to the full row so they never read as two odd pills. */
   .faq__card-actions { position: relative; display: flex; flex-wrap: wrap; gap: 0.7rem; margin-top: 0.4rem; }
@@ -120,35 +126,39 @@ const pad = (n: number) => String(n).padStart(2, '0');
   .faq__item { position: relative; border-bottom: 1px solid var(--line); }
   .faq__item::before {
     content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px;
-    background: var(--gold-grad);
+    background: var(--accent-grad);
     transform: scaleX(0); transform-origin: left;
     transition: transform 0.9s var(--ease-out);
   }
   .faq__item.is-open::before { transform: scaleX(1); }
   .faq__q { font: inherit; margin: 0; }
+  /* Index, question and icon share a 42px first-line box so they stay aligned when a question wraps. */
   .faq__btn {
+    --row: 42px;
     display: grid;
     grid-template-columns: 2.6rem 1fr auto;
-    align-items: center;
+    align-items: start;
     gap: 1rem;
     width: 100%;
-    min-height: 88px;
-    padding: 1.4rem 0;
+    min-height: 84px;
+    padding: 1.3rem 0;
     text-align: left;
-    color: var(--ivory-2);
+    color: var(--text-2);
   }
-  .faq__idx { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; color: var(--muted-2); transition: color 0.4s; align-self: start; padding-top: 0.6rem; }
+  .faq__idx { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.14em; line-height: var(--row); color: var(--muted-2); font-variant-numeric: tabular-nums; transition: color 0.4s; }
   .faq__qtext {
     font-family: var(--font-display);
-    font-size: clamp(1.4rem, 2vw, 1.9rem);
-    line-height: 1.15;
-    letter-spacing: -0.005em;
+    font-size: clamp(1.15rem, 1.5vw, 1.4rem);
+    font-weight: 450;
+    line-height: 1.3;
+    letter-spacing: -0.02em;
+    padding-top: calc((var(--row) - 1.3em) / 2);
     transition: color 0.4s, transform 0.6s var(--ease-out);
   }
-  .faq__btn:hover .faq__qtext { color: var(--ivory); transform: translateX(4px); }
+  .faq__btn:hover .faq__qtext { color: var(--text); transform: translateX(4px); }
   .faq__icon {
     position: relative;
-    width: 44px; height: 44px; flex: none;
+    width: var(--row); height: var(--row); flex: none;
     border-radius: 50%;
     border: 1px solid var(--line-strong);
     transition: transform 0.7s var(--ease-out), background 0.5s var(--ease-out), border-color 0.5s var(--ease-out);
@@ -156,23 +166,24 @@ const pad = (n: number) => String(n).padStart(2, '0');
   .faq__icon span {
     position: absolute; left: 50%; top: 50%;
     width: 14px; height: 1.5px; margin: -0.75px 0 0 -7px;
-    background: var(--ivory);
+    background: var(--text);
     border-radius: 2px;
     transition: transform 0.7s var(--ease-out), background 0.5s;
   }
   .faq__icon span:last-child { transform: rotate(90deg); }
-  .faq__btn:hover .faq__icon { border-color: rgba(232, 211, 162, 0.6); }
+  .faq__btn:hover .faq__icon { border-color: rgb(var(--fg-rgb) / 0.45); }
 
-  .faq__item.is-open .faq__idx { color: var(--gold); }
-  .faq__item.is-open .faq__qtext { color: var(--ivory); }
-  .faq__item.is-open .faq__icon { transform: rotate(180deg); background: var(--gold-grad); border-color: transparent; box-shadow: var(--gold-glow); }
-  .faq__item.is-open .faq__icon span { background: #17130b; }
+  /* Open: onyx disc on ivory (champagne on onyx), bronze index and rule. */
+  .faq__item.is-open .faq__idx { color: var(--accent); }
+  .faq__item.is-open .faq__qtext { color: var(--text); }
+  .faq__item.is-open .faq__icon { transform: rotate(180deg); background: var(--cta-bg); border-color: transparent; }
+  .faq__item.is-open .faq__icon span { background: var(--cta-fg); }
   .faq__item.is-open .faq__icon span:last-child { transform: rotate(0deg); }
 
-  .faq__panel { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 0.7s var(--ease-out); }
+  .faq__panel { --row: 42px; display: grid; grid-template-rows: 1fr; transition: grid-template-rows 0.7s var(--ease-out); }
   .faq__panel-inner { overflow: hidden; min-height: 0; }
   .faq__panel p {
-    padding: 0 3.6rem 1.8rem 3.6rem;
+    padding: 0 calc(var(--row) + 1rem) 1.8rem 3.6rem;
     color: var(--muted);
     font-size: 1rem;
     line-height: 1.7;
@@ -182,7 +193,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
   :global(.js) .faq__item:not(.is-open) .faq__panel { grid-template-rows: 0fr; }
   :global(.js) .faq__item:not(.is-open) .faq__panel-inner { visibility: hidden; transition: visibility 0s linear 0.7s; }
   :global(.js) .faq__item:not(.is-open) .faq__panel p { opacity: 0; transform: translateY(-8px); }
-  .faq__item.is-open .faq__panel p { color: var(--ivory-2); }
+  .faq__item.is-open .faq__panel p { color: var(--text-2); }
 
   .faq__more { margin-top: 2.2rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 1.2rem; color: var(--muted); font-size: 0.95rem; }
   .faq__more .link-underline { min-height: 44px; }
@@ -198,9 +209,9 @@ const pad = (n: number) => String(n).padStart(2, '0');
     .faq__more { display: none; }
   }
   @media (max-width: 560px) {
-    .faq__btn { grid-template-columns: 1fr auto; min-height: 76px; padding: 1.15rem 0; gap: 0.9rem; }
+    .faq__btn { --row: 40px; grid-template-columns: 1fr auto; min-height: 74px; padding: 1.1rem 0; gap: 0.9rem; }
     .faq__idx { display: none; }
-    .faq__qtext { font-size: 1.38rem; }
+    .faq__qtext { font-size: 1.12rem; }
     .faq__panel p { padding: 0 0 1.5rem 0; font-size: 0.96rem; }
     .faq__card-actions { display: grid; grid-template-columns: 1fr; }
     .faq__card-actions .btn { width: 100%; }

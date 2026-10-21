@@ -18,12 +18,12 @@ const rowB = [...occasions.slice(6), ...occasions.slice(0, 6)];
       <div class="mq__track" data-mq-track>
         <ul class="mq__group" role="list" aria-label="Occasions we serve">
           {occasions.map((o) => (
-            <li class="mq__item"><span>{o}</span><svg class="mq__gem" viewBox="0 0 10 10" aria-hidden="true"><path d="M5 0 10 5 5 10 0 5Z" /></svg></li>
+            <li class="mq__item"><span>{o}</span><span class="mq__dot" aria-hidden="true"></span></li>
           ))}
         </ul>
         <ul class="mq__group" role="list" aria-hidden="true">
           {occasions.map((o) => (
-            <li class="mq__item"><span>{o}</span><svg class="mq__gem" viewBox="0 0 10 10"><path d="M5 0 10 5 5 10 0 5Z" /></svg></li>
+            <li class="mq__item"><span>{o}</span><span class="mq__dot"></span></li>
           ))}
         </ul>
       </div>
@@ -33,7 +33,7 @@ const rowB = [...occasions.slice(6), ...occasions.slice(0, 6)];
         {[0, 1].map(() => (
           <ul class="mq__group" role="list">
             {rowB.map((o) => (
-              <li class="mq__item"><span>{o}</span><svg class="mq__gem mq__gem--line" viewBox="0 0 10 10"><path d="M5 .8 9.2 5 5 9.2 .8 5Z" /></svg></li>
+              <li class="mq__item"><span>{o}</span><span class="mq__dash"></span></li>
             ))}
           </ul>
         ))}
@@ -71,7 +71,7 @@ const rowB = [...occasions.slice(6), ...occasions.slice(0, 6)];
 </section>
 
 <style>
-  .intro { position: relative; background: var(--ink); overflow: hidden; }
+  .intro { position: relative; background: var(--bg); overflow: hidden; }
 
   /* ---------- Marquee ---------- */
   .mq {
@@ -79,10 +79,10 @@ const rowB = [...occasions.slice(6), ...occasions.slice(0, 6)];
     padding-block: clamp(1.6rem, 3.4vw, 2.8rem);
     border-block: 1px solid var(--line);
     background:
-      radial-gradient(60% 120% at 50% 50%, rgba(201, 168, 106, 0.07), transparent 70%),
-      var(--ink);
+      radial-gradient(60% 120% at 50% 50%, rgb(var(--accent-rgb) / 0.07), transparent 70%),
+      var(--bg);
     display: grid;
-    gap: clamp(0.2rem, 0.8vw, 0.6rem);
+    gap: clamp(0.9rem, 1.8vw, 1.5rem);
     -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
     mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
   }
@@ -93,17 +93,38 @@ const rowB = [...occasions.slice(6), ...occasions.slice(0, 6)];
     display: inline-flex;
     align-items: center;
     flex: none;
-    font-family: var(--font-display);
-    font-style: italic;
-    line-height: 1.12;
     white-space: nowrap;
     transition: color 0.6s var(--ease-out);
   }
-  .mq__row--a .mq__item { font-size: clamp(2.5rem, 6.6vw, 6.2rem); color: var(--ivory); letter-spacing: -0.02em; }
-  .mq__row--b .mq__item { font-size: clamp(1.5rem, 3.2vw, 3rem); color: var(--muted-2); letter-spacing: -0.005em; }
-  .mq__item:hover { color: var(--gold-2); }
-  .mq__gem { width: 0.2em; height: 0.2em; margin-inline: 0.55em; fill: var(--gold); flex: none; transform: translateY(0.05em); }
-  .mq__gem--line { fill: none; stroke: var(--gold); stroke-width: 1; opacity: 0.8; width: 0.26em; height: 0.26em; }
+  /* Row A: confident display sans; row B: a quiet, widely tracked index line */
+  .mq__row--a .mq__item {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: clamp(2.1rem, 5vw, 4.6rem);
+    line-height: 1.1;
+    letter-spacing: -0.035em;
+    color: var(--text);
+  }
+  .mq__row--b .mq__item {
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: clamp(0.68rem, 0.95vw, 0.82rem);
+    line-height: 1.6;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .mq__item:hover { color: var(--accent); }
+  .mq__dot {
+    flex: none;
+    width: 0.16em;
+    height: 0.16em;
+    margin-inline: 0.62em;
+    border-radius: 50%;
+    background: var(--accent);
+    transform: translateY(0.06em);
+  }
+  .mq__dash { flex: none; width: 2.4rem; height: 1px; margin-inline: 1.5rem 1.2rem; background: rgb(var(--accent-rgb) / 0.6); }
 
   /* ---------- Statement ---------- */
   .intro__body { padding-block: clamp(4.5rem, 10vw, 9rem) clamp(2.5rem, 5vw, 4rem); }
@@ -123,21 +144,22 @@ const rowB = [...occasions.slice(6), ...occasions.slice(0, 6)];
   .intro__aside .link-underline :global(svg) { width: 15px; height: 15px; }
 
   .intro__statement {
-    font-size: clamp(1.9rem, 3.5vw, 3.3rem);
-    line-height: 1.16;
-    letter-spacing: -0.015em;
-    color: var(--ivory);
+    font-size: clamp(1.7rem, 3.3vw, 3.15rem);
+    font-weight: 500;
+    line-height: 1.14;
+    letter-spacing: -0.03em;
+    color: var(--text);
     text-wrap: pretty;
     font-variant-numeric: lining-nums;
   }
   .intro__w { display: inline; }
+  /* Emphasis by colour, not italics */
   .intro__w--gold {
-    font-style: italic;
-    background: var(--gold-grad);
+    background: var(--accent-grad);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
-    padding-right: 0.04em;
+    padding-right: 0.03em;
   }
 
   /* ---------- Stats ---------- */
@@ -165,7 +187,7 @@ const rowB = [...occasions.slice(6), ...occasions.slice(0, 6)];
     top: clamp(1.6rem, 3vw, 2.4rem);
     bottom: 0.4rem;
     width: 1px;
-    background: linear-gradient(180deg, rgba(201, 168, 106, 0.65), rgba(201, 168, 106, 0));
+    background: linear-gradient(180deg, var(--line-strong), transparent);
   }
   @media (max-width: 899px) {
     .intro__stat:nth-child(3)::before { display: none; }
@@ -173,21 +195,18 @@ const rowB = [...occasions.slice(6), ...occasions.slice(0, 6)];
   }
   .intro__stat-value {
     font-family: var(--font-display);
-    font-size: clamp(2.8rem, 5.4vw, 4.8rem);
+    font-size: clamp(2.5rem, 4.8vw, 4.3rem);
+    font-weight: 400;
     line-height: 1;
-    color: var(--ivory);
-    letter-spacing: -0.02em;
+    color: var(--text);
+    letter-spacing: -0.04em;
     font-variant-numeric: lining-nums tabular-nums;
     white-space: nowrap;
   }
   .intro__stat-suffix {
-    font-style: italic;
-    background: var(--gold-grad);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    padding-left: 0.04em;
-    padding-right: 0.08em;
+    font-weight: 300;
+    color: var(--accent);
+    margin-left: 0.04em;
   }
   .intro__stat-label {
     font-size: var(--fs-micro);
@@ -254,7 +273,7 @@ const rowB = [...occasions.slice(6), ...occasions.slice(0, 6)];
     const words = statement.querySelectorAll<HTMLElement>('.intro__w');
     gsap.fromTo(
       words,
-      { opacity: 0.16 },
+      { opacity: 0.2 },
       {
         opacity: 1,
         ease: 'none',

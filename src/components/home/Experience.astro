@@ -49,7 +49,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
     <div class="exp__grid">
       <div class="exp__visual">
         <div class="exp__frame">
-          <div class="media media--shade exp__media" data-reveal="scale">
+          <div class="media exp__media" data-reveal="scale">
             <img src={images.waterfront} alt="Downtown Seattle and the waterfront at dusk" loading="lazy" decoding="async" width="1000" height="1250" />
           </div>
           <div class="exp__badge" aria-hidden="true">
@@ -99,11 +99,11 @@ const pad = (n: number) => String(n).padStart(2, '0');
 <style>
   .exp {
     background:
-      radial-gradient(55% 45% at 12% 30%, rgba(201, 168, 106, 0.07), transparent 70%),
-      linear-gradient(180deg, var(--ink) 0%, var(--ink-2) 22%, var(--ink-2) 78%, var(--ink) 100%);
+      radial-gradient(55% 45% at 12% 30%, rgb(var(--accent-rgb) / 0.07), transparent 70%),
+      linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 22%, var(--bg-2) 78%, var(--bg) 100%);
   }
   .exp__head-main { display: grid; gap: 1.3rem; }
-  /* overflow: clip keeps the word mask but lets italic words sit on the true text baseline */
+  /* overflow: clip keeps the word mask without clipping descenders */
   .exp h2 :global(.split-line) { overflow: clip; }
   .exp__head .lead { justify-self: end; }
 
@@ -125,6 +125,24 @@ const pad = (n: number) => String(n).padStart(2, '0');
     .exp__media { aspect-ratio: auto; height: min(calc(100vh - var(--header-h) - 3rem), 760px); }
   }
   .exp__media img { transform-origin: 50% 40%; object-position: 58% 50%; }
+  /* Ivory: the photo stays crisp, framed by an inner hairline (the reveal's clip-path would cut an outer shadow).
+     Onyx: the photo additionally settles into the night canvas. */
+  .exp__media::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 1px var(--line);
+    pointer-events: none;
+  }
+  :global([data-theme='dark']) .exp__media::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 45%, rgb(var(--bg-rgb) / 0.75) 100%);
+    pointer-events: none;
+  }
   .exp__badge {
     position: absolute;
     top: 1.2rem;
@@ -137,15 +155,25 @@ const pad = (n: number) => String(n).padStart(2, '0');
     width: 104px;
     height: 104px;
     border-radius: 50%;
-    border: 1px solid rgba(232, 211, 162, 0.45);
-    background: rgba(10, 10, 12, 0.5);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgb(var(--accent-rgb) / 0.4);
+    background: var(--glass);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    box-shadow: 0 12px 30px -18px rgb(var(--fg-rgb) / 0.35);
     text-align: center;
   }
-  .exp__badge-num { font-family: var(--font-display); font-style: italic; font-size: 2rem; line-height: 0.95; background: var(--gold-grad); -webkit-background-clip: text; background-clip: text; color: transparent; padding-right: 0.04em; }
-  @media (max-width: 639px) { .exp__badge { width: 88px; height: 88px; top: 0.9rem; right: 0.9rem; } .exp__badge-num { font-size: 1.65rem; } }
-  .exp__badge-label { font-size: 0.56rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ivory-2); line-height: 1.5; }
+  :global([data-theme='dark']) .exp__badge { box-shadow: none; }
+  .exp__badge-num {
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    font-variant-numeric: lining-nums tabular-nums;
+    color: var(--text);
+  }
+  @media (max-width: 639px) { .exp__badge { width: 88px; height: 88px; top: 0.9rem; right: 0.9rem; } .exp__badge-num { font-size: 1.35rem; } }
+  .exp__badge-label { font-size: 0.54rem; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--accent); line-height: 1.5; padding-left: 0.22em; }
 
   .exp__card {
     position: relative;
@@ -153,8 +181,10 @@ const pad = (n: number) => String(n).padStart(2, '0');
     margin: -5.5rem 1rem 0;
     padding: 1.4rem 1.4rem 1.5rem;
     border-radius: var(--radius);
-    box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.8);
+    box-shadow: 0 1px 2px rgb(var(--fg-rgb) / 0.05), 0 30px 60px -30px rgb(var(--fg-rgb) / 0.32);
   }
+  /* bg-rgb is near-black in Onyx, so this is a true shadow there */
+  :global([data-theme='dark']) .exp__card { box-shadow: 0 30px 60px -30px rgb(var(--bg-rgb) / 0.9); }
   @media (min-width: 640px) {
     .exp__card { position: absolute; left: 1.4rem; bottom: 1.4rem; margin: 0; width: min(330px, calc(100% - 2.8rem)); }
   }
@@ -163,16 +193,18 @@ const pad = (n: number) => String(n).padStart(2, '0');
   }
   .exp__card-title {
     font-family: var(--font-display);
-    font-size: 1.45rem;
-    font-style: italic;
-    color: var(--ivory);
+    font-size: 1.2rem;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    color: var(--text);
     margin-bottom: 0.9rem;
     padding-bottom: 0.8rem;
     border-bottom: 1px solid var(--line);
   }
   .exp__card-list { display: grid; gap: 0.7rem; }
-  .exp__card-list li { display: flex; align-items: center; gap: 0.75rem; font-size: 0.9rem; color: var(--ivory-2); }
-  .exp__check { display: grid; place-items: center; flex: none; width: 24px; height: 24px; border-radius: 50%; border: 1px solid rgba(201, 168, 106, 0.5); color: var(--gold-2); }
+  .exp__card-list li { display: flex; align-items: center; gap: 0.75rem; font-size: 0.9rem; color: var(--text-2); }
+  .exp__check { display: grid; place-items: center; flex: none; width: 24px; height: 24px; border-radius: 50%; border: 1px solid rgb(var(--accent-rgb) / 0.5); color: var(--accent-2); }
   .exp__check :global(svg) { width: 12px; height: 12px; stroke-width: 2.2; }
 
   /* ---------- Timeline ---------- */
@@ -191,10 +223,10 @@ const pad = (n: number) => String(n).padStart(2, '0');
   .exp__rail-fill {
     position: absolute;
     inset: 0;
-    background: linear-gradient(180deg, var(--gold-2), var(--gold) 60%, var(--gold-3));
-    box-shadow: 0 0 12px rgba(201, 168, 106, 0.55);
+    background: linear-gradient(180deg, var(--accent-2), var(--accent) 60%, var(--accent-3));
     transform-origin: top;
   }
+  :global([data-theme='dark']) .exp__rail-fill { box-shadow: 0 0 12px rgb(var(--accent-rgb) / 0.55); }
   .js .exp__rail-fill { transform: scaleY(0); }
   .exp { --node: 46px; }
   @media (min-width: 1024px) { .exp { --node: 54px; } }
@@ -209,10 +241,11 @@ const pad = (n: number) => String(n).padStart(2, '0');
     height: var(--node);
     border-radius: 50%;
     border: 1px solid var(--line-strong);
-    background: var(--ink-2);
-    font-family: var(--font-display);
-    font-size: 1.15rem;
-    letter-spacing: 0.02em;
+    background: var(--bg-2);
+    font-family: var(--font-sans);
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
     font-variant-numeric: lining-nums tabular-nums;
     font-feature-settings: 'lnum' 1, 'tnum' 1;
     color: var(--muted);
@@ -223,14 +256,14 @@ const pad = (n: number) => String(n).padStart(2, '0');
     position: absolute;
     inset: -1px;
     border-radius: 50%;
-    background: var(--gold-grad);
+    background: var(--cta-bg);
     opacity: 0;
     transform: scale(0.6);
     transition: opacity 0.7s var(--ease-out), transform 0.7s var(--ease-out);
   }
   .exp-step__node span { position: relative; }
   .exp-step.is-active .exp-step__node,
-  html:not(.js) .exp-step__node { color: #17130b; border-color: transparent; box-shadow: var(--gold-glow); }
+  html:not(.js) .exp-step__node { color: var(--cta-fg); border-color: transparent; box-shadow: var(--cta-glow); }
   .exp-step.is-active .exp-step__node::before,
   html:not(.js) .exp-step__node::before { opacity: 1; transform: none; }
 
@@ -241,11 +274,11 @@ const pad = (n: number) => String(n).padStart(2, '0');
   .js .exp-step:not(.is-active) .exp-step__text,
   .js .exp-step:not(.is-active) .exp-step__chip { opacity: 0.72; }
   .exp-step__body > * { transition: opacity 0.8s var(--ease-out); }
-  .exp-step__label { font-size: var(--fs-micro); font-weight: 600; letter-spacing: 0.24em; text-transform: uppercase; color: var(--gold); }
-  .exp-step__title { font-size: clamp(1.75rem, 2.8vw, 2.5rem); line-height: 1.05; font-variant-numeric: lining-nums; }
+  .exp-step__label { font-size: var(--fs-micro); font-weight: 600; letter-spacing: 0.24em; text-transform: uppercase; color: var(--accent); }
+  .exp-step__title { font-size: clamp(1.5rem, 2.3vw, 2.1rem); line-height: 1.1; letter-spacing: -0.03em; font-variant-numeric: lining-nums; }
   .exp-step__text { color: var(--muted); max-width: 48ch; font-size: 0.98rem; }
   .exp-step__chip { justify-self: start; margin-top: 0.3rem; }
-  .exp-step__chip :global(svg) { width: 14px; height: 14px; color: var(--gold); }
+  .exp-step__chip :global(svg) { width: 14px; height: 14px; color: var(--accent); }
 
   /* ---------- CTA ---------- */
   .exp__cta {
@@ -257,11 +290,11 @@ const pad = (n: number) => String(n).padStart(2, '0');
     border-top: 1px solid var(--line);
   }
   @media (min-width: 960px) { .exp__cta { grid-template-columns: 1fr auto; gap: 3rem; } }
-  .exp__cta-title { font-size: clamp(2rem, 3.6vw, 3.2rem); line-height: 1.05; max-width: 18ch; }
+  .exp__cta-title { font-size: clamp(1.9rem, 3.3vw, 3rem); line-height: 1.06; letter-spacing: -0.035em; max-width: 18ch; }
   .exp__cta-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 2rem; }
   .exp__call { font-size: 0.92rem; color: var(--muted); }
-  .exp__call a { display: inline-flex; align-items: center; min-height: 44px; color: var(--ivory); font-weight: 600; text-decoration: underline; text-decoration-color: rgba(201, 168, 106, 0.55); text-decoration-thickness: 1px; text-underline-offset: 6px; transition: color 0.3s, text-decoration-color 0.3s; }
-  .exp__call a:hover { color: var(--gold-2); text-decoration-color: var(--gold-2); }
+  .exp__call a { display: inline-flex; align-items: center; min-height: 44px; color: var(--text); font-weight: 600; text-decoration: underline; text-decoration-color: rgb(var(--accent-rgb) / 0.55); text-decoration-thickness: 1px; text-underline-offset: 6px; transition: color 0.3s, text-decoration-color 0.3s; }
+  .exp__call a:hover { color: var(--accent-2); text-decoration-color: var(--accent-2); }
   @media (max-width: 520px) {
     .exp__cta-actions .btn { width: 100%; }
   }

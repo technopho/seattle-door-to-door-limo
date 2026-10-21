@@ -142,18 +142,57 @@ function initCounters() {
 
 /* ---------- Header ---------- */
 const header = document.querySelector<HTMLElement>('[data-header]');
+// Pages with an always-dark hero keep the header in dark mode while it sits over the hero.
+const darkHero = document.body.hasAttribute('data-dark-hero') ? (document.querySelector('main')?.firstElementChild as HTMLElement | null) : null;
 let lastY = 0;
 function onScroll() {
   const y = window.scrollY;
   if (header) {
     header.classList.toggle('is-scrolled', y > 40);
     header.classList.toggle('is-hidden', y > 500 && y > lastY && !document.body.classList.contains('menu-open'));
+    const overHero = !!darkHero && y < darkHero.offsetHeight - header.offsetHeight && !document.body.classList.contains('menu-open');
+    if (overHero) header.dataset.theme = 'dark';
+    else header.removeAttribute('data-theme');
   }
   document.body.classList.toggle('past-hero', y > window.innerHeight * 0.7);
   lastY = y;
 }
 window.addEventListener('scroll', onScroll, { passive: true });
 onScroll();
+
+/* ---------- Theme toggle (Ivory / Onyx) ---------- */
+const root = document.documentElement;
+function applyTheme(next: 'light' | 'dark') {
+  root.dataset.theme = next;
+  try { localStorage.setItem('sdd-theme', next); } catch {}
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', next === 'dark' ? '#0a0a0c' : '#f4efe7');
+  document.querySelectorAll<HTMLButtonElement>('[data-theme-toggle]').forEach((b) => {
+    // Labeled switches (role="switch") report state; icon buttons describe the action.
+    if (b.getAttribute('role') === 'switch') b.setAttribute('aria-checked', String(next === 'dark'));
+    else b.setAttribute('aria-label', next === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+  });
+  document.dispatchEvent(new CustomEvent('sdd:theme', { detail: next }));
+}
+applyTheme(root.dataset.theme === 'dark' ? 'dark' : 'light');
+document.querySelectorAll<HTMLButtonElement>('[data-theme-toggle]').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
+    const vt = (document as Document & { startViewTransition?: (cb: () => void) => { ready: Promise<void> } }).startViewTransition;
+    if (!vt || reduceMotion) { applyTheme(next); return; }
+    // Circular reveal from the toggle button.
+    const r = btn.getBoundingClientRect();
+    const x = r.left + r.width / 2;
+    const y = r.top + r.height / 2;
+    const end = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+    const t = vt.call(document, () => { applyTheme(next); onScroll(); });
+    t.ready.then(() => {
+      root.animate(
+        { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${end}px at ${x}px ${y}px)`] },
+        { duration: 750, easing: 'cubic-bezier(0.65, 0, 0.35, 1)', pseudoElement: '::view-transition-new(root)' },
+      );
+    });
+  });
+});
 
 /* ---------- Mobile menu ---------- */
 const menuBtn = document.querySelector<HTMLButtonElement>('[data-menu-toggle]');
@@ -164,6 +203,7 @@ function openMenu() {
   menuBtn.setAttribute('aria-expanded', 'true');
   menu.removeAttribute('inert');
   window.lenis?.stop();
+  onScroll(); // drop the dark-hero header theme while the (page-themed) menu is open
   if (!reduceMotion) {
     gsap.fromTo(menu.querySelectorAll('[data-menu-item]'), { yPercent: 110, opacity: 0 }, { yPercent: 0, opacity: 1, duration: 0.9, ease: 'expo.out', stagger: 0.06, delay: 0.15 });
   }
@@ -174,6 +214,7 @@ function closeMenu() {
   menuBtn.setAttribute('aria-expanded', 'false');
   menu.setAttribute('inert', '');
   window.lenis?.start();
+  onScroll();
 }
 menuBtn?.addEventListener('click', () => (document.body.classList.contains('menu-open') ? closeMenu() : openMenu()));
 menu?.querySelectorAll('a').forEach((a) => a.addEventListener('click', closeMenu));

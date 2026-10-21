@@ -72,7 +72,7 @@ const imageFor = (s: (typeof services)[number]) => (s.slug === 'corporate' ? ima
   .svc {
     position: relative;
     padding-block: var(--section-y);
-    background: var(--ink);
+    background: var(--bg);
   }
   .svc__pin { position: relative; isolation: isolate; }
   .svc__pin::before {
@@ -83,7 +83,7 @@ const imageFor = (s: (typeof services)[number]) => (s.slug === 'corporate' ? ima
     width: 70vw;
     height: 60vh;
     transform: translate(-50%, -50%);
-    background: radial-gradient(closest-side, rgba(201, 168, 106, 0.07), transparent);
+    background: radial-gradient(closest-side, rgb(var(--accent-rgb) / 0.07), transparent);
     pointer-events: none;
     z-index: -1;
   }
@@ -96,9 +96,9 @@ const imageFor = (s: (typeof services)[number]) => (s.slug === 'corporate' ? ima
   .svc__head .lead { max-width: 46ch; text-wrap: pretty; }
   .svc h2 :global(.split-line) { overflow: clip; }
   .svc__head-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 0.8rem 1.6rem; margin-top: 0.4rem; }
-  .svc__hint { display: inline-flex; align-items: center; gap: 0.8rem; font-size: var(--fs-micro); font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ivory-2); }
+  .svc__hint { display: inline-flex; align-items: center; gap: 0.8rem; font-size: var(--fs-micro); font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text-2); }
   .svc__hint-line { position: relative; width: 3.2rem; height: 1px; background: var(--line-strong); overflow: hidden; }
-  .svc__hint-line::after { content: ''; position: absolute; inset: 0; background: var(--gold); transform: translateX(-100%); animation: svc-hint 2.6s var(--ease-in-out) infinite; }
+  .svc__hint-line::after { content: ''; position: absolute; inset: 0; background: var(--accent); transform: translateX(-100%); animation: svc-hint 2.6s var(--ease-in-out) infinite; }
   @keyframes svc-hint { 0% { transform: translateX(-100%); } 55%, 100% { transform: translateX(100%); } }
   .svc__hint-desk, .svc__hint-mouse { display: none; }
   /* Pointer users on the non-pinned carousel get arrow/drag copy instead of "swipe" */
@@ -110,7 +110,7 @@ const imageFor = (s: (typeof services)[number]) => (s.slug === 'corporate' ? ima
     .svc__cards.is-dragging .svc-card { pointer-events: none; }
   }
   .svc__call { display: inline-flex; align-items: center; min-height: 44px; font-size: 0.86rem; color: var(--muted); border-bottom: 1px solid transparent; transition: color 0.3s; }
-  .svc__call:hover { color: var(--gold-2); }
+  .svc__call:hover { color: var(--accent-2); }
 
   .svc__cards {
     display: flex;
@@ -134,17 +134,21 @@ const imageFor = (s: (typeof services)[number]) => (s.slug === 'corporate' ? ima
     flex-direction: column;
     border-radius: var(--radius-l);
     border: 1px solid var(--line);
-    background: linear-gradient(180deg, var(--ink-3), var(--ink-2));
+    background: var(--bg-3);
+    box-shadow: 0 1px 2px rgb(var(--fg-rgb) / 0.04), 0 24px 50px -34px rgb(var(--fg-rgb) / 0.3);
     overflow: hidden;
     isolation: isolate;
-    transition: border-color 0.6s var(--ease-out), transform 0.6s var(--ease-out);
+    transition: border-color 0.6s var(--ease-out), box-shadow 0.6s var(--ease-out), transform 0.6s var(--ease-out);
   }
-  .svc-card:hover { border-color: rgba(201, 168, 106, 0.38); }
+  .svc-card:hover { border-color: rgb(var(--accent-rgb) / 0.38); box-shadow: 0 1px 2px rgb(var(--fg-rgb) / 0.05), 0 30px 60px -32px rgb(var(--fg-rgb) / 0.38); }
+  /* Onyx: depth comes from the surface step, not a cast shadow (an ivory shadow would glow) */
+  :global([data-theme='dark']) .svc-card,
+  :global([data-theme='dark']) .svc-card:hover { box-shadow: none; }
   .svc-card__media {
     position: relative;
     aspect-ratio: 4 / 3.3;
     overflow: hidden;
-    background: var(--ink-3);
+    background: var(--bg-3);
     flex: none;
   }
   /* Wrapper carries the scroll parallax (GSAP); the img keeps its own scale so hover zoom still works */
@@ -163,38 +167,45 @@ const imageFor = (s: (typeof services)[number]) => (s.slug === 'corporate' ? ima
     object-fit: cover;
     transform: scale(1.04);
     transition: transform 1.4s var(--ease-out), filter 1.2s var(--ease-out);
-    filter: saturate(0.9) brightness(0.92);
+    filter: saturate(0.94);
     -webkit-user-drag: none;
   }
-  .svc-card:hover .svc-card__img img { transform: scale(1.1); filter: saturate(1) brightness(1); }
+  :global([data-theme='dark']) .svc-card__img img { filter: saturate(0.9) brightness(0.9); }
+  .svc-card:hover .svc-card__img img,
+  :global([data-theme='dark']) .svc-card:hover .svc-card__img img { transform: scale(1.1); filter: saturate(1) brightness(1); }
+  /* Short fade into the card's own surface (same token as .svc-card), so the seam is invisible in both themes */
   .svc-card__media::after {
     content: '';
     position: absolute;
     inset: 0;
-    background:
-      radial-gradient(90% 55% at 0% 0%, rgba(10, 10, 12, 0.68), rgba(10, 10, 12, 0) 62%),
-      linear-gradient(180deg, rgba(10, 10, 12, 0.5) 0%, rgba(10, 10, 12, 0) 34%),
-      linear-gradient(0deg, rgba(17, 17, 20, 0.95) 0%, rgba(17, 17, 20, 0) 42%);
+    background: linear-gradient(0deg, var(--bg-3) 0%, transparent 26%);
     pointer-events: none;
   }
+  /* Index: a small frosted tab, not a giant outlined numeral */
   .svc-card__num {
     position: absolute;
     z-index: 1;
-    top: 0.9rem;
-    left: 1.3rem;
-    font-family: var(--font-display);
-    font-style: italic;
-    font-size: clamp(3rem, 5vw, 4.6rem);
-    font-variant-numeric: lining-nums;
-    font-feature-settings: 'lnum' 1;
+    top: 1rem;
+    left: 1rem;
+    display: inline-grid;
+    place-items: center;
+    height: 1.9rem;
+    padding: 0 0.6rem 0 0.72rem;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: var(--glass);
+    backdrop-filter: blur(12px) saturate(140%);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+    font-family: var(--font-sans);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
     line-height: 1;
-    letter-spacing: -0.03em;
-    color: rgba(232, 211, 162, 0.16);
-    -webkit-text-stroke: 1.25px var(--gold-2);
-    text-shadow: 0 2px 18px rgba(0, 0, 0, 0.35);
-    transition: color 0.6s var(--ease-out);
+    font-variant-numeric: lining-nums tabular-nums;
+    color: var(--text-2);
+    transition: color 0.6s var(--ease-out), border-color 0.6s var(--ease-out);
   }
-  .svc-card:hover .svc-card__num { color: rgba(232, 211, 162, 0.9); }
+  .svc-card:hover .svc-card__num { color: var(--accent); border-color: rgb(var(--accent-rgb) / 0.4); }
 
   .svc-card__body {
     display: flex;
@@ -203,13 +214,13 @@ const imageFor = (s: (typeof services)[number]) => (s.slug === 'corporate' ? ima
     padding: 0.4rem clamp(1.25rem, 2vw, 1.75rem) clamp(1.25rem, 2vw, 1.6rem);
     flex: 1;
   }
-  .svc-card__kicker { font-size: 0.66rem; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; color: var(--gold); }
+  .svc-card__kicker { font-size: 0.66rem; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent); }
   .svc-card__kicker { text-wrap: balance; }
-  .svc-card__title { font-size: clamp(1.75rem, 2.3vw, 2.15rem); line-height: 1.05; text-wrap: balance; }
+  .svc-card__title { font-size: clamp(1.6rem, 2.1vw, 1.95rem); line-height: 1.08; letter-spacing: -0.03em; text-wrap: balance; }
   .svc-card__blurb { font-size: 0.9rem; line-height: 1.6; color: var(--muted); }
   .svc-card__points { display: grid; gap: 0.45rem; padding: 0.9rem 0 0; margin: 0.1rem 0 0; border-top: 1px solid var(--line); list-style: none; }
-  .svc-card__points li { display: flex; align-items: flex-start; gap: 0.6rem; font-size: 0.84rem; line-height: 1.4; color: var(--ivory-2); }
-  .svc-card__points :global(svg) { width: 15px; height: 15px; flex: none; color: var(--gold); margin-top: 0.12em; stroke-width: 2; }
+  .svc-card__points li { display: flex; align-items: flex-start; gap: 0.6rem; font-size: 0.84rem; line-height: 1.4; color: var(--text-2); }
+  .svc-card__points :global(svg) { width: 15px; height: 15px; flex: none; color: var(--accent); margin-top: 0.12em; stroke-width: 2; }
 
   .svc-card__cta {
     margin-top: auto;
@@ -224,7 +235,7 @@ const imageFor = (s: (typeof services)[number]) => (s.slug === 'corporate' ? ima
     font-weight: 700;
     letter-spacing: 0.16em;
     text-transform: uppercase;
-    color: var(--ivory);
+    color: var(--text);
     transition: border-color 0.5s var(--ease-out), background 0.5s var(--ease-out), color 0.5s var(--ease-out);
   }
   /* Stretch the link so the whole card is tappable */
@@ -235,12 +246,12 @@ const imageFor = (s: (typeof services)[number]) => (s.slug === 'corporate' ? ima
     width: 42px;
     height: 42px;
     border-radius: 50%;
-    background: var(--gold-grad);
-    color: #17130b;
+    background: var(--cta-bg);
+    color: var(--cta-fg);
     transition: transform 0.6s var(--ease-out);
   }
   .svc-card__cta-icon :global(svg) { width: 16px; height: 16px; }
-  .svc-card:hover .svc-card__cta { border-color: rgba(201, 168, 106, 0.55); background: rgba(201, 168, 106, 0.08); color: var(--gold-2); }
+  .svc-card:hover .svc-card__cta { border-color: rgb(var(--accent-rgb) / 0.55); background: rgb(var(--accent-rgb) / 0.08); color: var(--accent-2); }
   .svc-card:hover .svc-card__cta-icon { transform: rotate(-45deg); }
   .svc-card__cta:focus-visible { outline-offset: 4px; }
 
@@ -254,10 +265,10 @@ const imageFor = (s: (typeof services)[number]) => (s.slug === 'corporate' ? ima
     gap: 1.2rem;
   }
   .svc__count { font-family: var(--font-display); font-size: 1.2rem; color: var(--muted); font-variant-numeric: lining-nums tabular-nums; white-space: nowrap; }
-  .svc__count b { font-weight: 500; color: var(--ivory); }
-  .svc__count i { font-style: normal; margin-inline: 0.4em; color: var(--gold); opacity: 0.8; }
+  .svc__count b { font-weight: 500; color: var(--text); }
+  .svc__count i { font-style: normal; margin-inline: 0.4em; color: var(--accent); opacity: 0.8; }
   .svc__bar { position: relative; height: 1px; background: var(--line-strong); overflow: hidden; }
-  .svc__bar-fill { position: absolute; inset: 0; background: var(--gold-grad); transform-origin: left; transform: scaleX(0.1667); }
+  .svc__bar-fill { position: absolute; inset: 0; background: var(--accent-grad); transform-origin: left; transform: scaleX(0.1667); }
   .svc__name { display: none; }
   .svc__progress { grid-template-columns: auto 1fr auto; }
   .svc__nav { display: inline-flex; gap: 0.5rem; }
@@ -268,11 +279,11 @@ const imageFor = (s: (typeof services)[number]) => (s.slug === 'corporate' ? ima
     height: 46px;
     border-radius: 50%;
     border: 1px solid var(--line-strong);
-    color: var(--ivory);
+    color: var(--text);
     transition: border-color 0.4s var(--ease-out), color 0.4s var(--ease-out), background 0.4s var(--ease-out), opacity 0.3s;
   }
   .svc__arrow :global(svg) { width: 17px; height: 17px; }
-  .svc__arrow:hover { border-color: var(--gold); color: var(--gold-2); background: rgba(201, 168, 106, 0.08); }
+  .svc__arrow:hover { border-color: var(--accent); color: var(--accent-2); background: rgb(var(--accent-rgb) / 0.08); }
   .svc__arrow:disabled { opacity: 0.35; pointer-events: none; }
   @media (max-width: 599px) { .svc__nav { display: none; } .svc__progress { grid-template-columns: auto 1fr; } }
 
@@ -322,7 +333,7 @@ const imageFor = (s: (typeof services)[number]) => (s.slug === 'corporate' ? ima
     height: max(140px, calc(var(--svc-card-h) - 25rem));
     min-height: 0;
   }
-  .svc.is-pinned .svc-card__title { font-size: clamp(1.6rem, 2vw, 2rem); }
+  .svc.is-pinned .svc-card__title { font-size: clamp(1.5rem, 1.85vw, 1.85rem); }
   .svc.is-pinned .svc-card__body { gap: 0.7rem; }
   .svc.is-pinned .svc-card__points { margin-top: auto; }
   @media (max-width: 1199px) {
@@ -350,7 +361,7 @@ const imageFor = (s: (typeof services)[number]) => (s.slug === 'corporate' ? ima
     font-weight: 600;
     letter-spacing: 0.22em;
     text-transform: uppercase;
-    color: var(--ivory-2);
+    color: var(--text-2);
     white-space: nowrap;
   }
 

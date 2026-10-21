@@ -33,7 +33,7 @@ import { meta, isStudio, maxPax } from './fleetMeta';
               <tr>
                 <th scope="row" class="cmp__veh">
                   <a href={`#${v.id}`} class="cmp__vlink">
-                    <span class:list={['cmp__thumb', isStudio(v) && 'cmp__thumb--studio', m.grade && 'cmp__thumb--grade']}>
+                    <span class:list={['cmp__thumb', isStudio(v) && 'cmp__thumb--studio', m.grade && 'cmp__thumb--grade']} data-theme={isStudio(v) ? 'light' : undefined}>
                       <img src={v.image} alt="" loading="lazy" decoding="async" style={m.position ? `object-position:${m.position}` : undefined} />
                     </span>
                     <span class="cmp__vtext">
@@ -82,45 +82,49 @@ import { meta, isStudio, maxPax } from './fleetMeta';
 </script>
 
 <style>
+  .cmp { --cmp-card-shadow: 0 1px 2px rgb(var(--fg-rgb) / 0.04), 0 12px 30px -22px rgb(var(--fg-rgb) / 0.3); }
+  :global([data-theme='dark']) .cmp { --cmp-card-shadow: none; }
   .cmp__head { display: grid; gap: 1.2rem; }
   .cmp__head h2 :global(.split-line) { vertical-align: top; }
-  .cmp__head h2 :global(em .split-word) { background: var(--gold-grad); -webkit-background-clip: text; background-clip: text; color: transparent; padding-right: 0.06em; }
+  .cmp__head h2 :global(em .split-word) { background: var(--accent-grad); -webkit-background-clip: text; background-clip: text; color: transparent; padding-right: 0.06em; }
   .cmp__wrap { border-top: 1px solid var(--line-strong); }
   .cmp__table { width: 100%; border-collapse: collapse; text-align: left; }
   .cmp__table thead th {
     padding: 1.1rem 1rem 1.1rem 0;
     font-size: 0.64rem;
-    font-weight: 700;
-    letter-spacing: 0.22em;
+    font-weight: 600;
+    letter-spacing: 0.2em;
     text-transform: uppercase;
     color: var(--muted);
     border-bottom: 1px solid var(--line);
   }
   .cmp__table tbody tr { position: relative; transition: background 0.5s var(--ease-out); }
-  .cmp__table tbody tr:hover { background: linear-gradient(90deg, rgba(201, 168, 106, 0.06), rgba(201, 168, 106, 0) 70%); }
+  .cmp__table tbody tr:hover { background: linear-gradient(90deg, rgb(var(--accent-rgb) / 0.06), rgb(var(--accent-rgb) / 0) 70%); }
   .cmp__table tbody th, .cmp__table tbody td { padding: 1.35rem 1.2rem 1.35rem 0; border-bottom: 1px solid var(--line); vertical-align: middle; font-weight: 400; }
   .cmp__table tbody tr > :first-child { padding-left: 0.4rem; }
 
   .cmp__vlink { display: flex; align-items: center; gap: 1.1rem; }
-  .cmp__thumb { position: relative; flex: none; width: 104px; aspect-ratio: 16 / 10; border-radius: 10px; overflow: hidden; background: var(--ink-3); border: 1px solid var(--line); }
+  .cmp__thumb { position: relative; flex: none; width: 104px; aspect-ratio: 16 / 10; border-radius: 10px; overflow: hidden; background: var(--bg-3); border: 1px solid var(--line); }
   .cmp__thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform 1.2s var(--ease-out); }
-  .cmp__thumb--studio { background: radial-gradient(120% 100% at 50% 30%, #fbf8f2, #e6dece); border-color: rgba(232, 211, 162, 0.35); }
+  /* forced-light island (data-theme="light"): the white studio backdrop always sits on ivory */
+  .cmp__thumb--studio { background: radial-gradient(120% 100% at 50% 30%, var(--bg-3), var(--bg-4)); border-color: var(--line-strong); }
   .cmp__thumb--studio img { object-fit: contain; padding: 6% 8%; mix-blend-mode: multiply; }
   .cmp__table tbody tr:hover .cmp__thumb img { transform: scale(1.08); }
   .cmp__vtext { display: grid; gap: 0.2rem; }
-  .cmp__cat { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold); }
-  .cmp__name { font-family: var(--font-display); font-size: 1.55rem; line-height: 1.1; color: var(--ivory); transition: color 0.4s; }
-  .cmp__vlink:hover .cmp__name { color: var(--gold-2); }
+  .cmp__cat { font-size: 0.6rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); }
+  .cmp__name { font-family: var(--font-display); font-size: 1.4rem; font-weight: 500; line-height: 1.15; letter-spacing: -0.025em; color: var(--text); transition: color 0.4s; }
+  .cmp__vlink:hover .cmp__name { color: var(--accent-2); }
 
-  .cmp__num { font-family: var(--font-display); font-size: 2rem; line-height: 1; color: var(--ivory); font-variant-numeric: lining-nums; }
+  .cmp__num { font-family: var(--font-display); font-size: 1.85rem; font-weight: 400; line-height: 1; letter-spacing: -0.03em; color: var(--text); font-variant-numeric: lining-nums tabular-nums; }
   .cmp__unit { font-size: 0.8rem; color: var(--muted); }
   .cmp__mo { display: none; }
-  .cmp__thumb--grade img { filter: brightness(0.8) contrast(1.08) saturate(0.7); }
+  .cmp__thumb--grade img { filter: brightness(0.96) contrast(1.04) saturate(0.78); }
+  :global([data-theme='dark']) .cmp__thumb--grade img { filter: brightness(0.8) contrast(1.08) saturate(0.7); }
   .cmp__bar { display: block; width: 92px; height: 2px; margin-top: 0.55rem; border-radius: 2px; background: var(--line); overflow: hidden; }
-  .cmp__bar i { display: block; height: 100%; width: calc(var(--w) * 100%); background: var(--gold-grad); transform-origin: left; }
-  .cmp__text { color: var(--ivory-2); font-size: 0.92rem; max-width: 26ch; }
-  .cmp__sig { color: var(--ivory-2); font-size: 0.92rem; white-space: nowrap; }
-  .cmp__sig :global(svg) { display: inline-block; width: 15px; height: 15px; margin-right: 0.35rem; vertical-align: -2px; color: var(--gold); }
+  .cmp__bar i { display: block; height: 100%; width: calc(var(--w) * 100%); background: var(--accent-grad); transform-origin: left; }
+  .cmp__text { color: var(--text-2); font-size: 0.92rem; max-width: 26ch; }
+  .cmp__sig { color: var(--text-2); font-size: 0.92rem; white-space: nowrap; }
+  .cmp__sig :global(svg) { display: inline-block; width: 15px; height: 15px; margin-right: 0.35rem; vertical-align: -2px; color: var(--accent); }
   .cmp__go { text-align: right; }
   .cmp__btn {
     display: inline-flex;
@@ -132,22 +136,22 @@ import { meta, isStudio, maxPax } from './fleetMeta';
     border-radius: 999px;
     border: 1px solid var(--line-strong);
     font-size: 0.68rem;
-    font-weight: 700;
+    font-weight: 600;
     letter-spacing: 0.16em;
     text-transform: uppercase;
-    color: var(--ivory);
+    color: var(--text);
     white-space: nowrap;
     transition: background 0.4s var(--ease-out), color 0.4s, border-color 0.4s;
   }
   .cmp__btn :global(svg) { width: 14px; height: 14px; transition: transform 0.4s var(--ease-out); }
-  .cmp__btn:hover { background: var(--gold-grad); color: #17130b; border-color: transparent; }
+  .cmp__btn:hover { background: var(--cta-bg); color: var(--cta-fg); border-color: transparent; }
   .cmp__btn:hover :global(svg) { transform: translateX(3px); }
   .cmp__note { margin-top: 1.6rem; }
 
   @media (max-width: 1100px) and (min-width: 861px) {
     .cmp__sig { white-space: normal; }
     .cmp__thumb { width: 80px; }
-    .cmp__name { font-size: 1.3rem; }
+    .cmp__name { font-size: 1.2rem; }
   }
 
   /* Mobile: compact cards (the vehicle rows above carry the full detail) */
@@ -166,16 +170,17 @@ import { meta, isStudio, maxPax } from './fleetMeta';
       padding: 0.85rem 0.9rem 0.95rem;
       border: 1px solid var(--line);
       border-radius: var(--radius);
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.01));
+      background: var(--bg-3);
+      box-shadow: var(--cmp-card-shadow);
     }
-    .cmp__table tbody tr:hover { background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.01)); }
+    .cmp__table tbody tr:hover { background: var(--bg-3); }
     .cmp__table tbody th, .cmp__table tbody td { display: block; padding: 0; border: 0; }
     .cmp__veh { grid-area: veh; min-width: 0; }
     .cmp__vlink { gap: 0.85rem; }
     .cmp__thumb { width: 84px; border-radius: 8px; }
-    .cmp__name { font-size: 1.35rem; }
+    .cmp__name { font-size: 1.12rem; letter-spacing: -0.02em; }
     .cmp__go { grid-area: go; justify-self: end; }
-    .cmp__btn { width: 44px; height: 44px; min-height: 44px; padding: 0; border-color: rgba(201, 168, 106, 0.5); color: var(--gold-2); }
+    .cmp__btn { width: 44px; height: 44px; min-height: 44px; padding: 0; border-color: rgb(var(--accent-rgb) / 0.5); color: var(--accent-2); }
     .cmp__btn-t { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
     .cmp__btn :global(svg) { width: 16px; height: 16px; }
 
@@ -192,9 +197,9 @@ import { meta, isStudio, maxPax } from './fleetMeta';
       white-space: nowrap;
     }
     .cmp__table tbody td[data-label='Luggage'], .cmp__table tbody td.cmp__sig { padding-left: 0.75rem; margin-left: 0.75rem; border-left: 1px solid var(--line); }
-    .cmp__table tbody td.cmp__sig { display: block; overflow: hidden; text-overflow: ellipsis; color: var(--ivory-2); line-height: 1.6; }
+    .cmp__table tbody td.cmp__sig { display: block; overflow: hidden; text-overflow: ellipsis; color: var(--text-2); line-height: 1.6; }
     .cmp__sig :global(svg) { flex: none; margin-right: 0.1rem; vertical-align: 0; }
-    .cmp__num { font-size: 1.35rem; }
+    .cmp__num { font-size: 1.3rem; }
     .cmp__unit { font-size: 0.78rem; }
     .cmp__mo { display: inline; }
     .cmp__bar { display: none; }

@@ -1,36 +1,45 @@
 ---
-import '@fontsource/cormorant-garamond/400.css';
-import '@fontsource/cormorant-garamond/400-italic.css';
-import '@fontsource/cormorant-garamond/500.css';
-import '@fontsource/cormorant-garamond/500-italic.css';
-import '@fontsource-variable/manrope';
+import '@fontsource-variable/inter';
+import '@fontsource-variable/inter/wght-italic.css';
+import '@fontsource-variable/inter-tight';
+import '@fontsource-variable/inter-tight/wght-italic.css';
 import '../styles/global.css';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import Icon from '../components/Icon.astro';
 import { site } from '../data/site';
 
-interface Props { title?: string; description?: string; preloader?: boolean; footer?: boolean }
+interface Props { title?: string; description?: string; preloader?: boolean; footer?: boolean; darkHero?: boolean }
 const {
   title = `${site.name} | Luxury Chauffeur & Limousine Service in Seattle`,
   description = 'Private chauffeured transportation across Seattle, Bellevue and the Puget Sound. Airport transfers, corporate travel, weddings and nights out. 24/7.',
   preloader = false,
   footer = true,
+  darkHero = false,
 } = Astro.props;
 ---
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#0a0a0c" />
+    <meta name="theme-color" content="#f4efe7" />
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="preconnect" href="https://www.seattledoortodoorlimo.com" />
-    <script is:inline>document.documentElement.classList.add('js');</script>
+    <script is:inline>
+      (function () {
+        var d = document.documentElement, t = 'light';
+        try { t = localStorage.getItem('sdd-theme') || 'light'; } catch (e) {}
+        d.setAttribute('data-theme', t === 'dark' ? 'dark' : 'light');
+        d.classList.add('js');
+        var m = document.querySelector('meta[name="theme-color"]');
+        if (m) m.setAttribute('content', t === 'dark' ? '#0a0a0c' : '#f4efe7');
+      })();
+    </script>
   </head>
-  <body>
+  <body data-dark-hero={darkHero ? '' : undefined}>
     {preloader && (
       <div class="preloader" data-preloader aria-hidden="true">
         <div class="preloader__inner">
@@ -59,13 +68,13 @@ const {
 </html>
 
 <style>
-  .preloader { position: fixed; inset: 0; z-index: 10000; display: grid; place-items: center; background: var(--ink); clip-path: inset(0 0 0 0); }
+  .preloader { position: fixed; inset: 0; z-index: 10000; display: grid; place-items: center; background: var(--bg); clip-path: inset(0 0 0 0); }
   .preloader__inner { display: grid; justify-items: center; gap: 0.6rem; }
   .preloader__mask { display: block; overflow: hidden; }
   .preloader__mask > span { display: block; font-size: 0.7rem; letter-spacing: 0.5em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
-  .preloader__big > span { font-family: var(--font-display); font-size: clamp(2.6rem, 7vw, 5rem); letter-spacing: -0.01em; text-transform: none; color: var(--ivory); line-height: 1.05; }
-  .preloader__big em { font-style: italic; color: var(--gold); }
-  .preloader__line { display: block; width: min(320px, 60vw); height: 1px; background: var(--gold-grad); transform-origin: left; margin-top: 0.8rem; }
+  .preloader__big > span { font-family: var(--font-display); font-weight: 500; font-size: clamp(2.4rem, 6vw, 4.4rem); letter-spacing: -0.035em; text-transform: none; color: var(--text); line-height: 1.05; }
+  .preloader__big em { font-style: normal; color: var(--accent); }
+  .preloader__line { display: block; width: min(320px, 60vw); height: 1px; background: var(--accent-grad); transform-origin: left; margin-top: 0.8rem; }
 
   .mobile-bar { display: none; }
   @media (max-width: 760px) {
@@ -80,7 +89,7 @@ const {
       gap: 6px;
       padding: 6px;
       border-radius: 999px;
-      background: rgba(16, 16, 19, 0.82);
+      background: rgb(var(--bg-rgb) / 0.82);
       border: 1px solid var(--line-strong);
       backdrop-filter: blur(18px);
       -webkit-backdrop-filter: blur(18px);
@@ -91,6 +100,6 @@ const {
     :global(body.menu-open) .mobile-bar { transform: translateY(150%); }
     .mobile-bar__btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem; min-height: 48px; border-radius: 999px; font-size: 0.74rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
     .mobile-bar__btn :global(svg) { width: 16px; height: 16px; }
-    .mobile-bar__btn--gold { background: var(--gold-grad); color: #17130b; }
+    .mobile-bar__btn--gold { background: var(--cta-bg); color: var(--cta-fg); }
   }
 </style>

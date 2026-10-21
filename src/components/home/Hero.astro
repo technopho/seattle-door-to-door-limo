@@ -15,7 +15,7 @@ const airports = [
 ];
 const hours = Array.from({ length: 11 }, (_, i) => i + 2);
 ---
-<section class="hero" data-hero aria-label="Seattle luxury chauffeur service">
+<section class="hero" data-hero data-theme="dark" aria-label="Seattle luxury chauffeur service">
   <div class="hero__stage" data-hero-stage aria-hidden="true">
     <img class="hero__fallback" data-hero-fallback data-src={images.skyline} alt="" decoding="async" />
     <canvas class="hero__canvas" data-hero-canvas></canvas>
@@ -150,12 +150,14 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
 <style>
   /* ---------- Frame ---------- */
   .hero {
+    /* Rounded ivory "sheet" the page rises on in light mode (see .hero::after) */
+    --hero-curtain: clamp(20px, 2.5vw, 36px);
     position: relative;
     isolation: isolate;
     display: flex;
     min-height: max(100svh, 760px);
     overflow: hidden;
-    background: radial-gradient(120% 70% at 58% 58%, #1a1510 0%, #0b0c10 45%, var(--ink) 100%);
+    background: radial-gradient(120% 70% at 58% 58%, var(--bg-2) 0%, var(--bg-2) 45%, var(--bg) 100%);
   }
   .hero__stage { position: absolute; inset: 0; z-index: -1; overflow: hidden; }
   .hero__canvas { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; transition: opacity 2.2s var(--ease-out); }
@@ -179,10 +181,23 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
     inset: 0;
     pointer-events: none;
     background:
-      linear-gradient(180deg, rgba(10, 10, 12, 0.6) 0%, rgba(10, 10, 12, 0) 20%),
-      radial-gradient(48% 36% at 20% 66%, rgba(10, 10, 12, 0.5) 0%, rgba(10, 10, 12, 0) 100%),
-      linear-gradient(90deg, rgba(10, 10, 12, 0.88) 0%, rgba(10, 10, 12, 0.6) 30%, rgba(10, 10, 12, 0) 58%),
-      linear-gradient(0deg, var(--ink) 0%, rgba(10, 10, 12, 0.55) 16%, rgba(10, 10, 12, 0) 42%);
+      linear-gradient(180deg, rgb(var(--bg-rgb) / 0.6) 0%, rgb(var(--bg-rgb) / 0) 20%),
+      radial-gradient(48% 36% at 20% 66%, rgb(var(--bg-rgb) / 0.5) 0%, rgb(var(--bg-rgb) / 0) 100%),
+      linear-gradient(90deg, rgb(var(--bg-rgb) / 0.88) 0%, rgb(var(--bg-rgb) / 0.6) 30%, rgb(var(--bg-rgb) / 0) 58%),
+      linear-gradient(0deg, var(--bg) 0%, rgb(var(--bg-rgb) / 0.55) 16%, rgb(var(--bg-rgb) / 0) 42%);
+  }
+  /* Light page: the ivory page rises over the night scene as a rounded sheet, a clean
+     hard edge instead of a muddy dark-to-ivory gradient. On the dark page the scene
+     already settles into onyx, so the hand-off is seamless and needs no sheet. */
+  :global(html[data-theme='light']) .hero::after {
+    content: '';
+    position: absolute;
+    inset: auto 0 0 0;
+    z-index: 3;
+    height: var(--hero-curtain);
+    border-radius: var(--hero-curtain) var(--hero-curtain) 0 0;
+    background: var(--page-bg);
+    pointer-events: none;
   }
 
   .hero__inner {
@@ -197,25 +212,27 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
 
   /* ---------- Copy ---------- */
   .hero__intro { max-width: 760px; }
-  .hero__eyebrow { margin-bottom: 1.6rem; text-shadow: 0 1px 12px rgba(0, 0, 0, 0.85); }
+  .hero__eyebrow { margin-bottom: 1.75rem; letter-spacing: 0.24em; text-shadow: 0 1px 12px rgb(var(--bg-rgb) / 0.85); }
+  /* Inter Tight runs far wider than the old serif: a calmer size, tight tracking, weight 500 */
   .hero__title {
-    font-size: var(--fs-hero);
-    line-height: 0.94;
-    letter-spacing: -0.025em;
-    text-shadow: 0 2px 40px rgba(0, 0, 0, 0.35);
+    font-size: clamp(3rem, 5.7vw, 5.5rem);
+    font-weight: 500;
+    line-height: 0.98;
+    letter-spacing: -0.04em;
+    text-shadow: 0 2px 40px rgb(var(--bg-rgb) / 0.35);
   }
-  .hero__title em { display: block; background: none; color: inherit; padding-right: 0; }
-  .hero__title :global(.split-line) { padding: 0 0.12em 0.16em 0; margin: 0 -0.12em -0.16em 0; }
+  .hero__title em { display: block; font-style: normal; background: none; color: inherit; padding-right: 0; }
+  .hero__title :global(.split-line) { padding: 0 0.06em 0.14em 0; margin: 0 -0.06em -0.14em 0; }
   .hero__title em :global(.split-word) {
-    background: var(--gold-grad);
+    background: var(--accent-grad);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
-    padding-right: 0.08em;
+    padding-right: 0.04em;
     /* text-shadow would paint over a background-clipped gradient and muddy the gold */
     text-shadow: none;
   }
-  .hero__lead { margin-top: 1.7rem; max-width: 46ch; color: var(--ivory-2); }
+  .hero__lead { margin-top: 1.75rem; max-width: 46ch; color: var(--text-2); }
   .hero__ctas { display: flex; flex-wrap: wrap; gap: 0.85rem; margin-top: 2.2rem; }
   .hero__trust {
     display: flex;
@@ -225,13 +242,13 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
     margin-top: 2.2rem;
     padding: 0;
     font-size: 0.82rem;
-    color: var(--ivory-2);
+    color: var(--text-2);
   }
   /* column-gap only: no divider can be orphaned at the start of a wrapped line */
   .hero__trust li { display: inline-flex; align-items: center; gap: 0.55rem; white-space: nowrap; }
-  .hero__trust :global(svg) { width: 17px; height: 17px; color: var(--gold); }
+  .hero__trust :global(svg) { width: 17px; height: 17px; color: var(--accent); }
   .hero__trust .stars :global(svg) { width: 13px; height: 13px; }
-  .hero__trust strong { color: var(--ivory); font-weight: 700; }
+  .hero__trust strong { color: var(--text); font-weight: 600; }
 
   /* JS-driven intro: hidden until the preloader hands over (with a no-JS failsafe) */
   :global(.js) .hero [data-hero-in],
@@ -248,8 +265,8 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
     gap: 1.05rem;
     padding: clamp(1.25rem, 2vw, 1.75rem);
     border-radius: var(--radius-l);
-    background: linear-gradient(180deg, rgba(22, 21, 24, 0.72), rgba(12, 12, 15, 0.78));
-    box-shadow: 0 50px 100px -40px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    background: linear-gradient(180deg, rgb(var(--bg-rgb) / 0.72), rgb(var(--bg-rgb) / 0.78));
+    box-shadow: 0 50px 100px -40px rgb(var(--bg-rgb) / 0.9), inset 0 1px 0 rgb(var(--fg-rgb) / 0.06);
   }
   .quote::before {
     content: '';
@@ -258,22 +275,23 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
     left: 12%;
     right: 12%;
     height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(232, 211, 162, 0.75), transparent);
+    background: linear-gradient(90deg, transparent, rgb(var(--accent-2-rgb) / 0.75), transparent);
   }
-  .quote__head { display: grid; gap: 0.35rem; }
+  .quote__head { display: grid; gap: 0.55rem; }
   .quote__kicker {
     display: inline-flex;
     align-items: center;
     gap: 0.55rem;
     font-size: 0.66rem;
-    font-weight: 700;
-    letter-spacing: 0.22em;
+    font-weight: 600;
+    letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: var(--gold);
+    color: var(--accent);
   }
-  .quote__live { width: 6px; height: 6px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 0 rgba(127, 200, 160, 0.6); animation: q-pulse 2.4s infinite; }
-  @keyframes q-pulse { 70% { box-shadow: 0 0 0 8px rgba(127, 200, 160, 0); } 100% { box-shadow: 0 0 0 0 rgba(127, 200, 160, 0); } }
-  .quote__title { font-size: clamp(1.75rem, 2.3vw, 2.15rem); line-height: 1.05; }
+  .quote__live { width: 6px; height: 6px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 0 color-mix(in srgb, var(--ok) 55%, transparent); animation: q-pulse 2.4s infinite; }
+  @keyframes q-pulse { 70% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--ok) 0%, transparent); } 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ok) 0%, transparent); } }
+  /* A UI heading, not a display line: modest size, gentle tracking */
+  .quote__title { font-size: clamp(1.4rem, 1.6vw, 1.6rem); font-weight: 500; line-height: 1.15; letter-spacing: -0.025em; }
 
   .quote__tabs {
     position: relative;
@@ -281,7 +299,7 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
     padding: 4px;
     border: 1px solid var(--line-strong);
     border-radius: 999px;
-    background: rgba(0, 0, 0, 0.28);
+    background: rgb(var(--bg-rgb) / 0.45);
   }
   .quote__tabs button {
     position: relative;
@@ -290,16 +308,16 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
     min-height: 44px;
     padding: 0 0.7rem;
     border-radius: 999px;
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.09em;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: var(--ivory-2);
+    color: var(--text-2);
     white-space: nowrap;
     transition: color 0.5s var(--ease-out);
   }
-  .quote__tabs button:hover { color: var(--ivory); }
-  .quote__tabs button[aria-selected='true'] { color: #17130b; }
+  .quote__tabs button:hover { color: var(--text); }
+  .quote__tabs button[aria-selected='true'] { color: var(--on-accent); }
   .quote__pill {
     position: absolute;
     top: 4px;
@@ -307,8 +325,8 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
     left: 0;
     width: 0;
     border-radius: 999px;
-    background: var(--gold-grad);
-    box-shadow: 0 6px 24px -8px rgba(201, 168, 106, 0.7);
+    background: var(--accent-grad);
+    box-shadow: 0 6px 24px -8px rgb(var(--accent-rgb) / 0.7);
     transition: transform 0.65s var(--ease-out), width 0.65s var(--ease-out);
   }
   .quote__pill.no-anim { transition: none; }
@@ -329,17 +347,17 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
     height: 44px;
     margin-top: -22px;
     border-radius: 50%;
-    border: 1px solid rgba(201, 168, 106, 0.45);
-    background: #141317;
-    color: var(--gold-2);
-    box-shadow: 0 0 0 5px rgba(12, 12, 15, 0.9), 0 8px 24px -8px rgba(0, 0, 0, 0.8);
+    border: 1px solid rgb(var(--accent-rgb) / 0.45);
+    background: var(--bg-2);
+    color: var(--accent-2);
+    box-shadow: 0 0 0 5px rgb(var(--bg-rgb) / 0.9), 0 8px 24px -8px rgb(var(--bg-rgb) / 0.9);
     cursor: pointer;
     transition: border-color 0.3s, background 0.3s, color 0.3s;
   }
   .qswap[hidden] { display: none; }
   .qswap :global(svg) { width: 17px; height: 17px; transition: transform 0.7s var(--ease-out); }
-  .qswap:hover { border-color: var(--gold); background: #1b1913; }
-  .qswap:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+  .qswap:hover { border-color: var(--accent); background: var(--bg-2); }
+  .qswap:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
   .qgroup--route[data-dir='from'] .qswap :global(svg) { transform: rotate(180deg); }
   .quote[data-type='airport'] .qgroup--route .qrow { padding-right: 4.1rem; }
 
@@ -361,7 +379,7 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
     gap: 0.85rem;
     min-height: 62px;
     padding: 0.5rem 0.95rem;
-    background: rgba(12, 12, 15, 0.86);
+    background: rgb(var(--bg-rgb) / 0.86);
     cursor: text;
     transition: background 0.3s;
   }
@@ -374,16 +392,16 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
     bottom: 14px;
     width: 2px;
     border-radius: 2px;
-    background: var(--gold);
+    background: var(--accent);
     transform: scaleY(0);
     transition: transform 0.45s var(--ease-out);
   }
-  .qrow:focus-within { background: rgba(18, 17, 20, 0.95); }
+  .qrow:focus-within { background: rgb(var(--bg-rgb) / 0.95); }
   .qrow:focus-within::after { transform: scaleY(1); }
-  .qrow__icon { display: grid; place-items: center; color: var(--gold); }
+  .qrow__icon { display: grid; place-items: center; color: var(--accent); }
   .qrow__icon :global(svg) { width: 18px; height: 18px; }
   .qrow__body { display: grid; gap: 0.1rem; min-width: 0; }
-  .qrow__label { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
+  .qrow__label { font-size: 0.64rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
   .qrow__input {
     width: 100%;
     min-width: 0;
@@ -392,14 +410,14 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
     border: 0;
     outline: 0;
     background: transparent;
-    color: var(--ivory);
+    color: var(--text);
     font-size: 1rem;
     font-weight: 500;
     color-scheme: dark;
   }
   .qrow__input::placeholder { color: var(--muted); opacity: 1; }
   select.qrow__input { appearance: none; cursor: pointer; padding-right: 0.5rem; }
-  select.qrow__input option { background: var(--ink-3); color: var(--ivory); }
+  select.qrow__input option { background: var(--bg-3); color: var(--text); }
   /* Date/time: one icon (ours), and a tap anywhere on the row opens the native picker */
   .qrow__input[type='date'],
   .qrow__input[type='time'] { -webkit-appearance: none; appearance: none; cursor: pointer; text-align: left; }
@@ -423,7 +441,7 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
 
   .qrow--pax { cursor: default; }
   .qrow__pax { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 0.45rem; min-width: 0; line-height: 1.35; }
-  .qrow__pax output { font-size: 1.05rem; font-weight: 700; color: var(--ivory); font-variant-numeric: tabular-nums; min-width: 1.2ch; }
+  .qrow__pax output { font-size: 1.05rem; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; min-width: 1.2ch; }
   .qrow__hint { font-size: 0.74rem; color: var(--muted); }
   .stepper { display: flex; gap: 0.4rem; }
   .stepper__btn {
@@ -433,11 +451,11 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
     height: 44px;
     border-radius: 50%;
     border: 1px solid var(--line-strong);
-    color: var(--ivory);
+    color: var(--text);
     transition: border-color 0.3s, background 0.3s, color 0.3s, opacity 0.3s;
   }
   .stepper__btn :global(svg) { width: 16px; height: 16px; }
-  .stepper__btn:hover:not(:disabled) { border-color: var(--gold); color: var(--gold-2); background: rgba(201, 168, 106, 0.08); }
+  .stepper__btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent-2); background: rgb(var(--accent-rgb) / 0.08); }
   .stepper__btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
   .quote__submit { margin-top: 0.15rem; }
@@ -456,7 +474,7 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
   .hero__cue {
     position: absolute;
     left: 50%;
-    bottom: 1rem;
+    bottom: calc(var(--hero-curtain) + 0.6rem);
     z-index: 2;
     display: none;
     justify-items: center;
@@ -466,14 +484,14 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
     transform: translateX(-50%);
     color: var(--muted);
     font-size: 0.6rem;
-    font-weight: 700;
-    letter-spacing: 0.32em;
+    font-weight: 600;
+    letter-spacing: 0.3em;
     text-transform: uppercase;
     transition: color 0.3s;
   }
-  .hero__cue:hover { color: var(--gold-2); }
+  .hero__cue:hover { color: var(--accent-2); }
   .hero__cue-text { padding-left: 0.32em; }
-  .hero__cue-line { position: relative; width: 1px; height: 40px; overflow: hidden; background: var(--line-strong); }
+  .hero__cue-line { position: relative; width: 1px; height: 34px; overflow: hidden; background: var(--line-strong); }
   .hero__cue-line::after {
     content: '';
     position: absolute;
@@ -481,7 +499,7 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
     top: 0;
     width: 1px;
     height: 100%;
-    background: linear-gradient(180deg, transparent, var(--gold-2));
+    background: linear-gradient(180deg, transparent, var(--accent-2));
     animation: cue-drop 2.4s var(--ease-in-out) infinite;
   }
   @keyframes cue-drop {
@@ -492,7 +510,7 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
   /* Scroll cue only where there is clear room under the content */
   @media (min-width: 1200px) and (min-height: 860px) {
     .hero__cue { display: grid; }
-    .hero__inner { padding-bottom: clamp(6.5rem, 12vh, 8.5rem); }
+    .hero__inner { padding-bottom: calc(clamp(6.5rem, 12vh, 8.5rem) + var(--hero-curtain)); }
   }
 
   /* ---------- Laptop heights ---------- */
@@ -508,7 +526,7 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
   /* ---------- Small laptops / iPad landscape ---------- */
   @media (min-width: 981px) and (max-width: 1200px) {
     .hero__inner { grid-template-columns: minmax(0, 1fr) minmax(320px, 360px); gap: 2.5rem; }
-    .hero__title { font-size: clamp(4rem, 7.4vw, 5.6rem); }
+    .hero__title { font-size: clamp(3.6rem, 6.8vw, 5rem); }
     .hero__lead { font-size: 1.02rem; }
     .hero__ctas { flex-wrap: nowrap; gap: 0.7rem; }
     .hero__ctas .btn { min-height: 54px; padding: 0 1.45rem; letter-spacing: 0.12em; }
@@ -522,19 +540,21 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
 
   /* ---------- Tablet & mobile ---------- */
   @media (max-width: 980px) {
-    .hero { display: block; min-height: 0; }
+    /* flat onyx so the area under the stage (quote card) meets the stage's fade without a step */
+    .hero { display: block; min-height: 0; background: var(--bg); }
+    .hero__title { font-size: clamp(3rem, 9vw, 5rem); }
     .hero__stage { inset: 0 0 auto 0; height: calc(100svh + 160px); }
     .hero__stage::after {
       content: '';
       position: absolute;
       inset: auto 0 0 0;
       height: 220px;
-      background: linear-gradient(180deg, rgba(10, 10, 12, 0), var(--ink));
+      background: linear-gradient(180deg, rgb(var(--bg-rgb) / 0), var(--bg));
     }
     .hero__scrim {
       background:
-        linear-gradient(180deg, rgba(10, 10, 12, 0.55) 0%, rgba(10, 10, 12, 0) 16%),
-        linear-gradient(180deg, rgba(10, 10, 12, 0) 24%, rgba(10, 10, 12, 0.72) 37%, rgba(10, 10, 12, 0.8) 56%, rgba(10, 10, 12, 0.9) 80%, rgba(10, 10, 12, 0.94) 100%);
+        linear-gradient(180deg, rgb(var(--bg-rgb) / 0.55) 0%, rgb(var(--bg-rgb) / 0) 16%),
+        linear-gradient(180deg, rgb(var(--bg-rgb) / 0) 24%, rgb(var(--bg-rgb) / 0.72) 37%, rgb(var(--bg-rgb) / 0.8) 56%, rgb(var(--bg-rgb) / 0.9) 80%, rgb(var(--bg-rgb) / 0.94) 100%);
     }
     .hero__inner { grid-template-columns: 1fr; gap: 0.5rem; padding-top: 0; padding-bottom: clamp(3rem, 8vw, 5rem); }
     .hero__intro {
@@ -552,10 +572,10 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
       align-self: flex-start;
       padding: 0.45rem 0.85rem;
       border-radius: 999px;
-      background: rgba(10, 10, 12, 0.55);
+      background: rgb(var(--bg-rgb) / 0.55);
       -webkit-backdrop-filter: blur(6px);
       backdrop-filter: blur(6px);
-      box-shadow: inset 0 0 0 1px rgba(201, 168, 106, 0.16);
+      box-shadow: inset 0 0 0 1px rgb(var(--accent-rgb) / 0.16);
     }
     .hero__eyebrow::before { display: none; }
   }

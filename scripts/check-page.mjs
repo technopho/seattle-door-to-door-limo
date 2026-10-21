@@ -1,5 +1,5 @@
 // Headless visual + console check using the system Chrome.
-// Usage: node scripts/check-page.mjs <url> [--out dir] [--name prefix] [--scroll N] [--widths 1440,390] [--full]
+// Usage: node scripts/check-page.mjs <url> [--out dir] [--name prefix] [--scroll N] [--widths 1440,390] [--full] [--theme light|dark]
 // Prints console errors / page errors and writes screenshots: <out>/<name>-<width>[-sN].png
 import puppeteer from 'puppeteer-core';
 import fs from 'node:fs';
@@ -14,6 +14,7 @@ const name = opt('name', 'page');
 const scrollSteps = Number(opt('scroll', '0'));
 const widths = opt('widths', '1440,390').split(',').map(Number);
 const wait = Number(opt('wait', '2500'));
+const theme = opt('theme', 'light');
 fs.mkdirSync(out, { recursive: true });
 
 const browser = await puppeteer.launch({
@@ -26,6 +27,7 @@ for (const w of widths) {
   const page = await browser.newPage();
   const h = w < 700 ? 844 : 900;
   await page.setViewport({ width: w, height: h, deviceScaleFactor: 1, isMobile: w < 700, hasTouch: w < 700 });
+  await page.evaluateOnNewDocument((t) => { try { localStorage.setItem('sdd-theme', t); } catch {} }, theme);
   page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') { console.log(`[${w}] console.${m.type()}: ${m.text()}`); if (m.type() === 'error') problems++; } });
   page.on('pageerror', (e) => { console.log(`[${w}] PAGEERROR: ${e.message}`); problems++; });
   page.on('requestfailed', (r) => console.log(`[${w}] REQFAIL: ${r.url()} ${r.failure()?.errorText}`));

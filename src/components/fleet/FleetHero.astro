@@ -3,7 +3,7 @@ import Icon from '../Icon.astro';
 import { images } from '../../data/site';
 import { maxPax } from './fleetMeta';
 ---
-<section class="fh" aria-labelledby="fleet-title">
+<section class="fh" data-theme="dark" aria-labelledby="fleet-title">
   <div class="fh__media" aria-hidden="true">
     <div class="fh__par" data-parallax="0.1">
       <img class="fh__img" src={images.darkCar} alt="" width="2600" height="1574" decoding="async" fetchpriority="high" />
@@ -42,7 +42,7 @@ import { maxPax } from './fleetMeta';
     align-items: flex-end;
     padding: calc(var(--header-h) + 3rem) 0 clamp(2.5rem, 5vw, 4rem);
     overflow: hidden;
-    background: var(--ink);
+    background: var(--bg);
   }
   .fh__media { position: absolute; inset: 0; z-index: -1; overflow: hidden; }
   .fh__par { position: absolute; inset: -12% 0; }
@@ -52,32 +52,32 @@ import { maxPax } from './fleetMeta';
     position: absolute;
     inset: 0;
     background:
-      linear-gradient(90deg, rgba(10, 10, 12, 0.92) 0%, rgba(10, 10, 12, 0.55) 38%, rgba(10, 10, 12, 0) 65%),
-      linear-gradient(180deg, rgba(10, 10, 12, 0.7) 0%, rgba(10, 10, 12, 0) 26%, rgba(10, 10, 12, 0) 52%, var(--ink) 100%);
+      linear-gradient(90deg, rgb(var(--bg-rgb) / 0.92) 0%, rgb(var(--bg-rgb) / 0.55) 38%, rgb(var(--bg-rgb) / 0) 65%),
+      linear-gradient(180deg, rgb(var(--bg-rgb) / 0.7) 0%, rgb(var(--bg-rgb) / 0) 26%, rgb(var(--bg-rgb) / 0) 52%, var(--bg) 100%);
   }
 
   .fh__content { position: relative; display: grid; gap: 1.6rem; }
   .fh__top { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
-  .fh__title { font-size: var(--fs-hero); line-height: 0.92; max-width: 11ch; }
+  .fh__title { font-size: var(--fs-hero); line-height: 0.96; letter-spacing: -0.04em; max-width: 11ch; }
   /* split masks are inline-blocks: align them to the top so they keep the tight display leading */
   .fh__title :global(.split-line) { vertical-align: top; }
   .fh__br { display: none; }
   /* split words are transformed layers, so each needs its own gold text clip */
-  .fh__title :global(em .split-word) { background: var(--gold-grad); -webkit-background-clip: text; background-clip: text; color: transparent; padding-right: 0.06em; }
+  .fh__title :global(em .split-word) { background: var(--accent-grad); -webkit-background-clip: text; background-clip: text; color: transparent; padding-right: 0.06em; }
   /* CTAs sit directly under the copy that sells them; the car keeps the right half as negative space. */
   .fh__row { display: grid; grid-template-columns: 1fr; justify-items: start; gap: 1.6rem; }
   .fh__row .lead { max-width: 52ch; }
   .fh__ctas { display: flex; flex-wrap: wrap; gap: 0.8rem; }
   .fh__chips { display: flex; flex-wrap: wrap; gap: 0.6rem; padding-top: 1.6rem; border-top: 1px solid var(--line); }
-  .fh__chips .chip { background: rgba(10, 10, 12, 0.45); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
-  .fh__chips :global(svg) { width: 15px; height: 15px; color: var(--gold); }
+  .fh__chips .chip { background: rgb(var(--bg-rgb) / 0.45); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  .fh__chips :global(svg) { width: 15px; height: 15px; color: var(--accent); }
 
   @media (max-width: 640px) {
     .fh { min-height: auto; padding-top: calc(var(--header-h) + 34vh); padding-bottom: 2.25rem; }
     .fh__par { inset: -8% 0 30%; }
     .fh__img { object-position: 76% 50%; }
     .fh__shade {
-      background: linear-gradient(180deg, rgba(10, 10, 12, 0.55) 0%, rgba(10, 10, 12, 0) 18%, rgba(10, 10, 12, 0) 34%, rgba(10, 10, 12, 0.85) 52%, var(--ink) 64%);
+      background: linear-gradient(180deg, rgb(var(--bg-rgb) / 0.55) 0%, rgb(var(--bg-rgb) / 0) 18%, rgb(var(--bg-rgb) / 0) 34%, rgb(var(--bg-rgb) / 0.85) 52%, var(--bg) 64%);
     }
     .fh__br { display: inline; }
     .fh__row { justify-items: stretch; }
