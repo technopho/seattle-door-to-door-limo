@@ -1,0 +1,44 @@
+---
+import Base from '../../layouts/Base.astro';
+import ServiceHero from '../../components/services/ServiceHero.astro';
+import ServiceOverview from '../../components/services/ServiceOverview.astro';
+import ServiceVehicles from '../../components/services/ServiceVehicles.astro';
+import ServiceAreas from '../../components/services/ServiceAreas.astro';
+import ServiceFaq from '../../components/services/ServiceFaq.astro';
+import RelatedServices from '../../components/services/RelatedServices.astro';
+import ServiceCta from '../../components/services/ServiceCta.astro';
+import { services, serviceHref, images, type Service } from '../../data/site';
+import { servicePages } from '../../data/service-pages';
+import { breadcrumbs, serviceSchema, faqPage } from '../../lib/seo';
+
+export function getStaticPaths() {
+  return services
+    .filter((s) => servicePages[s.slug])
+    .map((s) => ({ params: { page: s.page }, props: { service: s } }));
+}
+
+const { service: s } = Astro.props as { service: Service };
+const p = servicePages[s.slug];
+const path = serviceHref(s);
+
+// Closing-band photograph: the first candidate not already used by this page's hero or related cards.
+// (Keep these light, web-sized photos: the Pike Place Market original is a 2.6 MB, 5184px file.)
+const usedImages = new Set([p.hero.image, ...p.related.map((slug) => servicePages[slug]?.hero.image)]);
+const ctaImage = [images.bellevue, images.waterfront, images.skyline].find((img) => !usedImages.has(img));
+
+const jsonLd = [
+  breadcrumbs([['Services', '/services/'], [p.crumb ?? s.title, path]]),
+  serviceSchema({ name: p.schemaName, description: p.seo.description, path }),
+  faqPage(p.faqs),
+];
+---
+<Base title={p.seo.title} description={p.seo.description} jsonLd={jsonLd} ogImage={p.hero.image}>
+  <ServiceHero service={s} page={p} />
+  <ServiceOverview service={s} page={p} />
+  <ServiceVehicles slug={s.slug} serviceTitle={s.title} vehicles={p.vehicles} title={p.vehiclesTitle} lead={p.vehiclesLead} />
+  <ServiceAreas places={p.places} title={p.areasTitle} lead={p.areasLead} />
+  <ServiceFaq items={p.faqs} serviceTitle={s.title} title={p.faqTitle} lead={p.faqLead} />
+  {/* The service CTA sits before the cross-sell so it never stacks against the footer CTA. */}
+  <ServiceCta heading={p.cta} reserveHref={`/book/?type=${s.slug}`} reserveLabel={p.reserveLabel} image={ctaImage} />
+  <RelatedServices slugs={p.related} title={p.relatedTitle} />
+</Base>

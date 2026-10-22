@@ -2,7 +2,7 @@
 // Dot-matrix Puget Sound, glowing city pins, animated routes from the SeaTac hub,
 // HTML labels projected from 3D every frame. Lazy-loaded by AreasMap.astro.
 import * as THREE from 'three';
-import { areas, hub } from '../data/site';
+import { areas, hub, areaHref } from '../data/site';
 
 // `still` = the city was picked on the map itself: keep the camera put so the label stays under the pointer.
 export type AreaMapHandle = { setActive(i: number | null, still?: boolean): void };
@@ -160,8 +160,10 @@ function glowTexture() {
 /* ------------------------------------------------------------------------
    Static SVG fallback (no WebGL).
    ------------------------------------------------------------------------ */
+let fbCount = 0;
 export function renderFallback(stage: HTMLElement) {
   stage.classList.add('is-fallback');
+  const uid = `am-fb${++fbCount}`; // unique SVG ids if the map is embedded more than once
   const narrow = stage.clientWidth < 600;
   const pts = areas.map((a) => project(a.lat, a.lng));
   const h = project(hub.lat, hub.lng);
@@ -188,14 +190,15 @@ export function renderFallback(stage: HTMLElement) {
   const cities = pts
     .map(([x, z], i) => {
       const left = areas[i].city === 'Kirkland' || areas[i].city === 'Seattle';
-      return `<g class="am-fb__city" transform="translate(${x} ${z})"><circle r="${halo}" class="am-fb__halo"/><circle r="0.11"/><text x="${left ? -lx : lx}" y="0.16" text-anchor="${left ? 'end' : 'start'}">${areas[i].city}</text></g>`;
+      // Pointer shortcut to the area page; the city list carries the same links for keyboard users.
+      return `<a href="${areaHref(areas[i])}" tabindex="-1"><g class="am-fb__city" transform="translate(${x} ${z})"><circle r="${halo}" class="am-fb__halo"/><circle r="0.11"/><text x="${left ? -lx : lx}" y="0.16" text-anchor="${left ? 'end' : 'start'}">${areas[i].city}</text></g></a>`;
     })
     .join('');
   const svg = `<svg class="am-fb${narrow ? ' am-fb--narrow' : ''}" viewBox="${minX} ${minZ} ${maxX - minX} ${maxZ - minZ}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Service area map: SeaTac Airport connected to Seattle, Bellevue, Kirkland, Redmond, Tacoma and Everett">
-    <defs><pattern id="am-dots" width="0.16" height="0.16" patternUnits="userSpaceOnUse"><circle cx="0.08" cy="0.08" r="0.022" fill="rgba(243,238,228,0.28)"/></pattern>
-    <radialGradient id="am-fade"><stop offset="0.55" stop-color="#fff"/><stop offset="1" stop-color="#000"/></radialGradient>
-    <mask id="am-mask"><rect x="${minX}" y="${minZ}" width="${maxX - minX}" height="${maxZ - minZ}" fill="url(#am-fade)"/></mask></defs>
-    <g mask="url(#am-mask)"><rect x="${minX}" y="${minZ}" width="${maxX - minX}" height="${maxZ - minZ}" fill="url(#am-dots)"/>
+    <defs><pattern id="${uid}-dots" width="0.16" height="0.16" patternUnits="userSpaceOnUse"><circle cx="0.08" cy="0.08" r="0.022" fill="rgba(243,238,228,0.28)"/></pattern>
+    <radialGradient id="${uid}-fade"><stop offset="0.55" stop-color="#fff"/><stop offset="1" stop-color="#000"/></radialGradient>
+    <mask id="${uid}-mask"><rect x="${minX}" y="${minZ}" width="${maxX - minX}" height="${maxZ - minZ}" fill="url(#${uid}-fade)"/></mask></defs>
+    <g mask="url(#${uid}-mask)"><rect x="${minX}" y="${minZ}" width="${maxX - minX}" height="${maxZ - minZ}" fill="url(#${uid}-dots)"/>
     <path class="am-fb__water" fill-rule="evenodd" d="${water}"/></g>
     <g class="am-fb__arcs">${arcs}</g>${cities}
     <g transform="translate(${h[0]} ${h[1]})" class="am-fb__hub"><circle r="0.42" class="am-fb__halo"/><circle r="0.16"/><text x="0.55" y="0.14">SeaTac</text></g>
@@ -339,6 +342,8 @@ export function createAreaMap(stage: HTMLElement): AreaMapHandle | null {
     renderFallback(stage);
     return null;
   }
+  // Shader-error checks block on getProgramInfoLog until each program links; dev-only (see hero-scene.ts).
+  renderer.debug.checkShaderErrors = import.meta.env.DEV;
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
   renderer.setClearColor(0x000000, 0);
   const canvas = renderer.domElement;
@@ -628,6 +633,8 @@ export function createAreaMap(stage: HTMLElement): AreaMapHandle | null {
     sox: number;
     soy: number;
     init: boolean;
+    locked: boolean; // picked on the map: frozen where it was hovered / tapped
+    hit: boolean; // pointer target (only once it is visibly there)
   };
   const labelEls = Array.from(stage.querySelectorAll<HTMLElement>('[data-am-label]'));
   const labelFor = (key: string) => labelEls.find((el) => el.dataset.amLabel === key);
@@ -646,7 +653,7 @@ export function createAreaMap(stage: HTMLElement): AreaMapHandle | null {
         mode: pref ?? 'top',
         inner: el.querySelector<HTMLElement>('.am-label__inner') ?? el,
         stem: el.querySelector<HTMLElement>('.am-label__stem'),
-        w: 0, h: 0, ox: 0, oy: 0, sox: 0, soy: 0, init: false,
+        w: 0, h: 0, ox: 0, oy: 0, sox: 0, soy: 0, init: false, locked: false, hit: true,
       };
     });
   const labelState = { show: reduced ? 1 : 0 };
@@ -697,6 +704,7 @@ export function createAreaMap(stage: HTMLElement): AreaMapHandle | null {
   let width = 1;
   let height = 1;
   let active: number | null = null;
+  let lockIdx: number | null = null; // label picked on the map: it keeps its exact spot
   let zoomGoal = 1;
   const v = new THREE.Vector3();
   const v2 = new THREE.Vector3();
@@ -825,7 +833,11 @@ export function createAreaMap(stage: HTMLElement): AreaMapHandle | null {
   }
 
   function setActive(i: number | null, still = false) {
+    if (i === active && (i === null || (lockIdx === i) === still)) return;
     active = i;
+    lockIdx = i !== null && still ? i : null;
+    // Inactive pills drop their ETA (compact), so sizes change with the selection.
+    measureLabels();
     pins.forEach((p, k) => (p.target = i === null ? 1 : k === i ? 1.35 : 0.2));
     if (i === null) {
       targetGoal.copy(fitCenter);
@@ -893,7 +905,9 @@ export function createAreaMap(stage: HTMLElement): AreaMapHandle | null {
       });
     });
 
-    // Active label first (it must not move from under the pointer), then nearest (lowest on screen).
+    // Active label first, then nearest (lowest on screen). A label picked on the map is locked:
+    // it stays exactly where it was hovered / tapped (a second tap must land on it again), and
+    // the others are laid out around it.
     const order = [...labels].sort((a, b) => {
       if (active !== null) {
         if (a.idx === active) return -1;
@@ -905,6 +919,16 @@ export function createAreaMap(stage: HTMLElement): AreaMapHandle | null {
     order.forEach((l) => {
       const x = l.pin.ax;
       const y = l.pin.ay;
+      if (l.idx === lockIdx && l.init) {
+        if (!l.locked) {
+          l.locked = true;
+          l.ox = l.sox;
+          l.oy = l.soy;
+        }
+        placedBoxes.push({ l: x + l.ox, t: y + l.oy, r: x + l.ox + l.w, b: y + l.oy + l.h });
+        return;
+      }
+      l.locked = false;
       let best = l.mode;
       let bestCost = Infinity;
       let bx = 0;
@@ -949,7 +973,13 @@ export function createAreaMap(stage: HTMLElement): AreaMapHandle | null {
         const len = Math.hypot(nx, ny);
         l.stem.style.transform = len < 1 ? 'scaleX(0)' : `rotate(${Math.atan2(ny, nx).toFixed(3)}rad) scaleX(${len.toFixed(1)})`;
       }
-      l.el.style.opacity = String(Math.min(1, Math.max(0, show * 1.4 - (1 - l.pin.drop))));
+      const op = Math.min(1, Math.max(0, show * 1.4 - (1 - l.pin.drop)));
+      l.el.style.opacity = String(op);
+      const hit = op > 0.6;
+      if (hit !== l.hit) {
+        l.hit = hit;
+        l.inner.style.pointerEvents = hit ? '' : 'none';
+      }
     });
   }
 
@@ -1038,6 +1068,8 @@ export function createAreaMap(stage: HTMLElement): AreaMapHandle | null {
   let raf = 0;
   let running = false;
   let inView = false;
+  // Nothing is drawn until the shaders have compiled in parallel (compileAsync, below)
+  let compiled = false;
   function loop(now: number) {
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
@@ -1046,7 +1078,7 @@ export function createAreaMap(stage: HTMLElement): AreaMapHandle | null {
     raf = running ? requestAnimationFrame(loop) : 0;
   }
   function syncRunning() {
-    const should = inView && document.visibilityState === 'visible' && !reduced;
+    const should = compiled && inView && document.visibilityState === 'visible' && !reduced;
     if (should && !running) {
       running = true;
       last = performance.now();
@@ -1059,7 +1091,7 @@ export function createAreaMap(stage: HTMLElement): AreaMapHandle | null {
   }
   let pending = false;
   function requestRender() {
-    if (running || pending) return;
+    if (!compiled || running || pending) return;
     pending = true;
     requestAnimationFrame(() => {
       pending = false;
@@ -1080,6 +1112,13 @@ export function createAreaMap(stage: HTMLElement): AreaMapHandle | null {
   document.addEventListener('visibilitychange', syncRunning);
   new ResizeObserver(resize).observe(mount);
   resize();
+  // Compile every program off the main thread (KHR_parallel_shader_compile) before the first draw, so
+  // mounting the map never stalls a frame on a synchronous shader link.
+  renderer.compileAsync(scene, camera).then(() => {
+    compiled = true;
+    syncRunning();
+    requestRender();
+  });
   document.fonts?.ready.then(() => { measureLabels(); measureHud(); requestRender(); });
 
   /* ---- Intro ---- */

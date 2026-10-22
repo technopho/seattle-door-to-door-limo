@@ -8,12 +8,14 @@ const capacity = [...fleet]
   .sort((a, b) => a.passengers - b.passengers)
   .map((v) => ({ id: v.id, name: v.name, pax: v.passengers }));
 
+// Values are the full names /book/ receives; labels stay short enough for the row beside the swap button.
 const airports = [
-  { value: 'SeaTac International Airport (SEA)', label: 'SeaTac International (SEA)' },
-  { value: 'Paine Field (PAE)', label: 'Paine Field, Everett (PAE)' },
-  { value: 'Boeing Field (BFI)', label: 'Boeing Field / King County (BFI)' },
+  { value: 'SeaTac International Airport (SEA)', label: 'SeaTac (SEA)' },
+  { value: 'Paine Field (PAE)', label: 'Paine Field (PAE)' },
+  { value: 'Boeing Field (BFI)', label: 'Boeing Field (BFI)' },
 ];
-const hours = Array.from({ length: 11 }, (_, i) => i + 2);
+// Same 1–12 range as the booking wizard and the service-page quick quote, so no minimum is implied.
+const hours = Array.from({ length: 12 }, (_, i) => i + 1);
 ---
 <section class="hero" data-hero data-theme="dark" aria-label="Seattle luxury chauffeur service">
   <div class="hero__stage" data-hero-stage aria-hidden="true">
@@ -24,23 +26,26 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
 
   <div class="hero__inner container" data-hero-content>
     <div class="hero__intro" data-hero-intro>
-      <p class="eyebrow hero__eyebrow" data-hero-in>Seattle · Bellevue · SeaTac — Since {site.since}</p>
-      <h1 class="hero__title display" data-split data-split-manual data-split-done="1" data-hero-title><span class="split-line" style="display:inline-block"><span class="split-word">Seattle,</span></span> <em><span class="split-line" style="display:inline-block"><span class="split-word">chauffeured.</span></span></em></h1>
-      <p class="lead hero__lead" data-hero-in>
-        Private chauffeurs and immaculate black cars for airport runs, executive travel and the nights that matter, across Seattle and the Eastside, 24/7.
+      <!-- The kicker carries the page's head term inside the h1 (same pattern as /fleet/); the display line stays the brand line. -->
+      <h1 class="hero__title display" data-split data-split-manual data-split-done="1" data-hero-title>
+        <span class="eyebrow hero__eyebrow" data-hero-in><span>Seattle limo &amp; chauffeur service<span class="hero__eyebrow-since"> · Since {site.since}</span></span></span>
+        <span class="split-line" style="display:inline-block"><span class="split-word">Seattle,</span></span> <em><span class="split-line" style="display:inline-block"><span class="split-word">chauffeured.</span></span></em>
+      </h1>
+      <p class="lead hero__lead" data-hero-rise>
+        Private chauffeurs and immaculate black cars for airport runs, executive travel and the nights that matter, across Seattle and the Eastside,&nbsp;24/7.
       </p>
-      <div class="hero__ctas" data-hero-in>
+      <div class="hero__ctas" data-hero-rise>
         <a href="/book/" class="btn btn--gold btn--lg" data-magnetic>Reserve your ride <Icon name="arrow" /></a>
-        <a href={site.phoneHref} class="btn btn--ghost btn--lg" data-cursor="Call"><Icon name="phone" /> Call {site.phone}</a>
+        <a href={site.phoneHref} class="btn btn--ghost btn--lg" data-cursor="Call"><Icon name="phone" /> {site.phone}</a>
       </div>
-      <ul class="hero__trust" role="list" data-hero-in>
+      <ul class="hero__trust" role="list" data-hero-rise>
         <li class="hero__rating">
           <span class="stars" aria-hidden="true">
             <Icon name="star" /><Icon name="star" /><Icon name="star" /><Icon name="star" /><Icon name="star" />
           </span>
           <span><strong>{site.rating.score}</strong> · {site.rating.count} reviews</span>
         </li>
-        <li><Icon name="shield" /> Licensed &amp; insured</li>
+        <li><Icon name="shield" /> Licensed, vetted chauffeurs</li>
         <li><Icon name="plane" /> Live flight tracking</li>
       </ul>
     </div>
@@ -48,8 +53,8 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
     <aside class="hero__quote" data-hero-in data-hero-quote aria-labelledby="quote-title">
       <form class="quote glass" data-quote data-fleet={JSON.stringify(capacity)} action="/book/" method="get" novalidate>
         <div class="quote__head">
-          <p class="quote__kicker"><span class="quote__live" aria-hidden="true"></span> Reserve in under a minute</p>
-          <h2 class="quote__title" id="quote-title">Get an instant quote</h2>
+          <p class="quote__kicker"><span class="quote__live" aria-hidden="true"></span> Reserve in four quick steps</p>
+          <h2 class="quote__title" id="quote-title">Where can we take you?</h2>
         </div>
 
         <div class="quote__tabs" role="tablist" aria-label="Trip type" data-quote-tabs>
@@ -80,7 +85,7 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
               <span class="qrow__body">
                 <span class="qrow__label">Duration</span>
                 <select class="qrow__input" name="hours" data-hours>
-                  {hours.map((h) => <option value={h} selected={h === 3}>{h} hours</option>)}
+                  {hours.map((h) => <option value={h} selected={h === 3}>{h} {h === 1 ? 'hour' : 'hours'}</option>)}
                 </select>
               </span>
               <span class="qrow__chev"><Icon name="chevron" /></span>
@@ -108,11 +113,14 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
                 <input class="qrow__input" type="date" name="date" data-date />
               </span>
             </label>
-            <label class="qrow">
+            <label class="qrow" data-time-row data-empty>
               <span class="qrow__icon"><Icon name="clock" /></span>
               <span class="qrow__body">
                 <span class="qrow__label">Time</span>
-                <input class="qrow__input" type="time" name="time" step="900" data-time />
+                <span class="qrow__field">
+                  <input class="qrow__input" type="time" name="time" step="900" data-time />
+                  <span class="qrow__ph" aria-hidden="true">Select time</span>
+                </span>
               </span>
             </label>
           </div>
@@ -134,9 +142,9 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
         </div>
 
         <button type="submit" class="btn btn--gold btn--lg btn--block quote__submit" data-magnetic="0.15">
-          See vehicles &amp; rates <Icon name="arrow" />
+          Choose your vehicle <Icon name="arrow" />
         </button>
-        <p class="quote__note"><Icon name="check" /> Free cancellation up to 24h <span aria-hidden="true">·</span> Confirmed in minutes</p>
+        <p class="quote__note"><span class="quote__note-item"><Icon name="check" /> Nothing charged now</span><span class="quote__note-sep" aria-hidden="true">·</span><span class="quote__note-item">Personally confirmed</span></p>
       </form>
     </aside>
   </div>
@@ -197,7 +205,28 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
     height: var(--hero-curtain);
     border-radius: var(--hero-curtain) var(--hero-curtain) 0 0;
     background: var(--page-bg);
+    /* a soft champagne glow (no hard rule) lifts the curved edge off the night scene; the next
+       section's own hairline then reads as the single rule rather than a doubled edge */
+    box-shadow: 0 -8px 56px -6px rgb(var(--accent-rgb) / 0.16);
     pointer-events: none;
+  }
+  /* The scene settles into flat onyx just above the sheet (or into the onyx page in dark mode),
+     so the light hand-off is one crisp edge and the dark one is seamless. */
+  .hero__stage::before {
+    content: '';
+    position: absolute;
+    inset: auto 0 0 0;
+    z-index: 1;
+    height: clamp(120px, 18vh, 200px);
+    pointer-events: none;
+    background: linear-gradient(
+      180deg,
+      rgb(var(--bg-rgb) / 0) 0%,
+      rgb(var(--bg-rgb) / 0.35) 35%,
+      rgb(var(--bg-rgb) / 0.75) 65%,
+      rgb(var(--bg-rgb) / 0.94) 85%,
+      var(--bg) 100%
+    );
   }
 
   .hero__inner {
@@ -212,19 +241,40 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
 
   /* ---------- Copy ---------- */
   .hero__intro { max-width: 760px; }
-  .hero__eyebrow { margin-bottom: 1.75rem; letter-spacing: 0.24em; text-shadow: 0 1px 12px rgb(var(--bg-rgb) / 0.85); }
-  /* Inter Tight runs far wider than the old serif: a calmer size, tight tracking, weight 500 */
+  /* The kicker lives inside the h1: a block-level flex row sized to its text, so the display line starts below it */
+  .hero__eyebrow {
+    display: flex;
+    width: fit-content;
+    max-width: 100%;
+    margin-bottom: 1.6rem;
+    font-size: var(--fs-micro);
+    letter-spacing: 0.24em;
+    color: var(--accent-2);
+    text-shadow: 0 1px 12px rgb(var(--bg-rgb) / 0.85);
+  }
+  .hero__eyebrow::before { width: 2rem; background: linear-gradient(90deg, transparent, var(--accent-2)); }
+  /* Inter Tight display at the site's hero scale and heading weight (matches /fleet/, /services/);
+     tight (not crushed) tracking keeps the "ff" in "chauffeured" from colliding. */
   .hero__title {
-    font-size: clamp(3rem, 5.7vw, 5.5rem);
+    font-size: var(--fs-hero);
     font-weight: 500;
-    line-height: 0.98;
-    letter-spacing: -0.04em;
+    line-height: 0.96;
+    letter-spacing: -0.035em;
+    font-kerning: normal;
+    text-wrap: balance;
     text-shadow: 0 2px 40px rgb(var(--bg-rgb) / 0.35);
   }
   .hero__title em { display: block; font-style: normal; background: none; color: inherit; padding-right: 0; }
   .hero__title :global(.split-line) { padding: 0 0.06em 0.14em 0; margin: 0 -0.06em -0.14em 0; }
+  /* Accent word: non-italic champagne gradient with a specular sheen that sweeps once after the
+     intro lands (painted per word, since transformed children break a parent's background-clip). */
   .hero__title em :global(.split-word) {
-    background: var(--accent-grad);
+    background-image:
+      linear-gradient(100deg, transparent 38%, rgb(var(--fg-rgb) / 0.72) 50%, transparent 62%),
+      var(--accent-grad);
+    background-size: 260% 100%, 100% 100%;
+    background-position: -5% 0, 0 0;
+    background-repeat: no-repeat;
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -232,30 +282,53 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
     /* text-shadow would paint over a background-clipped gradient and muddy the gold */
     text-shadow: none;
   }
-  .hero__lead { margin-top: 1.75rem; max-width: 46ch; color: var(--text-2); }
+  .hero.is-sheen .hero__title em :global(.split-word) { animation: hero-sheen 2.6s var(--ease-in-out) both; }
+  @keyframes hero-sheen {
+    from { background-position: 105% 0, 0 0; }
+    to { background-position: -5% 0, 0 0; }
+  }
+  .hero__lead {
+    margin-top: 1.6rem;
+    max-width: 44ch;
+    font-size: clamp(1.02rem, 1.15vw, 1.14rem);
+    line-height: 1.62;
+    letter-spacing: -0.003em;
+    color: var(--text-2);
+    text-wrap: pretty;
+  }
   .hero__ctas { display: flex; flex-wrap: wrap; gap: 0.85rem; margin-top: 2.2rem; }
+  /* Proof row: a quiet spec line under a hairline, sized to its content */
   .hero__trust {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.7rem 2rem;
-    margin-top: 2.2rem;
-    padding: 0;
-    font-size: 0.82rem;
+    gap: 0.7rem 1.9rem;
+    width: fit-content;
+    max-width: 100%;
+    margin-top: 2.1rem;
+    padding: 1.35rem 0 0;
+    border-top: 1px solid var(--line-strong);
+    font-size: 0.8rem;
+    letter-spacing: 0.01em;
     color: var(--text-2);
   }
   /* column-gap only: no divider can be orphaned at the start of a wrapped line */
   .hero__trust li { display: inline-flex; align-items: center; gap: 0.55rem; white-space: nowrap; }
-  .hero__trust :global(svg) { width: 17px; height: 17px; color: var(--accent); }
-  .hero__trust .stars :global(svg) { width: 13px; height: 13px; }
-  .hero__trust strong { color: var(--text); font-weight: 600; }
+  .hero__trust :global(svg) { width: 16px; height: 16px; color: var(--accent); }
+  .hero__trust .stars :global(svg) { width: 12px; height: 12px; }
+  .hero__trust strong { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
 
-  /* JS-driven intro: hidden until the preloader hands over (with a no-JS failsafe) */
+  /* JS-driven intro (with a no-JS failsafe). The kicker, headline, quote card and cue wait for the script.
+     The lead, CTAs and proof row are the page's LCP candidates, so they paint from the first frame and
+     only rise into place (transform, never opacity). */
   :global(.js) .hero [data-hero-in],
   :global(.js) .hero__title { opacity: 0; animation: hero-failsafe 0.01s linear 6s forwards; }
+  :global(.js) .hero [data-hero-rise] { transform: translateY(26px); animation: hero-failsafe-rise 0.01s linear 6s forwards; }
   .hero.is-armed [data-hero-in],
+  .hero.is-armed [data-hero-rise],
   .hero.is-armed .hero__title { animation: none; }
   @keyframes hero-failsafe { to { opacity: 1; } }
+  @keyframes hero-failsafe-rise { to { transform: none; } }
 
   /* ---------- Quote widget ---------- */
   .hero__quote { position: relative; width: 100%; }
@@ -265,7 +338,11 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
     gap: 1.05rem;
     padding: clamp(1.25rem, 2vw, 1.75rem);
     border-radius: var(--radius-l);
-    background: linear-gradient(180deg, rgb(var(--bg-rgb) / 0.72), rgb(var(--bg-rgb) / 0.78));
+    /* Near-opaque onyx instead of .glass's live blur: a backdrop-filter over the WebGL canvas is
+       re-rasterised every frame for almost no visible gain at this opacity. */
+    background: linear-gradient(180deg, rgb(var(--bg-rgb) / 0.84), rgb(var(--bg-rgb) / 0.88));
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
     box-shadow: 0 50px 100px -40px rgb(var(--bg-rgb) / 0.9), inset 0 1px 0 rgb(var(--fg-rgb) / 0.06);
   }
   .quote::before {
@@ -277,21 +354,21 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
     height: 1px;
     background: linear-gradient(90deg, transparent, rgb(var(--accent-2-rgb) / 0.75), transparent);
   }
-  .quote__head { display: grid; gap: 0.55rem; }
+  .quote__head { display: grid; gap: 0.5rem; }
   .quote__kicker {
     display: inline-flex;
     align-items: center;
     gap: 0.55rem;
-    font-size: 0.66rem;
+    font-size: 0.68rem;
     font-weight: 600;
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: var(--accent);
+    color: var(--accent-2);
   }
-  .quote__live { width: 6px; height: 6px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 0 color-mix(in srgb, var(--ok) 55%, transparent); animation: q-pulse 2.4s infinite; }
+  .quote__live { width: 6px; height: 6px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 0 color-mix(in srgb, var(--ok) 55%, transparent); animation: q-pulse 2.4s 3; } /* 3 pulses, not forever: an endless box-shadow loop repaints every frame */
   @keyframes q-pulse { 70% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--ok) 0%, transparent); } 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ok) 0%, transparent); } }
   /* A UI heading, not a display line: modest size, gentle tracking */
-  .quote__title { font-size: clamp(1.4rem, 1.6vw, 1.6rem); font-weight: 500; line-height: 1.15; letter-spacing: -0.025em; }
+  .quote__title { font-size: clamp(1.35rem, 1.55vw, 1.55rem); font-weight: 500; line-height: 1.15; letter-spacing: -0.022em; }
 
   .quote__tabs {
     position: relative;
@@ -360,6 +437,9 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
   .qswap:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
   .qgroup--route[data-dir='from'] .qswap :global(svg) { transform: rotate(180deg); }
   .quote[data-type='airport'] .qgroup--route .qrow { padding-right: 4.1rem; }
+  /* The swap button marks the airport row's right edge, so it drops the chevron column */
+  .quote[data-type='airport'] .qrow--airport { grid-template-columns: 20px minmax(0, 1fr); }
+  .quote[data-type='airport'] .qrow--airport .qrow__chev { display: none; }
 
   .qgroup {
     display: flex;
@@ -401,7 +481,7 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
   .qrow__icon { display: grid; place-items: center; color: var(--accent); }
   .qrow__icon :global(svg) { width: 18px; height: 18px; }
   .qrow__body { display: grid; gap: 0.1rem; min-width: 0; }
-  .qrow__label { font-size: 0.64rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+  .qrow__label { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
   .qrow__input {
     width: 100%;
     min-width: 0;
@@ -413,10 +493,19 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
     color: var(--text);
     font-size: 1rem;
     font-weight: 500;
+    letter-spacing: -0.006em;
+    font-variant-numeric: tabular-nums;
     color-scheme: dark;
   }
   .qrow__input::placeholder { color: var(--muted); opacity: 1; }
-  select.qrow__input { appearance: none; cursor: pointer; padding-right: 0.5rem; }
+  select.qrow__input {
+    appearance: none;
+    cursor: pointer;
+    padding-right: 0.5rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
   select.qrow__input option { background: var(--bg-3); color: var(--text); }
   /* Date/time: one icon (ours), and a tap anywhere on the row opens the native picker */
   .qrow__input[type='date'],
@@ -434,6 +523,23 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
   }
   .qrow__input::-webkit-date-and-time-value { text-align: left; margin: 0; }
   .qrow__input::-webkit-datetime-edit { padding: 0; }
+  /* Time starts unset: a muted "Select time" sits over the native field until the guest picks one */
+  .qrow__field { display: grid; min-width: 0; }
+  .qrow__field > * { grid-area: 1 / 1; }
+  .qrow__ph {
+    align-self: center;
+    overflow: hidden;
+    font-size: 1rem;
+    font-weight: 500;
+    letter-spacing: -0.006em;
+    color: var(--muted);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    pointer-events: none;
+    opacity: 0;
+  }
+  :global(.js) .qrow[data-empty] .qrow__ph { opacity: 1; }
+  :global(.js) .qrow[data-empty] .qrow__input { color: transparent; }
   .qrow__chev { color: var(--muted); pointer-events: none; }
   .qrow__chev :global(svg) { width: 16px; height: 16px; }
   .qgroup--split .qrow { grid-template-columns: 18px minmax(0, 1fr); gap: 0.7rem; padding-right: 0.7rem; }
@@ -442,7 +548,14 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
   .qrow--pax { cursor: default; }
   .qrow__pax { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 0.45rem; min-width: 0; line-height: 1.35; }
   .qrow__pax output { font-size: 1.05rem; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; min-width: 1.2ch; }
-  .qrow__hint { font-size: 0.74rem; color: var(--muted); }
+  /* Suggested vehicle: a caption under the count wherever the card is narrow (it may wrap, and
+     there is no separator to orphan); on wide cards it sits inline after a drawn "·" (below). */
+  .qrow__hint { flex-basis: 100%; min-width: 0; font-size: 0.72rem; line-height: 1.3; color: var(--muted); }
+  @media (min-width: 1201px) {
+    .qrow__pax { flex-wrap: nowrap; }
+    .qrow__hint { flex-basis: auto; font-size: 0.74rem; line-height: inherit; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .qrow__hint:not(:empty)::before { content: '· '; content: '· ' / ''; }
+  }
   .stepper { display: flex; gap: 0.4rem; }
   .stepper__btn {
     display: grid;
@@ -461,14 +574,25 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
   .quote__submit { margin-top: 0.15rem; }
   .quote__note {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: center;
-    gap: 0.45rem;
+    gap: 0.2rem 0.45rem;
     font-size: 0.74rem;
+    letter-spacing: 0.01em;
     color: var(--muted);
     text-align: center;
   }
+  /* each phrase wraps as a unit; on the narrowest phones the dot drops and they stack */
+  .quote__note-item { display: inline-flex; align-items: center; gap: 0.45rem; white-space: nowrap; }
   .quote__note :global(svg) { width: 14px; height: 14px; color: var(--ok); }
+  @media (max-width: 379px) {
+    .quote__note-sep { display: none; }
+    .quote__note { flex-direction: column; }
+    /* Date/time drop their icons so "Select time" and a full date still fit */
+    .qgroup--split .qrow { grid-template-columns: minmax(0, 1fr); }
+    .qgroup--split .qrow__icon { display: none; }
+  }
 
   /* ---------- Scroll cue ---------- */
   .hero__cue {
@@ -483,9 +607,9 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
     padding: 0.4rem;
     transform: translateX(-50%);
     color: var(--muted);
-    font-size: 0.6rem;
+    font-size: 0.66rem;
     font-weight: 600;
-    letter-spacing: 0.3em;
+    letter-spacing: 0.28em;
     text-transform: uppercase;
     transition: color 0.3s;
   }
@@ -525,17 +649,28 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
 
   /* ---------- Small laptops / iPad landscape ---------- */
   @media (min-width: 981px) and (max-width: 1200px) {
+    /* Squarer screens shift the lit skyline left, behind the copy: carry the scrim further across */
+    .hero__scrim {
+      background:
+        linear-gradient(180deg, rgb(var(--bg-rgb) / 0.6) 0%, rgb(var(--bg-rgb) / 0) 20%),
+        radial-gradient(48% 36% at 20% 66%, rgb(var(--bg-rgb) / 0.5) 0%, rgb(var(--bg-rgb) / 0) 100%),
+        linear-gradient(90deg, rgb(var(--bg-rgb) / 0.9) 0%, rgb(var(--bg-rgb) / 0.72) 38%, rgb(var(--bg-rgb) / 0) 70%),
+        linear-gradient(0deg, var(--bg) 0%, rgb(var(--bg-rgb) / 0.55) 16%, rgb(var(--bg-rgb) / 0) 42%);
+    }
     .hero__inner { grid-template-columns: minmax(0, 1fr) minmax(320px, 360px); gap: 2.5rem; }
     .hero__title { font-size: clamp(3.6rem, 6.8vw, 5rem); }
     .hero__lead { font-size: 1.02rem; }
     .hero__ctas { flex-wrap: nowrap; gap: 0.7rem; }
     .hero__ctas .btn { min-height: 54px; padding: 0 1.45rem; letter-spacing: 0.12em; }
+    /* three proofs don't fit one line here: rating above, the two badges paired below */
     .hero__trust { gap: 0.6rem 1.5rem; }
+    .hero__trust li.hero__rating { flex-basis: 100%; }
     .quote { padding: 1.25rem; }
     .quote__tabs button { padding: 0 0.5rem; letter-spacing: 0.07em; }
     .qrow { padding-inline: 0.85rem; gap: 0.7rem; }
     .qgroup--split .qrow { padding-inline: 0.75rem 0.5rem; gap: 0.55rem; }
-    .qgroup--split .qrow__input { font-size: 0.95rem; }
+    .qgroup--split .qrow__input,
+    .qgroup--split .qrow__ph { letter-spacing: -0.01em; }
   }
 
   /* ---------- Tablet & mobile ---------- */
@@ -544,6 +679,7 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
     .hero { display: block; min-height: 0; background: var(--bg); }
     .hero__title { font-size: clamp(3rem, 9vw, 5rem); }
     .hero__stage { inset: 0 0 auto 0; height: calc(100svh + 160px); }
+    .hero__stage::before { display: none; }
     .hero__stage::after {
       content: '';
       position: absolute;
@@ -566,21 +702,24 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
       padding-top: calc(var(--header-h) + 1rem);
       padding-bottom: 2.25rem;
     }
-    .hero__quote { max-width: 560px; }
-    /* The eyebrow sits on the road's vanishing point here, so it gets a quiet backdrop */
+    /* The card spans the column; on tablets its date/time and passenger rows pair up (below) */
+    .hero__quote { max-width: none; }
+    /* The eyebrow sits on the road's vanishing point here, so it gets a quiet (unblurred) backdrop */
     .hero__eyebrow {
-      align-self: flex-start;
-      padding: 0.45rem 0.85rem;
+      padding: 0.5rem 0.9rem;
       border-radius: 999px;
-      background: rgb(var(--bg-rgb) / 0.55);
-      -webkit-backdrop-filter: blur(6px);
-      backdrop-filter: blur(6px);
-      box-shadow: inset 0 0 0 1px rgb(var(--accent-rgb) / 0.16);
+      background: rgb(var(--bg-rgb) / 0.72);
+      box-shadow: inset 0 0 0 1px rgb(var(--accent-rgb) / 0.18);
     }
     .hero__eyebrow::before { display: none; }
   }
+  @media (min-width: 720px) and (max-width: 980px) {
+    .quote__panel { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); }
+    .qgroup--route { grid-column: 1 / -1; }
+  }
   @media (max-width: 560px) {
-    .hero__eyebrow { margin-bottom: 1.1rem; padding: 0.45rem 0.8rem; font-size: 0.62rem; letter-spacing: 0.2em; }
+    .hero__eyebrow { margin-bottom: 1.1rem; padding: 0.5rem 0.85rem; font-size: 0.68rem; letter-spacing: 0.18em; }
+    .hero__eyebrow-since { display: none; }
     .hero__title { font-size: clamp(3.1rem, 14.5vw, 4rem); }
     .hero__lead { margin-top: 1.15rem; font-size: 0.98rem; line-height: 1.6; }
     .hero__ctas { flex-direction: column; margin-top: 1.6rem; gap: 0.65rem; }
@@ -590,13 +729,25 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
     .quote { padding: 1.15rem; border-radius: 22px; }
     .quote__tabs button { font-size: 0.7rem; letter-spacing: 0.08em; padding: 0 0.45rem; }
     .qrow { padding-inline: 0.85rem; gap: 0.7rem; }
+    /* fields stay at 16px so iOS Safari never zooms on focus; tracking recovers the width */
     .qgroup--split .qrow { padding-inline: 0.75rem 0.5rem; gap: 0.55rem; }
-    .qgroup--split .qrow__input { font-size: 0.95rem; }
+    .qgroup--split .qrow__input,
+    .qgroup--split .qrow__ph { letter-spacing: -0.01em; }
+  }
+  @media (max-width: 379px) {
+    /* The column may not grow past the screen (the trip-type tabs' min-content used to widen it on
+       320px phones, pushing the lead past the right gutter); the tabs tighten to fit instead. */
+    .hero__inner { grid-template-columns: minmax(0, 1fr); }
+    .quote { padding: 1rem; }
+    .quote__tabs button { padding: 0 0.3rem; font-size: 0.64rem; letter-spacing: 0.04em; }
+    .hero__eyebrow { padding-inline: 0.75rem; letter-spacing: 0.12em; }
   }
 
   @media (prefers-reduced-motion: reduce) {
     :global(.js) .hero [data-hero-in], :global(.js) .hero__title { opacity: 1; animation: none; }
+    :global(.js) .hero [data-hero-rise] { transform: none; animation: none; }
     .hero__cue-line::after { animation: none; transform: none; }
+    .hero.is-sheen .hero__title em :global(.split-word) { animation: none; }
   }
 </style>
 
@@ -623,8 +774,10 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
     const quote = hero.querySelector<HTMLElement>('[data-hero-quote]')!;
     const cue = hero.querySelector<HTMLElement>('[data-hero-cue]');
     const ins = Array.from(hero.querySelectorAll<HTMLElement>('[data-hero-in]')).filter((el) => el !== quote && el !== cue);
+    // Lead, CTAs and proof row: visible from the first paint (LCP), they only rise into place
+    const rise = Array.from(hero.querySelectorAll<HTMLElement>('[data-hero-rise]'));
 
-    /* ---------- Intro choreography (plays when the preloader hands over) ---------- */
+    /* ---------- Intro choreography (starts as soon as the script runs) ---------- */
     hero.classList.add('is-armed');
     const words = splitWords(title);
     let scene: HeroScene | null = null;
@@ -636,6 +789,7 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
       gsap.set(words, { yPercent: 120, rotate: 4, transformOrigin: '0% 100%' });
       gsap.set(title, { opacity: 1 });
       gsap.set(ins, { opacity: 0, y: 26 });
+      gsap.set(rise, { y: 26 }); // matches the CSS first-paint offset; never hidden
       gsap.set(quote, { opacity: 0, y: 40 });
       if (cue) gsap.set(cue, { opacity: 0 });
     }
@@ -646,29 +800,37 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
       scene?.playIntro();
       if (reduce) return;
       const tl = gsap.timeline({ defaults: { ease: 'expo.out' } });
-      tl.to(ins[0], { opacity: 1, y: 0, duration: 1.2 }, 0.1)
-        .to(words, { yPercent: 0, rotate: 0, duration: 1.6, stagger: 0.09 }, 0.18)
-        .to(ins.slice(1), { opacity: 1, y: 0, duration: 1.3, stagger: 0.1 }, 0.55)
-        .to(quote, { opacity: 1, y: 0, duration: 1.6 }, 0.7);
-      if (cue) tl.to(cue, { opacity: 1, duration: 1.2, ease: 'power2.out' }, 1.3);
+      tl.to(ins, { opacity: 1, y: 0, duration: 1.2 }, 0)
+        .to(words, { yPercent: 0, rotate: 0, duration: 1.6, stagger: 0.09 }, 0.05)
+        .to(rise, { y: 0, duration: 1.3, stagger: 0.1 }, 0.2)
+        .to(quote, { opacity: 1, y: 0, duration: 1.6 }, 0.55)
+        // one specular pass across the champagne accent once the headline has settled
+        .call(() => hero.classList.add('is-sheen'), undefined, 1.0);
+      if (cue) tl.to(cue, { opacity: 1, duration: 1.2, ease: 'power2.out' }, 1.15);
     };
-    if (document.documentElement.classList.contains('is-ready')) play();
-    else document.addEventListener('sdd:ready', play, { once: true });
+    // The intro never waits on anything but a preloader, if a page ever turns one back on.
+    const preloading = !!document.querySelector('[data-preloader]') && !document.documentElement.classList.contains('is-ready');
+    if (preloading) document.addEventListener('sdd:ready', play, { once: true });
+    else play();
 
     /* ---------- WebGL scene (code-split) with photographic fallback ---------- */
     const showFallback = () => {
       if (!fallbackImg.src && fallbackImg.dataset.src) fallbackImg.src = fallbackImg.dataset.src;
       stage.classList.add('is-fallback');
     };
-    const hasWebGL2 = (() => {
+    const hasWebGL2 = () => {
       try {
         return !!document.createElement('canvas').getContext('webgl2');
       } catch {
         return false;
       }
-    })();
-    if (!hasWebGL2) showFallback();
-    else import('../../scripts/hero-scene')
+    };
+    // Data-saver and low-end devices skip the 3D scene (and its ~140 KB three.js chunk): Save-Data keeps
+    // the plain onyx gradient, low-memory / few-core devices get the photographic fallback.
+    const nav = navigator as Navigator & { connection?: { saveData?: boolean }; deviceMemory?: number };
+    const saveData = !!nav.connection?.saveData;
+    const lowEnd = (nav.deviceMemory ?? 8) < 4 || (navigator.hardwareConcurrency || 4) < 4;
+    const loadScene = () => import('../../scripts/hero-scene')
       .then(({ createHeroScene }) => {
         scene = createHeroScene(canvas, {
           reducedMotion: reduce,
@@ -694,6 +856,21 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
         }
       })
       .catch(showFallback);
+    if (saveData) {
+      /* the hero's own onyx gradient stands in: no photo, no 3D */
+    } else if (lowEnd) showFallback();
+    else {
+      // Kept off the critical path: the WebGL probe, the three.js fetch and the scene build all wait
+      // until the page has loaded and the main thread is idle, so they never compete with the hero
+      // copy (LCP) or the fonts.
+      const start = () => (hasWebGL2() ? loadScene() : showFallback());
+      const whenIdle = () => {
+        if ('requestIdleCallback' in window) window.requestIdleCallback(start, { timeout: 2500 });
+        else window.setTimeout(start, 200);
+      };
+      if (document.readyState === 'complete') whenIdle();
+      else window.addEventListener('load', whenIdle, { once: true });
+    }
 
     /* ---------- Scroll: content lifts and dissolves as the camera pushes in ---------- */
     if (!reduce) {
@@ -745,16 +922,28 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
     let dir: 'to' | 'from' = 'to';
     let pax = 2;
 
-    /* Defaults: today, and a sensible pickup time ~2h out on the quarter hour */
+    /* Date shows today; time starts unset ("Select time"). Only what the guest actually chose is
+       carried into /book/, so an untouched card never sends a made-up pickup time. */
     const pad = (n: number) => String(n).padStart(2, '0');
     const ymd = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-    const now = new Date();
-    dateInput.value = ymd(now);
-    dateInput.min = ymd(now);
-    const t = new Date(now.getTime() + 2 * 3600 * 1000);
-    t.setMinutes(Math.ceil(t.getMinutes() / 15) * 15, 0, 0);
-    if (ymd(t) !== ymd(now)) dateInput.value = ymd(t);
-    timeInput.value = `${pad(t.getHours())}:${pad(t.getMinutes())}`;
+    const today = ymd(new Date());
+    dateInput.value = today;
+    dateInput.min = today;
+    let dateChosen = false;
+    const timeRow = timeInput.closest<HTMLElement>('[data-time-row]');
+    const syncTime = () => timeRow?.toggleAttribute('data-empty', !timeInput.value && document.activeElement !== timeInput);
+    timeInput.addEventListener('focus', () => timeRow?.removeAttribute('data-empty'));
+    timeInput.addEventListener('blur', syncTime);
+    ['input', 'change'].forEach((ev) => {
+      timeInput.addEventListener(ev, syncTime);
+      dateInput.addEventListener(ev, () => { dateChosen = !!dateInput.value; });
+    });
+    syncTime();
+    // values restored by back/forward navigation count as the guest's own choice
+    window.addEventListener('pageshow', () => {
+      if (dateInput.value && dateInput.value !== today) dateChosen = true;
+      syncTime();
+    });
 
     /* A tap anywhere on the date/time row opens the native picker (not just the tiny indicator) */
     [dateInput, timeInput].forEach((input) => {
@@ -852,7 +1041,7 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
       paxBtns[0].disabled = pax <= 1;
       paxBtns[1].disabled = pax >= 20;
       const fit = fleet.find((v) => v.pax >= pax);
-      paxHint.textContent = fit ? `· ${fit.name}` : '';
+      paxHint.textContent = fit ? fit.name : '';
     };
     paxBtns.forEach((b) =>
       b.addEventListener('click', () => {
@@ -878,8 +1067,11 @@ const hours = Array.from({ length: 11 }, (_, i) => i + 2);
       }
       if (from) params.set('from', from);
       if (to) params.set('to', to);
-      if (dateInput.value) params.set('date', dateInput.value);
-      if (timeInput.value) params.set('time', timeInput.value);
+      // A chosen time makes the shown date (today by default) part of the request; otherwise the
+      // date only travels if the guest picked one, and /book/ asks for whatever is missing.
+      const time = timeInput.value;
+      if (dateInput.value && (dateChosen || time)) params.set('date', dateInput.value);
+      if (time) params.set('time', time);
       params.set('pax', String(pax));
       if (type === 'hourly') params.set('hours', hoursSel.value);
       window.location.href = `/book/?${params.toString()}`;

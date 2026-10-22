@@ -1,7 +1,7 @@
 ---
 import Icon from '../Icon.astro';
 import { fleet, site } from '../../data/site';
-import { categories, paxRanges, meta, isStudio, catCount, pad } from './fleetMeta';
+import { categories, paxRanges, meta, isStudio, catCount, pad, serviceLinks, cropStyle } from './fleetMeta';
 const total = fleet.length;
 ---
 <section class="fb" id="collection" aria-label="Browse the fleet">
@@ -50,6 +50,7 @@ const total = fleet.length;
       const m = meta[v.id];
       const studio = isStudio(v);
       const reserve = `/book/?vehicle=${v.id}`;
+      const links = serviceLinks(v.id);
       return (
         <article
           id={v.id}
@@ -63,7 +64,9 @@ const total = fleet.length;
             <div class="vh__card" data-tilt-card>
               <a href={reserve} class="vh__frame media" data-reveal="scale" data-cursor="Reserve" data-theme={studio ? 'light' : undefined} tabindex="-1" aria-hidden="true">
                 <div class="vh__zoom">
-                  <img src={v.image} alt={m.alt} loading="lazy" decoding="async" style={m.position ? `object-position:${m.position}` : undefined} />
+                  <div class:list={['vh__crop', m.crop && 'is-crop']} style={cropStyle(v.id)}>
+                    <img src={v.image} alt={m.alt} width="1600" height="1000" loading={i === 0 ? 'eager' : 'lazy'} decoding="async" style={m.position ? `object-position:${m.position}` : undefined} />
+                  </div>
                 </div>
                 <span class="vh__glare" aria-hidden="true"></span>
                 <span class="vh__tag">{v.category}</span>
@@ -93,9 +96,19 @@ const total = fleet.length;
             <ul class="vh__features" role="list">
               {v.features.map((f) => <li><Icon name="check" /> {f}</li>)}
             </ul>
+            {links.length > 0 && (
+              <div class="vh__svc">
+                <span class="vh__svc-lab" id={`vh-${v.id}-svc`}>Ideal for</span>
+                <ul class="vh__svc-list" role="list" aria-labelledby={`vh-${v.id}-svc`}>
+                  {links.map((l) => (
+                    <li><a href={l.href} class="vh__svc-link">{l.label}<Icon name="arrow-up-right" /></a></li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <div class="vh__ctas">
-              <a href={reserve} class="btn btn--gold" data-magnetic="0.2">Reserve this vehicle <Icon name="arrow" /></a>
-              <a href={reserve} class="btn btn--ghost">Get a quote</a>
+              <a href={reserve} class="btn btn--gold" data-magnetic="0.2">Reserve the {m.short} <Icon name="arrow" /></a>
+              <a href={site.phoneHref} class="vh__call"><Icon name="phone" /> <span>Or call <strong>{site.phone}</strong></span></a>
             </div>
           </div>
         </article>
@@ -241,7 +254,7 @@ const total = fleet.length;
     feedback(after.length);
     if (same) return;
 
-    if (reduce) { layout(); ScrollTrigger.refresh(); return; }
+    if (reduce) { layout(); ScrollTrigger.refresh(); window.lenis?.resize(); return; }
 
     const outgoing = [...before, ...emptyArr.filter((el) => !el.hidden)];
     busy = gsap.timeline();
@@ -249,6 +262,7 @@ const total = fleet.length;
       .add(() => {
         layout();
         gsap.set([...rows, ...emptyArr], { clearProps: 'opacity,transform' });
+        window.lenis?.resize();
         // If the visitor is deep in the list, bring the results back into view while they're hidden.
         if (list && list.getBoundingClientRect().top < 0) {
           const y = list.getBoundingClientRect().top + window.scrollY - 150;
@@ -297,19 +311,22 @@ const total = fleet.length;
   document.querySelector('[data-ff-widen]')?.addEventListener('click', () => { setCat('all'); apply(); });
   document.querySelector('[data-ff-reset]')?.addEventListener('click', () => { setCat('all'); setPax(0); apply(); });
 
-  // Deep links (footer, quick-match list): make sure a filtered-out vehicle is visible before scrolling to it.
+  // Deep links (footer, quick-match list, comparison table): make sure a filtered-out vehicle is visible
+  // before scrolling to it. Runs in the capture phase, ahead of the global Lenis anchor handler.
   document.addEventListener('click', (e) => {
     const a = (e.target as HTMLElement).closest<HTMLAnchorElement>('a[href*="#"]');
     if (!a) return;
     const url = new URL(a.href, location.href);
     if (url.pathname !== location.pathname || !url.hash) return;
     const row = rows.find((r) => `#${r.id}` === url.hash);
-    if (row && row.hidden) {
-      busy?.progress(1).kill();
-      setCat('all'); setPax(0); layout();
-      gsap.set([...rows, ...emptyArr], { clearProps: 'opacity,transform' });
-      ScrollTrigger.refresh();
-    }
+    if (!row || !row.hidden) return;
+    busy?.progress(1).kill();
+    setCat('all'); setPax(0); layout();
+    gsap.set([...rows, ...emptyArr], { clearProps: 'opacity,transform' });
+    ScrollTrigger.refresh();
+    // The page just grew: refresh Lenis' cached scroll limit, otherwise scrollTo() is clamped
+    // to the old (shorter) maximum and stops thousands of pixels short of the row.
+    window.lenis?.resize();
   }, true);
 
   // Fade hint on the scrollable category row disappears once scrolled to the end (or when it fits).
@@ -318,6 +335,13 @@ const total = fleet.length;
     catGroup.classList.toggle('is-end', catGroup.scrollLeft + catGroup.clientWidth >= catGroup.scrollWidth - 4);
   };
   catGroup?.addEventListener('scroll', checkEnd, { passive: true });
+  // Keyboard: keep a focused pill clear of the right-edge fade on narrow screens.
+  catGroup?.addEventListener('focusin', (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLElement>('[data-cat]');
+    if (!b || catGroup.scrollWidth <= catGroup.clientWidth + 2) return;
+    const target = b.offsetLeft - (catGroup.clientWidth - b.offsetWidth) / 2;
+    catGroup.scrollTo({ left: Math.max(0, target), behavior: reduce ? 'auto' : 'smooth' });
+  });
 
   // Initial indicator placement (after fonts settle) + on resize.
   root?.classList.add('is-ready');
@@ -432,9 +456,13 @@ const total = fleet.length;
   }
   .ff__pill:hover { color: var(--text); }
   .ff__pill[aria-pressed='true'] { color: var(--bg); }
+  /* The category row is a scroll container, so an outside ring would be clipped: draw it inside the pill.
+     On the filled (pressed) pill the ring switches to the pill's text colour so it stays high-contrast. */
+  .ff__pill:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .ff__pill[aria-pressed='true']:focus-visible { outline-color: var(--bg); outline-offset: -4px; }
   .ff:not(.is-ready) .ff__pill[aria-pressed='true'] { background: var(--text); }
-  .ff__n { font-size: 0.62rem; font-weight: 500; letter-spacing: 0.04em; color: var(--muted-2); font-variant-numeric: tabular-nums; transition: color 0.45s; }
-  .ff__pill[aria-pressed='true'] .ff__n { color: rgb(var(--bg-rgb) / 0.6); }
+  .ff__n { font-size: 0.62rem; font-weight: 500; letter-spacing: 0.04em; color: var(--muted); font-variant-numeric: tabular-nums; transition: color 0.45s; }
+  .ff__pill[aria-pressed='true'] .ff__n { color: rgb(var(--bg-rgb) / 0.72); }
   .ff__paxwrap { display: flex; align-items: center; gap: 0.6rem; flex: none; padding-left: 1rem; border-left: 1px solid var(--line); }
   .ff__label { display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.66rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); }
   .ff__label :global(svg) { width: 15px; height: 15px; color: var(--accent); }
@@ -539,7 +567,9 @@ const total = fleet.length;
     align-items: center;
     padding-block: clamp(3.5rem, 6vw, 5.5rem);
     border-top: 1px solid var(--line);
-    scroll-margin-top: 150px;
+    /* html already reserves the header via scroll-padding-top (and the Lenis anchor handler adds its own offset);
+       this only clears the sticky filter bar, so a deep-linked vehicle lands just beneath it. */
+    scroll-margin-top: 60px;
   }
   .vh.is-first { border-top: 0; padding-top: clamp(3.5rem, 6vw, 5.5rem); }
   .vh[hidden] { display: none; }
@@ -579,8 +609,9 @@ const total = fleet.length;
       linear-gradient(180deg, rgb(var(--fb-ink) / 0) 50%, rgb(var(--fb-ink) / calc(var(--fb-scrim) * 1.3)) 100%);
   }
   /* Tighter editorial crops: the oversized zoom layer is clipped by the frame. */
-  #s550 .vh__zoom { inset: -34% -6% 0 -6%; }
   #party-sprinter .vh__zoom { inset: -6% -14% -4% -4%; }
+  .vh__crop { position: absolute; inset: 0; }
+  .vh__crop.is-crop { transform: scale(var(--crop-s, 1)); transform-origin: var(--crop-o, 50% 50%); }
 
   .vh__glare {
     position: absolute;
@@ -604,11 +635,19 @@ const total = fleet.length;
     font-weight: 600;
     letter-spacing: 0.2em;
     text-transform: uppercase;
+    /* Ivory: a crisp onyx pill on every photo (a translucent ivory chip turns muddy grey over dark shots). */
+    color: var(--bg-3);
+    background: var(--text);
+    /* faint ivory hairline: keeps the pill's edge defined on near-black photos */
+    border: 1px solid rgb(var(--bg-rgb) / 0.22);
+  }
+  /* Onyx: frosted obsidian chip over the photo (the forced-light studio frame keeps the onyx pill). */
+  :global([data-theme='dark']) .vh:not(.vh--studio) .vh__tag {
     color: var(--text);
     background: rgb(var(--bg-rgb) / 0.72);
-    border: 1px solid rgb(var(--fg-rgb) / 0.12);
-    backdrop-filter: blur(12px);
+    border-color: rgb(var(--fg-rgb) / 0.12);
     -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
   }
   /* Studio-shot vehicle: the frame is a forced-light island (data-theme="light"), so the white
      backdrop reads as an intentional ivory plate in both themes. */
@@ -620,7 +659,6 @@ const total = fleet.length;
   .vh--studio .vh__zoom img { object-fit: contain; padding: 9% 9% 7%; mix-blend-mode: multiply; }
   .vh--studio .vh__frame { border-color: var(--line-strong); }
   .vh--studio .vh__frame::after { display: none; }
-  .vh--studio .vh__tag { background: var(--text); border-color: transparent; color: var(--bg-3); backdrop-filter: none; -webkit-backdrop-filter: none; }
   .vh__studio-note {
     position: absolute;
     top: 1.25rem;
@@ -639,7 +677,7 @@ const total = fleet.length;
   .vh__info { display: grid; gap: 1.35rem; align-content: center; }
   .vh__meta { display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap; }
   .vh__idx { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.16em; color: var(--text); font-variant-numeric: tabular-nums; }
-  .vh__idx i { font-style: normal; color: var(--muted-2); }
+  .vh__idx i { font-style: normal; color: var(--muted); }
   .vh__name { font-size: clamp(2.3rem, 3.7vw, 3.5rem); line-height: 1.02; letter-spacing: -0.035em; }
   .vh__intro { color: var(--text-2); max-width: 46ch; line-height: 1.7; }
 
@@ -670,31 +708,78 @@ const total = fleet.length;
     border: 1px solid rgb(var(--accent-rgb) / 0.24);
     stroke-width: 2.2;
   }
-  .vh__ctas { display: flex; flex-wrap: wrap; gap: 0.75rem; padding-top: 0.4rem; }
+  /* "Ideal for": quiet links into the matching service pages. A fixed two-column structure
+     (label | links) so every row reads the same however many links it has; stacked on small screens. */
+  .vh__svc { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: baseline; gap: 0 1.25rem; }
+  .vh__svc-lab { font-size: 0.62rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); }
+  .vh__svc-list { display: flex; flex-wrap: wrap; gap: 0 1.15rem; }
+  .vh__svc-link {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    min-height: 44px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text);
+    transition: color 0.35s var(--ease-out);
+  }
+  .vh__svc-link::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 1.2rem;
+    bottom: 10px;
+    height: 1px;
+    background: var(--line-strong);
+    transition: background 0.35s var(--ease-out);
+  }
+  .vh__svc-link :global(svg) { width: 14px; height: 14px; color: var(--accent); transition: transform 0.4s var(--ease-out); }
+  .vh__svc-link:hover { color: var(--accent); }
+  .vh__svc-link:hover::after { background: currentColor; }
+  .vh__svc-link:hover :global(svg) { transform: translate(2px, -2px); }
+
+  .vh__ctas { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.6rem; padding-top: 0.2rem; }
+  .vh__call {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    min-height: 44px;
+    font-size: 0.86rem;
+    color: var(--muted);
+    white-space: nowrap;
+    transition: color 0.35s var(--ease-out);
+  }
+  .vh__call strong { font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; transition: color 0.35s var(--ease-out); }
+  .vh__call :global(svg) { width: 15px; height: 15px; color: var(--accent); }
+  .vh__call:hover strong { color: var(--accent); }
 
   @media (max-width: 1100px) and (min-width: 861px) {
     .vh { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(2rem, 4vw, 3rem); }
     .vh__frame { aspect-ratio: 5 / 4; }
     .vh__specs { grid-template-columns: 1fr 1fr; }
     .vh__spec--wide { grid-column: 1 / -1; padding-left: 0 !important; border-left: 0 !important; border-top: 1px solid var(--line); }
-    .vh__ctas .btn { flex: 1 1 auto; padding-inline: 1.2rem; }
   }
   @media (max-width: 860px) {
     .vh__features li { font-size: 0.9rem; }
-    .vh { grid-template-columns: 1fr; gap: 2rem; padding-block: 3.25rem; scroll-margin-top: 132px; }
+    .vh { grid-template-columns: 1fr; gap: 2rem; padding-block: 3.25rem; scroll-margin-top: 40px; }
     .vh.is-first { padding-top: 2.5rem; }
     .vh.is-rev .vh__stage { order: 0; }
     .vh__frame { aspect-ratio: 16 / 10; border-radius: var(--radius); }
     .vh.is-rev .vh__studio-note { right: auto; left: 1.1rem; }
     .vh__specs { grid-template-columns: 1fr 1fr; }
     .vh__spec--wide { grid-column: 1 / -1; padding-left: 0 !important; border-left: 0 !important; border-top: 1px solid var(--line); }
-    .vh__ctas { display: grid; grid-template-columns: 1fr; }
+    .vh__svc { grid-template-columns: minmax(0, 1fr); gap: 0.15rem; }
+    .vh__ctas { display: grid; grid-template-columns: 1fr; justify-items: center; gap: 0.35rem; }
     .vh__ctas .btn { width: 100%; }
   }
   @media (max-width: 560px) {
     .vh__frame { aspect-ratio: 4 / 3; }
   }
   @media (max-width: 420px) {
+    /* "Reserve the Executive Sprinter" is wider than a phone-width pill at the default button tracking:
+       tighten tracking and side padding, and let it wrap (centred) on very narrow screens rather than clip. */
+    .vh__ctas .btn { padding-inline: 1.1rem; gap: 0.55rem; letter-spacing: 0.08em; white-space: normal; text-align: center; line-height: 1.3; text-wrap: balance; }
     .vh__features { grid-template-columns: 1fr; }
     .vh__name { font-size: 2.3rem; }
     .vh__studio-note { font-size: 0.56rem; letter-spacing: 0.18em; }

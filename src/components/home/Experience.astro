@@ -1,37 +1,48 @@
 ---
-// Experience: the five-step Door-to-Door Standard, a scroll-drawn timeline beside a sticky portrait.
+// Experience: how every ride runs, in five steps (a scroll-drawn timeline beside a sticky photo).
+// "The Door-to-Door Standard" is reserved for the About page's four commitments, so it is not reused here.
+// PLACEHOLDER photo: the airliner wing is the only site image not already used on the home page (the
+// waterfront appears in Services and Areas). A real chauffeur / door-open / cabin photo from the client
+// would suit this section best.
 import Icon from '../Icon.astro';
 import { site, images } from '../../data/site';
 
+// `when` is the moment in the journey each promise belongs to (the node already carries the number).
 const steps = [
   {
-    title: 'Reserve in 60 seconds',
+    when: 'Anytime',
+    title: 'Reserve in four quick steps',
     text: 'Book online or call us at any hour. Tell us where, when and who, and we take it from there.',
     chip: { icon: 'calendar', label: 'Online or by phone, 24/7' },
   },
   {
+    when: 'Next',
     title: 'Confirmed by a real person',
-    text: 'A dispatcher, not a bot, confirms your ride within minutes. Your chauffeur’s name, vehicle and contact follow by text.',
+    text: 'A dispatcher, not a bot, reviews and confirms every booking. Your chauffeur’s name, vehicle and contact follow by text.',
     chip: { icon: 'chat', label: 'Chauffeur details by text' },
   },
   {
+    when: 'Day of travel',
     title: 'Tracked & on time',
     text: 'We monitor your flight live and dispatch around Seattle traffic, so the plan bends to you, never the other way around.',
     chip: { icon: 'plane', label: 'Live flight monitoring' },
   },
   {
-    title: 'Met at the curb',
-    text: 'Your chauffeur is waiting with your name in hand. Luggage handled, doors opened, not a moment spent searching.',
-    chip: { icon: 'suitcase', label: 'Meet & greet' },
+    when: 'Pickup',
+    title: 'Met at your door',
+    // A name-sign greeting is an on-request extra in the booking wizard, so it is offered, not promised.
+    text: 'Your chauffeur texts the exact meeting point and is there before you are. Prefer a name-sign greeting at arrivals? Just ask. Luggage handled, doors opened, no searching.',
+    chip: { icon: 'suitcase', label: 'Name-sign greeting on request' },
   },
   {
+    when: 'En route',
     title: 'Arrive composed',
-    text: 'Wi-Fi, chilled water and a cabin set to your temperature. Step out exactly as relaxed as you stepped in.',
-    chip: { icon: 'wifi', label: 'Wi-Fi, water & climate set to you' },
+    text: 'A quiet, immaculate cabin set to your temperature, with Wi-Fi and refreshments in select vehicles. Step out as relaxed as you stepped in.',
+    chip: { icon: 'sparkle', label: 'Quiet cabin, climate set to you' },
   },
 ];
 
-const standard = ['Licensed & background-checked', 'Suited & discreet', 'Local route experts', 'Safety-first driving'];
+const standard = ['Licensed & background-checked', 'Discreet, professional service', 'Local route experts', 'Safety-first driving'];
 const pad = (n: number) => String(n).padStart(2, '0');
 ---
 <section id="experience" class="exp section" data-exp aria-labelledby="exp-title">
@@ -39,10 +50,10 @@ const pad = (n: number) => String(n).padStart(2, '0');
     <header class="section-head section-head--split exp__head">
       <div class="exp__head-main">
         <p class="eyebrow" data-reveal>The Experience</p>
-        <h2 id="exp-title" data-split>The Door-to-Door <em>Standard</em></h2>
+        <h2 id="exp-title" data-split>Five steps, <em>start to finish.</em></h2>
       </div>
       <p class="lead" data-reveal data-delay="0.15">
-        Five promises we keep on every ride, from the moment you reserve to the moment you step out. No surprises, only the quiet confidence of a ride that simply works.
+        From the moment you reserve to the moment you step out, here is how every ride runs. No surprises, only the quiet confidence of a ride that simply works.
       </p>
     </header>
 
@@ -50,7 +61,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
       <div class="exp__visual">
         <div class="exp__frame">
           <div class="media exp__media" data-reveal="scale">
-            <img src={images.waterfront} alt="Downtown Seattle and the waterfront at dusk" loading="lazy" decoding="async" width="1000" height="1250" />
+            <img src={images.plane} alt="Airliner wing above the clouds at golden hour" loading="lazy" decoding="async" width="1600" height="1062" />
           </div>
           <div class="exp__badge" aria-hidden="true">
             <span class="exp__badge-label">Est.</span>
@@ -75,7 +86,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
             <li class="exp-step" data-exp-step>
               <span class="exp-step__node" data-exp-node aria-hidden="true"><span>{pad(i + 1)}</span></span>
               <div class="exp-step__body" data-reveal>
-                <p class="exp-step__label">Step {pad(i + 1)}</p>
+                <p class="exp-step__label"><span class="sr-only">Step {i + 1}: </span>{s.when}</p>
                 <h3 class="exp-step__title">{s.title}</h3>
                 <p class="exp-step__text">{s.text}</p>
                 <span class="chip exp-step__chip"><Icon name={s.chip.icon} />{s.chip.label}</span>
@@ -87,7 +98,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
     </div>
 
     <div class="exp__cta" data-reveal>
-      <p class="exp__cta-title display">Your chauffeur is <em>ready when you are.</em></p>
+      <p class="exp__cta-title display">Book online, <em>arrive composed.</em></p>
       <div class="exp__cta-actions">
         <a href="/book/" class="btn btn--gold btn--lg" data-magnetic>Reserve your ride <Icon name="arrow" /></a>
         <p class="exp__call">Prefer to talk? <a href={site.phoneHref} data-cursor="Call">Call {site.phone}</a></p>
@@ -98,6 +109,11 @@ const pad = (n: number) => String(n).padStart(2, '0');
 
 <style>
   .exp {
+    background:
+      radial-gradient(55% 45% at 12% 30%, rgb(var(--bg-rgb) / 0.55), transparent 70%),
+      linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 22%, var(--bg-2) 78%, var(--bg) 100%);
+  }
+  :global([data-theme='dark']) .exp {
     background:
       radial-gradient(55% 45% at 12% 30%, rgb(var(--accent-rgb) / 0.07), transparent 70%),
       linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 22%, var(--bg-2) 78%, var(--bg) 100%);
@@ -124,7 +140,9 @@ const pad = (n: number) => String(n).padStart(2, '0');
   @media (min-width: 1024px) {
     .exp__media { aspect-ratio: auto; height: min(calc(100vh - var(--header-h) - 3rem), 760px); }
   }
-  .exp__media img { transform-origin: 50% 40%; object-position: 58% 50%; }
+  .exp__media img { transform-origin: 70% 50%; object-position: 80% 50%; }
+  /* Tall sticky crop: slide right so the wing sweeps in from the left edge up to the winglet and sun */
+  @media (min-width: 1024px) { .exp__media img { object-position: 92% 50%; } }
   /* Ivory: the photo stays crisp, framed by an inner hairline (the reveal's clip-path would cut an outer shadow).
      Onyx: the photo additionally settles into the night canvas. */
   .exp__media::before {
@@ -157,12 +175,13 @@ const pad = (n: number) => String(n).padStart(2, '0');
     border-radius: 50%;
     border: 1px solid rgb(var(--accent-rgb) / 0.4);
     background: var(--glass);
-    backdrop-filter: blur(16px) saturate(140%);
     -webkit-backdrop-filter: blur(16px) saturate(140%);
+    backdrop-filter: blur(16px) saturate(140%);
     box-shadow: 0 12px 30px -18px rgb(var(--fg-rgb) / 0.35);
     text-align: center;
   }
-  :global([data-theme='dark']) .exp__badge { box-shadow: none; }
+  /* Onyx: denser glass so the disc stays dark and the champagne labels legible over a bright sky */
+  :global([data-theme='dark']) .exp__badge { box-shadow: none; background: rgb(var(--bg-rgb) / 0.72); }
   .exp__badge-num {
     font-family: var(--font-display);
     font-size: 1.6rem;
@@ -173,7 +192,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
     color: var(--text);
   }
   @media (max-width: 639px) { .exp__badge { width: 88px; height: 88px; top: 0.9rem; right: 0.9rem; } .exp__badge-num { font-size: 1.35rem; } }
-  .exp__badge-label { font-size: 0.54rem; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--accent); line-height: 1.5; padding-left: 0.22em; }
+  .exp__badge-label { font-size: 0.64rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); line-height: 1.5; padding-left: 0.2em; }
 
   .exp__card {
     position: relative;
@@ -183,6 +202,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
     border-radius: var(--radius);
     box-shadow: 0 1px 2px rgb(var(--fg-rgb) / 0.05), 0 30px 60px -30px rgb(var(--fg-rgb) / 0.32);
   }
+  :global([data-theme='light']) .exp__card { background: color-mix(in srgb, var(--bg-3) 86%, transparent); }
   /* bg-rgb is near-black in Onyx, so this is a true shadow there */
   :global([data-theme='dark']) .exp__card { box-shadow: 0 30px 60px -30px rgb(var(--bg-rgb) / 0.9); }
   @media (min-width: 640px) {
@@ -227,7 +247,8 @@ const pad = (n: number) => String(n).padStart(2, '0');
     transform-origin: top;
   }
   :global([data-theme='dark']) .exp__rail-fill { box-shadow: 0 0 12px rgb(var(--accent-rgb) / 0.55); }
-  .js .exp__rail-fill { transform: scaleY(0); }
+  /* html-level state classes must be :global, or Astro's scoping attribute stops them ever matching */
+  :global(.js) .exp__rail-fill { transform: scaleY(0); }
   .exp { --node: 46px; }
   @media (min-width: 1024px) { .exp { --node: 54px; } }
 
@@ -263,16 +284,14 @@ const pad = (n: number) => String(n).padStart(2, '0');
   }
   .exp-step__node span { position: relative; }
   .exp-step.is-active .exp-step__node,
-  html:not(.js) .exp-step__node { color: var(--cta-fg); border-color: transparent; box-shadow: var(--cta-glow); }
+  :global(html:not(.js)) .exp-step__node { color: var(--cta-fg); border-color: transparent; box-shadow: var(--cta-glow); }
   .exp-step.is-active .exp-step__node::before,
-  html:not(.js) .exp-step__node::before { opacity: 1; transform: none; }
+  :global(html:not(.js)) .exp-step__node::before { opacity: 1; transform: none; }
 
   .exp-step__body { display: grid; gap: 0.7rem; padding-top: calc(var(--node) / 2 - 0.85rem); transition: opacity 0.8s var(--ease-out); }
-  /* Upcoming steps: headline dims, body copy stays readable */
-  .js .exp-step:not(.is-active) .exp-step__label,
-  .js .exp-step:not(.is-active) .exp-step__title { opacity: 0.45; }
-  .js .exp-step:not(.is-active) .exp-step__text,
-  .js .exp-step:not(.is-active) .exp-step__chip { opacity: 0.72; }
+  /* Upcoming steps: the node empties and the title steps back (0.5 keeps large-text contrast above 3:1
+     in both themes). The label, body copy and chip stay at full contrast so readers can look ahead. */
+  :global(.js) .exp-step:not(.is-active) .exp-step__title { opacity: 0.5; }
   .exp-step__body > * { transition: opacity 0.8s var(--ease-out); }
   .exp-step__label { font-size: var(--fs-micro); font-weight: 600; letter-spacing: 0.24em; text-transform: uppercase; color: var(--accent); }
   .exp-step__title { font-size: clamp(1.5rem, 2.3vw, 2.1rem); line-height: 1.1; letter-spacing: -0.03em; font-variant-numeric: lining-nums; }
@@ -291,6 +310,8 @@ const pad = (n: number) => String(n).padStart(2, '0');
   }
   @media (min-width: 960px) { .exp__cta { grid-template-columns: 1fr auto; gap: 3rem; } }
   .exp__cta-title { font-size: clamp(1.9rem, 3.3vw, 3rem); line-height: 1.06; letter-spacing: -0.035em; max-width: 18ch; }
+  /* Keep the gold phrase whole: "Book online, / arrive composed." */
+  .exp__cta-title em { white-space: nowrap; }
   .exp__cta-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 2rem; }
   .exp__call { font-size: 0.92rem; color: var(--muted); }
   .exp__call a { display: inline-flex; align-items: center; min-height: 44px; color: var(--text); font-weight: 600; text-decoration: underline; text-decoration-color: rgb(var(--accent-rgb) / 0.55); text-decoration-thickness: 1px; text-underline-offset: 6px; transition: color 0.3s, text-decoration-color 0.3s; }

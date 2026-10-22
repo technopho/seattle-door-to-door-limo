@@ -15,21 +15,40 @@ const shorts: Record<string, string> = {
 // PLACEHOLDER stage photography. Some shared site photos don't depict the vehicle named beside them
 // (the stretch shows a sedan, the party coach a plain van, the Model S a coupe), which reads as an error
 // at hero size. Until the client supplies real fleet photos, these vehicle-accurate stock images stand in.
+// Stretch: a colour, sign-free waterfront shot (white stretch sedan, no readable text or plates).
 const U = (id: string) => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=1600&q=80`;
 const stageImage: Record<string, string> = {
   electric: U('photo-1620891549027-942fdc95d3f5'),
-  stretch: U('photo-1775292690711-2f57b433f699'),
+  stretch: U('photo-1676107648535-931375db52e2'),
   'party-sprinter': U('photo-1545185105-a81262517cf4'),
 };
 // Per-photo focal point (object-position) so the subject survives the 16:9 and 4:3 crops.
 const focus: Record<string, string> = {
-  s550: '50% 18%',
-  stretch: '50% 62%',
+  stretch: '58% 80%',
   electric: '50% 70%',
 };
+// Editorial reframes for photos where object-position alone can't hide a detail. The S550 photo is a
+// wide 2000×990 frame of a chauffeur drinking from a bottle; this window is anchored to the left edge and
+// sits below his shoulders, so the open door, mirror and cream leather cabin lead the frame and the
+// figure falls into the right third.
+// Fractions of the source image: x = left edge, w = window width (bottom-anchored),
+// tuned per frame shape (desktop 16:9.4, mobile 4:3) so the top ~22% of the photo is always cut.
+const crop: Record<string, { ar: string; x: number; w: number; xm: number; wm: number }> = {
+  s550: { ar: '2000 / 990', x: 0, w: 0.657, xm: 0, wm: 0.515 },
+};
+const altOverride: Record<string, string> = {
+  s550: 'Chauffeur in a tailored grey suit beside a black Mercedes-Benz S550, front door open to a cream leather cabin',
+};
+const slideStyle = (id: string) => {
+  const c = crop[id];
+  if (c) return `--car:${c.ar};--cx:${c.x};--cw:${c.w};--cxm:${c.xm};--cwm:${c.wm}`;
+  return focus[id] ? `--pos:${focus[id]}` : undefined;
+};
 
-// Group-size filters, derived from real capacity: a vehicle "fits" when it seats the top of the range.
-// Matches are ordered tightest-first so the automatic pick is always the closest fit.
+// Group-size filters, derived from real capacity: a vehicle "fits" when it seats the bottom of the range
+// (a party of four is never told the Model S is too small); only vehicles below that are dimmed.
+// "Best fit" (and the automatic pick) is the smallest vehicle that seats the whole range.
+const bySize = [...fleet].sort((a, b) => a.passengers - b.passengers);
 const groups = [
   { key: '1-3', label: '1–3', min: 1, max: 3 },
   { key: '4-6', label: '4–6', min: 4, max: 6 },
@@ -37,15 +56,13 @@ const groups = [
   { key: '15+', label: '15+', min: 15, max: 15 },
 ].map((g) => ({
   ...g,
-  fits: fleet
-    .filter((v) => v.passengers >= g.max)
-    .sort((a, b) => a.passengers - b.passengers)
-    .map((v) => v.id),
+  fits: bySize.filter((v) => v.passengers >= g.min).map((v) => v.id),
+  best: (bySize.find((v) => v.passengers >= g.max) ?? bySize[bySize.length - 1]).id,
 }));
 
 const pad = (n: number) => String(n).padStart(2, '0');
 const first = fleet[0];
-const alt = (v: (typeof fleet)[number]) => `${v.name}, ${v.category.toLowerCase()} for up to ${v.passengers} passengers, Seattle Door to Door Limo`;
+const alt = (v: (typeof fleet)[number]) => altOverride[v.id] ?? `${v.name}, ${v.category.toLowerCase()} for up to ${v.passengers} passengers, Seattle Door to Door Limo`;
 const imgOf = (v: (typeof fleet)[number]) => stageImage[v.id] ?? v.image;
 const isStudio = (v: (typeof fleet)[number]) => imgOf(v) === images.sprinterStudio;
 
@@ -68,7 +85,7 @@ const payload = fleet.map((v) => ({
         <h2 id="fleet-title" data-split>Choose your <em>arrival.</em></h2>
       </div>
       <div class="fs__head-r" data-reveal data-delay="0.15">
-        <p class="lead">From a whisper-quiet executive sedan to a twenty-guest party coach. Tell us how many are riding, pick the vehicle that fits the moment, and reserve it in under a minute.</p>
+        <p class="lead">From a whisper-quiet executive sedan to a twenty-guest party coach. Tell us how many are riding, pick the vehicle that fits the moment, and reserve it in four quick steps.</p>
       </div>
     </header>
 
@@ -79,7 +96,7 @@ const payload = fleet.map((v) => ({
           <p class="fs__filters-label" id="fleet-filter-label"><Icon name="users" /> Group size</p>
           <div class="fs__filter-row" role="group" aria-labelledby="fleet-filter-label">
             {groups.map((g) => (
-              <button type="button" class="fs__filter" aria-pressed="false" data-fs-group={g.key} data-fs-paxv={g.min} data-fs-fits={g.fits.join(',')}>
+              <button type="button" class="fs__filter" aria-pressed="false" data-fs-group={g.key} data-fs-paxv={g.min} data-fs-fits={g.fits.join(',')} data-fs-pick={g.best}>
                 {g.label}
               </button>
             ))}
@@ -119,8 +136,8 @@ const payload = fleet.map((v) => ({
       <div class="fs__stage" id="fleet-stage" role="tabpanel" aria-labelledby={`fleet-tab-${first.id}`} data-fs-stage>
         <div class:list={['fs__frame', isStudio(first) && 'is-studio']} data-reveal="scale" data-fs-frame>
           {fleet.map((v, i) => (
-            <figure class:list={['fs__slide', i === 0 && 'is-active', isStudio(v) && 'fs__slide--studio']} data-fs-slide={i} aria-hidden={i === 0 ? undefined : 'true'} style={focus[v.id] ? `--pos:${focus[v.id]}` : undefined}>
-              <img src={imgOf(v)} alt={alt(v)} loading={i === 0 ? 'eager' : 'lazy'} decoding="async" width="1600" height="1000" />
+            <figure class:list={['fs__slide', i === 0 && 'is-active', isStudio(v) && 'fs__slide--studio', crop[v.id] && 'fs__slide--crop']} data-fs-slide={i} aria-hidden={i === 0 ? undefined : 'true'} style={slideStyle(v.id)}>
+              <img src={imgOf(v)} alt={alt(v)} loading="lazy" decoding="async" width="1600" height="1000" />
               {isStudio(v) && <span class="fs__floor" aria-hidden="true"></span>}
             </figure>
           ))}
@@ -128,7 +145,7 @@ const payload = fleet.map((v) => ({
           <div class="fs__frame-tag" aria-hidden="true" data-fs-label data-theme={isStudio(first) ? 'dark' : undefined}>
             <span class="fs__frame-idx" data-fs-tag-idx>01</span><span class="fs__frame-sep"></span><span data-fs-tag-cat>{first.category}</span>
           </div>
-          <div class="fs__frame-count" aria-hidden="true" data-fs-label data-theme={isStudio(first) ? 'dark' : undefined}><span data-fs-tag-n>01</span> / {pad(fleet.length)}</div>
+          <div class="fs__frame-count" aria-hidden="true" data-fs-label data-theme={isStudio(first) ? 'dark' : undefined}><span data-fs-tag-n>01</span><span class="fs__frame-slash">/</span><span>{pad(fleet.length)}</span></div>
         </div>
 
         <div class="fs__info">
@@ -237,7 +254,7 @@ const payload = fleet.map((v) => ({
   .fs__tab:hover::after { opacity: 0.6; }
   .fs__tab.is-active::after { opacity: 1; }
   .fs__tab.is-active::before { transform: scaleX(1); }
-  .fs__tab-idx { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em; color: var(--muted-2); transition: color 0.4s; }
+  .fs__tab-idx { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em; color: var(--muted); transition: color 0.4s; }
   .fs__tab-text { display: grid; gap: 0.15rem; min-width: 0; transition: transform 0.6s var(--ease-out); }
   .fs__tab-cat { display: flex; align-items: center; gap: 0.6rem; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); transition: color 0.4s; }
   .fs__tab-best {
@@ -265,7 +282,8 @@ const payload = fleet.map((v) => ({
   .fs__tab.is-dim > * { opacity: 0.3; }
   .fs__tab.is-dim:hover > *, .fs__tab.is-dim:focus-visible > * { opacity: 0.7; }
   .fs__tab.is-fit .fs__tab-idx { color: var(--accent-2); }
-  .fs__tab:focus-visible { outline-offset: -2px; }
+  /* Ring sits outside the row so it never cuts through the index numeral. */
+  .fs__tab:focus-visible { outline-offset: 2px; }
 
   .fs__help { margin-top: 1.6rem; font-size: 0.9rem; color: var(--muted); max-width: 34ch; }
   .fs__help-link { color: var(--text); border-bottom: 1px solid rgb(var(--accent-2-rgb) / 0.4); transition: color 0.3s, border-color 0.3s; }
@@ -292,6 +310,14 @@ const payload = fleet.map((v) => ({
   }
   .fs__slide.is-active { clip-path: inset(0% 0% 0% 0%); z-index: 1; }
   .fs__slide img { width: 100%; height: 100%; object-fit: cover; object-position: var(--pos, 50% 50%); will-change: transform; }
+  /* Reframed photo: the image is sized to its own aspect ratio and offset so only the chosen,
+     bottom-anchored window shows. It overhangs every edge, so the wipe's scale/drift never exposes a gap. */
+  .fs__slide--crop img {
+    position: absolute; bottom: 0;
+    left: calc(var(--cx) / var(--cw) * -100%);
+    width: calc(100% / var(--cw)); height: auto; max-width: none;
+    aspect-ratio: var(--car);
+  }
   /* Photo scrim: always a darkening vignette (an ivory haze over photography looks washed out),
      deeper in the dark theme so the photo melts into the obsidian page. */
   .fs__slide:not(.fs__slide--studio)::after {
@@ -314,6 +340,12 @@ const payload = fleet.map((v) => ({
     padding: 9% 8% 7%;
     mix-blend-mode: multiply;
   }
+  /* Onyx: full-brightness ivory would be the brightest thing on the page, so the cyclorama drops to a
+     warm stone. Multiply still knocks out the photo's white background. */
+  :global([data-theme='dark']) .fs__slide--studio {
+    background:
+      radial-gradient(120% 90% at 50% 38%, #e7e0d4 0%, #d6cdbd 55%, #c9bfae 100%);
+  }
   .fs__slide--studio::before {
     content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none;
     box-shadow: inset 0 0 120px rgb(120 100 70 / 0.18);
@@ -333,6 +365,8 @@ const payload = fleet.map((v) => ({
     pointer-events: none;
   }
 
+  /* Ivory: near-solid paper labels with a hairline and a soft lift (heavy glass over a dark photo
+     turns into a muddy grey pill). Onyx: smoked glass. */
   .fs__frame-tag, .fs__frame-count {
     position: absolute; z-index: 60;
     display: inline-flex; align-items: center; gap: 0.7rem;
@@ -340,12 +374,17 @@ const payload = fleet.map((v) => ({
     border-radius: 999px;
     font-size: 0.66rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase;
     color: var(--text);
-    background: rgb(var(--bg-rgb) / 0.74);
-    border: 1px solid rgb(var(--fg-rgb) / 0.1);
-    backdrop-filter: blur(14px) saturate(140%);
-    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    background: rgb(var(--bg-rgb) / 0.92);
+    border: 1px solid rgb(var(--fg-rgb) / 0.08);
+    box-shadow: 0 10px 24px -16px rgb(var(--fg-rgb) / 0.45);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
   }
-  :global([data-theme='dark']) .fs__frame :is(.fs__frame-tag, .fs__frame-count) { background: rgb(var(--bg-rgb) / 0.55); border-color: rgb(var(--fg-rgb) / 0.14); }
+  :global([data-theme='dark']) .fs__frame :is(.fs__frame-tag, .fs__frame-count) {
+    background: rgb(var(--bg-rgb) / 0.55); border-color: rgb(var(--fg-rgb) / 0.14); box-shadow: none;
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    backdrop-filter: blur(14px) saturate(140%);
+  }
   .fs__frame-tag { left: 1.1rem; top: 1.1rem; }
   /* On the ivory studio panel, glass turns muddy: the labels switch to solid obsidian
      (the script forces data-theme="dark" on them, in both page themes). */
@@ -353,11 +392,13 @@ const payload = fleet.map((v) => ({
     background: rgb(var(--bg-rgb) / 0.9);
     border-color: transparent;
     color: var(--text);
-    backdrop-filter: none; -webkit-backdrop-filter: none;
+    box-shadow: none;
+    -webkit-backdrop-filter: none; backdrop-filter: none;
   }
   .fs__frame-idx { color: var(--accent); }
   .fs__frame-sep { width: 1.4rem; height: 1px; background: rgb(var(--accent-rgb) / 0.6); }
-  .fs__frame-count { right: 1.1rem; bottom: 1.1rem; font-variant-numeric: tabular-nums; color: var(--text-2); }
+  .fs__frame-count { right: 1.1rem; bottom: 1.1rem; gap: 0.45rem; font-variant-numeric: tabular-nums; color: var(--text-2); }
+  .fs__frame-slash { color: var(--muted); }
 
   /* ---------- Info ---------- */
   .fs__info {
@@ -415,7 +456,7 @@ const payload = fleet.map((v) => ({
       scroll-snap-type: x mandatory;
       scrollbar-width: none;
       margin-inline: calc(var(--gutter) * -1);
-      padding: 0.2rem var(--gutter) 0.4rem;
+      padding: 0.35rem var(--gutter) 0.5rem; /* room for the outside focus ring */
       scroll-padding-inline: var(--gutter);
       -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 var(--gutter), #000 calc(100% - var(--gutter)), transparent 100%);
       mask-image: linear-gradient(90deg, transparent 0, #000 var(--gutter), #000 calc(100% - var(--gutter)), transparent 100%);
@@ -445,6 +486,7 @@ const payload = fleet.map((v) => ({
     .fs__frame-tag { left: 0.8rem; top: auto; bottom: 0.8rem; padding: 0.45rem 0.8rem; font-size: 0.6rem; }
     .fs__frame-count { display: none; }
     .fs__slide:not(.fs__slide--studio) img { object-position: var(--pos-m, var(--pos, 50% 20%)); }
+    .fs__slide--crop img { left: calc(var(--cxm) / var(--cwm) * -100%); width: calc(100% / var(--cwm)); }
   }
   @media (max-width: 560px) {
     .fs__specs { grid-template-columns: auto 1fr; gap: 1.2rem 1.4rem; }
@@ -452,7 +494,9 @@ const payload = fleet.map((v) => ({
     .fs__spec--best dd { max-width: none; }
     .fs__cta { flex-direction: column; align-items: stretch; gap: 1.2rem; }
     .fs__reserve { padding-inline: 1.4rem; }
-    .fs__all { align-self: center; min-height: 44px; }
+    /* 44px tap target from padding, not min-height, so the underline stays 5px under the text. */
+    .fs__all { align-self: center; padding-block: 12px; }
+    .fs__all::after { bottom: 7px; }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -653,7 +697,7 @@ const payload = fleet.map((v) => ({
         filters.forEach((o) => o.setAttribute('aria-pressed', o === f && on ? 'true' : 'false'));
         const fits = on ? (f.dataset.fsFits || '').split(',') : null;
         pax = on ? Number(f.dataset.fsPaxv) : null;
-        const best = fits?.[0] ?? null; // fits are ordered tightest-first
+        const best = on ? f.dataset.fsPick || null : null; // smallest vehicle that seats the whole range
         tabs.forEach((t) => {
           const id = t.dataset.id || '';
           const fit = !fits || fits.includes(id);
@@ -665,7 +709,7 @@ const payload = fleet.map((v) => ({
           const n = fits.length;
           const idx = data.findIndex((d) => d.id === best);
           const label = f.textContent?.trim();
-          status.textContent = `${n === data.length ? 'All' : n} vehicle${n === 1 ? ' seats' : 's seat'} ${label} guests. Closest fit: ${data[idx].name}.`;
+          status.textContent = `${n === data.length ? 'All' : n} vehicle${n === 1 ? ' suits' : 's suit'} ${label} guests. Best fit: ${data[idx].name}.`;
           if (idx >= 0 && idx !== current) select(idx);
           else scrollRailTo(tabs[current]);
         } else {

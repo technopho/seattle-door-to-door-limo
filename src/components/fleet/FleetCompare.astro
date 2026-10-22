@@ -1,7 +1,7 @@
 ---
 import Icon from '../Icon.astro';
 import { fleet } from '../../data/site';
-import { meta, isStudio, maxPax } from './fleetMeta';
+import { meta, isStudio, maxPax, cropStyle } from './fleetMeta';
 ---
 <section class="section surface-2 cmp" id="compare" aria-labelledby="cmp-title">
   <div class="container">
@@ -10,7 +10,7 @@ import { meta, isStudio, maxPax } from './fleetMeta';
         <p class="eyebrow" data-reveal="fade">At a glance</p>
         <h2 id="cmp-title" data-split><span>Compare</span> <span>the</span> <em>collection.</em></h2>
       </div>
-      <p class="lead" data-reveal data-delay="0.15">Capacity, luggage and the moments each vehicle was made for, side by side. Every option is chauffeur-driven and detailed before every ride.</p>
+      <p class="lead" data-reveal data-delay="0.15">Capacity, luggage and the moments each vehicle was made for, side by side. Select any vehicle for the full details, or reserve it directly.</p>
     </div>
 
     <div class="cmp__wrap" data-reveal>
@@ -34,7 +34,9 @@ import { meta, isStudio, maxPax } from './fleetMeta';
                 <th scope="row" class="cmp__veh">
                   <a href={`#${v.id}`} class="cmp__vlink">
                     <span class:list={['cmp__thumb', isStudio(v) && 'cmp__thumb--studio', m.grade && 'cmp__thumb--grade']} data-theme={isStudio(v) ? 'light' : undefined}>
-                      <img src={v.image} alt="" loading="lazy" decoding="async" style={m.position ? `object-position:${m.position}` : undefined} />
+                      <span class:list={['cmp__crop', m.crop && 'is-crop']} style={cropStyle(v.id)}>
+                        <img src={v.image} alt="" width="208" height="130" loading="lazy" decoding="async" style={m.position ? `object-position:${m.position}` : undefined} />
+                      </span>
                     </span>
                     <span class="cmp__vtext">
                       <span class="cmp__cat">{v.category}</span>
@@ -43,10 +45,12 @@ import { meta, isStudio, maxPax } from './fleetMeta';
                   </a>
                 </th>
                 <td data-label="Passengers">
-                  <span class="cmp__num">{v.passengers}</span> <span class="cmp__unit cmp__mo">guests</span>
-                  <span class="cmp__bar" aria-hidden="true"><i style={`--w:${(v.passengers / maxPax).toFixed(3)}`}></i></span>
+                  <span class="cmp__stat">
+                    <span class="cmp__num">{v.passengers}</span> <span class="cmp__unit">guests</span>
+                    <span class="cmp__bar" aria-hidden="true"><i style={`--w:${(v.passengers / maxPax).toFixed(3)}`}></i></span>
+                  </span>
                 </td>
-                <td data-label="Luggage"><span class="cmp__num">{v.luggage}</span> <span class="cmp__unit">bags</span></td>
+                <td data-label="Luggage"><span class="cmp__stat"><span class="cmp__num">{v.luggage}</span> <span class="cmp__unit">bags</span></span></td>
                 <td data-label="Best for" class="cmp__text">{v.bestFor}</td>
                 <td data-label="Signature amenity" class="cmp__sig"><Icon name="sparkle" /> {m.signature}</td>
                 <td class="cmp__go">
@@ -105,6 +109,8 @@ import { meta, isStudio, maxPax } from './fleetMeta';
 
   .cmp__vlink { display: flex; align-items: center; gap: 1.1rem; }
   .cmp__thumb { position: relative; flex: none; width: 104px; aspect-ratio: 16 / 10; border-radius: 10px; overflow: hidden; background: var(--bg-3); border: 1px solid var(--line); }
+  .cmp__crop { position: absolute; inset: 0; display: block; }
+  .cmp__crop.is-crop { transform: scale(var(--crop-s, 1)); transform-origin: var(--crop-o, 50% 50%); }
   .cmp__thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform 1.2s var(--ease-out); }
   /* forced-light island (data-theme="light"): the white studio backdrop always sits on ivory */
   .cmp__thumb--studio { background: radial-gradient(120% 100% at 50% 30%, var(--bg-3), var(--bg-4)); border-color: var(--line-strong); }
@@ -117,10 +123,11 @@ import { meta, isStudio, maxPax } from './fleetMeta';
 
   .cmp__num { font-family: var(--font-display); font-size: 1.85rem; font-weight: 400; line-height: 1; letter-spacing: -0.03em; color: var(--text); font-variant-numeric: lining-nums tabular-nums; }
   .cmp__unit { font-size: 0.8rem; color: var(--muted); }
-  .cmp__mo { display: none; }
+  /* Figure + unit share one baseline in both stat columns; the capacity bar hangs below without pushing the figure up. */
+  .cmp__stat { position: relative; display: inline-flex; align-items: baseline; gap: 0.3rem; white-space: nowrap; }
   .cmp__thumb--grade img { filter: brightness(0.96) contrast(1.04) saturate(0.78); }
   :global([data-theme='dark']) .cmp__thumb--grade img { filter: brightness(0.8) contrast(1.08) saturate(0.7); }
-  .cmp__bar { display: block; width: 92px; height: 2px; margin-top: 0.55rem; border-radius: 2px; background: var(--line); overflow: hidden; }
+  .cmp__bar { position: absolute; left: 0; top: calc(100% + 0.5rem); display: block; width: 92px; height: 2px; border-radius: 2px; background: var(--line); overflow: hidden; }
   .cmp__bar i { display: block; height: 100%; width: calc(var(--w) * 100%); background: var(--accent-grad); transform-origin: left; }
   .cmp__text { color: var(--text-2); font-size: 0.92rem; max-width: 26ch; }
   .cmp__sig { color: var(--text-2); font-size: 0.92rem; white-space: nowrap; }
@@ -201,7 +208,6 @@ import { meta, isStudio, maxPax } from './fleetMeta';
     .cmp__sig :global(svg) { flex: none; margin-right: 0.1rem; vertical-align: 0; }
     .cmp__num { font-size: 1.3rem; }
     .cmp__unit { font-size: 0.78rem; }
-    .cmp__mo { display: inline; }
     .cmp__bar { display: none; }
   }
   @media (max-width: 370px) {

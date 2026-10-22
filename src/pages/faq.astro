@@ -1,0 +1,25 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHead from '../components/content/PageHead.astro';
+import FaqSearch from '../components/content/FaqSearch.astro';
+import FaqBrowser from '../components/content/FaqBrowser.astro';
+import { markupFaqs } from '../components/content/faqData';
+import { breadcrumbs, faqPage } from '../lib/seo';
+
+const title = 'Seattle Limo FAQ: Booking, Airport & Fleet | Door to Door';
+const description =
+  'Answers on booking, SeaTac pickups, flight delays, vehicle capacity, weddings and service areas for our Seattle chauffeur service. Still unsure? Call us 24/7.';
+// The page closes on the concierge card (sidebar on desktop, after the questions on phones), so the
+// footer's CTA band is dropped (footerCta={false}) to avoid two call-to-action cards back to back.
+---
+<Base title={title} description={description} jsonLd={[breadcrumbs([['FAQ', '/faq/']]), faqPage(markupFaqs)]} footerCta={false}>
+  <PageHead
+    trail={[['FAQ', '/faq/']]}
+    eyebrow="Help center"
+    lead="Booking, airport pickups, vehicles, events and where we drive. Search below, browse by topic, or ask the concierge: a real person answers 24/7."
+  >
+    <Fragment slot="title">Frequently asked <em>questions</em></Fragment>
+    <FaqSearch />
+  </PageHead>
+  <FaqBrowser />
+</Base>

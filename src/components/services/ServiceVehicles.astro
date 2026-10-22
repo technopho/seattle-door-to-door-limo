@@ -1,0 +1,140 @@
+---
+// Recommended vehicles for a service: fleet facts from site.ts, photo framing from the fleet page meta.
+import Icon from '../Icon.astro';
+import { fleet, images } from '../../data/site';
+import { meta, cropStyle } from '../fleet/fleetMeta';
+import type { Heading } from '../../data/service-pages';
+
+interface Props { slug: string; serviceTitle: string; vehicles: { id: string; why: string }[]; title: Heading; lead: string }
+const { slug, serviceTitle, vehicles, title, lead } = Astro.props;
+
+const cards = vehicles.flatMap(({ id, why }) => {
+  const v = fleet.find((f) => f.id === id);
+  if (!v) return [];
+  const m = meta[id];
+  return [{
+    v,
+    why,
+    make: m?.make ?? v.name,
+    model: m?.model ?? '',
+    alt: m?.alt ?? `${v.name} ${v.category.toLowerCase()}`,
+    position: m?.position,
+    crop: m?.crop ? cropStyle(id) : undefined,
+    studio: v.image === images.sprinterStudio,
+  }];
+});
+---
+<section class="vs section surface-2" aria-labelledby="vs-title">
+  <div class="container">
+    <header class="section-head section-head--split vs__head">
+      <div class="vs__head-main">
+        <p class="eyebrow" data-reveal="fade">Recommended vehicles</p>
+        <h2 id="vs-title" data-split>{title.text} <em>{title.em}</em></h2>
+      </div>
+      <div class="vs__head-aside" data-reveal data-delay="0.1">
+        <p class="lead">{lead}</p>
+        <a href="/fleet/" class="link-underline">Compare the full fleet <Icon name="arrow" size={14} /></a>
+      </div>
+    </header>
+
+    <ul class:list={['vs__grid', `vs__grid--${cards.length}`]} role="list" data-stagger="0.08">
+      {cards.map((c) => (
+        <li>
+          <article class="vc" aria-labelledby={`vc-${c.v.id}`}>
+            <a href={`/fleet/#${c.v.id}`} class:list={['vc__media', c.studio && 'vc__media--studio']} data-theme={c.studio ? 'light' : undefined} tabindex="-1" aria-hidden="true" data-cursor="View">
+              <span class:list={['vc__crop', c.crop && 'is-crop']} style={c.crop}>
+                <img src={c.v.image} alt={c.alt} width="1600" height="1000" loading="lazy" decoding="async" style={c.position ? `object-position:${c.position}` : undefined} />
+              </span>
+              <span class="vc__tag">{c.v.category}</span>
+            </a>
+            <div class="vc__body">
+              <h3 class="vc__name" id={`vc-${c.v.id}`}>{c.make} {c.model && <em>{c.model}</em>}</h3>
+              <p class="vc__why">{c.why}</p>
+              <dl class="vc__specs">
+                <div><dt><Icon name="users" /> Guests</dt><dd>Up to {c.v.passengers}</dd></div>
+                <div><dt><Icon name="suitcase" /> Luggage</dt><dd>{c.v.luggage} bags</dd></div>
+              </dl>
+              <div class="vc__ctas">
+                <a href={`/book/?type=${slug}&vehicle=${c.v.id}`} class="btn btn--gold vc__reserve" aria-label={`Reserve the ${c.v.name} for ${serviceTitle.toLowerCase()}`}>Reserve <Icon name="arrow" /></a>
+                <a href={`/fleet/#${c.v.id}`} class="vc__more">Vehicle details<span class="sr-only">: {c.v.name}</span> <Icon name="arrow-up-right" /></a>
+              </div>
+            </div>
+          </article>
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>
+
+<style>
+  .vs__head h2 :global(.split-line) { vertical-align: top; }
+  .vs__head-aside { display: grid; gap: 1.2rem; justify-items: start; }
+  /* 44px tap target; the underline stub stays anchored to the text rather than the box edge. */
+  .vs__head-aside .link-underline { min-height: 44px; }
+  .vs__head-aside .link-underline::after { bottom: calc(50% - 0.95em); }
+
+  .vs__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(1rem, 2vw, 1.6rem); }
+  .vs__grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .vs__grid > li { display: flex; }
+
+  .vc {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-l);
+    background: var(--bg-3);
+    box-shadow: 0 1px 2px rgb(var(--fg-rgb) / 0.04), 0 24px 50px -36px rgb(var(--fg-rgb) / 0.3);
+    transition: transform 0.6s var(--ease-out), box-shadow 0.6s var(--ease-out), border-color 0.4s;
+  }
+  .vc:hover { transform: translateY(-4px); border-color: var(--line-strong); box-shadow: 0 1px 2px rgb(var(--fg-rgb) / 0.05), 0 34px 60px -36px rgb(var(--fg-rgb) / 0.4); }
+  :global([data-theme='dark']) .vc { background: var(--bg-3); box-shadow: none; }
+  :global([data-theme='dark']) .vc:hover { box-shadow: 0 30px 60px -30px rgb(0 0 0 / 0.8); }
+
+  .vc__media { position: relative; display: block; aspect-ratio: 16 / 10; overflow: hidden; background: var(--bg-4); }
+  /* Studio-shot Sprinter: a forced-light ivory plate (data-theme="light"), as on the fleet page,
+     so the white backdrop reads as intentional in both themes. */
+  .vc__media--studio { background: radial-gradient(120% 100% at 50% 30%, var(--bg-3), var(--bg-4)); }
+  .vc__media--studio img { object-fit: contain; padding: 6% 8% 9%; mix-blend-mode: multiply; }
+  :global(html[data-theme='dark']) .vc__media--studio { filter: brightness(0.9); }
+  .vc__crop { position: absolute; inset: 0; display: block; }
+  .vc__crop.is-crop { transform: scale(var(--crop-s, 1)); transform-origin: var(--crop-o, 50% 50%); }
+  .vc__media img { width: 100%; height: 100%; object-fit: cover; transition: transform 1.2s var(--ease-out); }
+  .vc:hover .vc__media img { transform: scale(1.04); }
+  .vc__tag {
+    position: absolute; left: 0.9rem; bottom: 0.9rem;
+    padding: 0.4rem 0.8rem; border-radius: 999px;
+    font-size: 0.62rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--text); background: rgb(var(--bg-rgb) / 0.85); border: 1px solid var(--line);
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  }
+
+  .vc__body { display: flex; flex-direction: column; gap: 0.9rem; flex: 1; padding: clamp(1.3rem, 2.2vw, 1.8rem); }
+  .vc__name { font-size: clamp(1.4rem, 1.9vw, 1.7rem); line-height: 1.1; letter-spacing: -0.03em; }
+  .vc__why { color: var(--muted); font-size: 0.95rem; line-height: 1.6; }
+  .vc__specs { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); margin-top: auto; }
+  .vc__specs > div { display: grid; gap: 0.2rem; padding: 0.85rem 0; }
+  .vc__specs > div + div { padding-left: 1rem; border-left: 1px solid var(--line); }
+  .vc__specs dt { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
+  .vc__specs dt :global(svg) { width: 14px; height: 14px; color: var(--accent); }
+  .vc__specs dd { font-family: var(--font-display); font-size: 1.1rem; font-weight: 500; letter-spacing: -0.015em; color: var(--text); }
+  .vc__ctas { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.6rem 1rem; padding-top: 0.2rem; }
+  .vc__reserve { min-height: 46px; padding: 0 1.3rem; font-size: 0.72rem; }
+  .vc__more {
+    display: inline-flex; align-items: center; gap: 0.4rem; min-height: 44px;
+    font-size: 0.74rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-2);
+    transition: color 0.3s;
+  }
+  .vc__more :global(svg) { width: 14px; height: 14px; color: var(--accent); transition: transform 0.4s var(--ease-out); }
+  .vc__more:hover { color: var(--accent); }
+  .vc__more:hover :global(svg) { transform: translate(2px, -2px); }
+
+  @media (max-width: 1080px) {
+    .vs__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 680px) {
+    .vs__grid, .vs__grid--2 { grid-template-columns: 1fr; }
+    .vc { border-radius: var(--radius); }
+  }
+</style>

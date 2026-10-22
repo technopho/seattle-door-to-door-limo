@@ -1,0 +1,32 @@
+---
+import Base from '../../layouts/Base.astro';
+import AreasHero from '../../components/areas/AreasHero.astro';
+import AreasMap from '../../components/home/AreasMap.astro';
+import CityCards from '../../components/areas/CityCards.astro';
+import PortsBand from '../../components/areas/PortsBand.astro';
+import TripPlanner from '../../components/areas/TripPlanner.astro';
+import { breadcrumbs } from '../../lib/seo';
+
+const title = 'Seattle Area Limo Service: Cities & Airports | Door to Door';
+const description =
+  'Chauffeured limo and black car service across Seattle, Bellevue, Kirkland, Redmond, Tacoma and Everett, plus SeaTac and the cruise piers. Reserve 24/7.';
+---
+<!-- Order: the six city links come straight after the hero; the map and terminals support them.
+     The page closes on its own trip form, so the footer's concierge band is switched off. -->
+<Base title={title} description={description} jsonLd={[breadcrumbs([['Service Areas', '/service-areas/']])]} footerCta={false}>
+  <AreasHero />
+  <CityCards />
+  <div class="sa-map">
+    <AreasMap id="coverage" eyebrow="Route map" marks={false}>
+      <Fragment slot="title">Trace the drive <em data-reveal data-delay="0.3">from SeaTac.</em></Fragment>
+      <Fragment slot="lead">Hover or tap a city to see its route from the airport, then reserve that exact trip. Terminals and cruise piers are covered below.</Fragment>
+    </AreasMap>
+  </div>
+  <PortsBand />
+  <TripPlanner />
+</Base>
+
+<style>
+  /* The map follows the city cards on the same surface: trim the doubled section padding. */
+  .sa-map :global(#coverage) { padding-top: clamp(2.5rem, 5vw, 4.5rem); }
+</style>

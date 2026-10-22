@@ -3,16 +3,26 @@
 import Icon from '../Icon.astro';
 import { site, stats, occasions } from '../../data/site';
 
-// Statement copy, tokenised so each word can be scrubbed from muted to ivory.
+// Statement copy, tokenised so each word can be scrubbed from muted to ivory. The closing brand line is
+// one token joined by no-break spaces, so "door to door." never splits.
+// (Was "on time, every time,": an absolute punctuality promise the client has not substantiated.)
+const nb = (phrase: string) => phrase.replace(/ /g, '\u00A0');
 const statement: { t: string; gold?: boolean }[] = [
   ...`Since ${site.since}, we’ve driven Seattle’s executives, newlyweds and night owls\u00A0—`.split(' ').map((t) => ({ t })),
-  ...'on time, every time,'.split(' ').map((t) => ({ t })),
-  ...'door to door.'.split(' ').map((t) => ({ t, gold: true })),
+  { t: 'punctually,' },
+  { t: 'discreetly,' },
+  { t: nb('door to door.'), gold: true },
 ];
+
+// Years in business is derived from the founding year so it can never contradict "Since 2008" above it
+// (site.ts carried a hard-coded "20+"; the client is confirming the right figure).
+const years = new Date().getFullYear() - site.since;
+const figures = stats.map((s) => (/years/i.test(s.label) ? { value: years, suffix: '', label: 'Years serving Seattle' } : s));
 
 const rowB = [...occasions.slice(6), ...occasions.slice(0, 6)];
 ---
 <section class="intro" aria-label="Who we are">
+  <div class="mq-wrap">
   <div class="mq" data-mq>
     <div class="mq__row mq__row--a" data-mq-row data-dir="-1">
       <div class="mq__track" data-mq-track>
@@ -40,6 +50,12 @@ const rowB = [...occasions.slice(6), ...occasions.slice(0, 6)];
       </div>
     </div>
   </div>
+  <!-- WCAG 2.2.2: the ticker loops indefinitely, so it gets a pause control (revealed by the script that animates it) -->
+  <button type="button" class="mq__toggle" aria-label="Pause scrolling occasions" aria-pressed="false" data-mq-toggle hidden>
+    <svg class="mq__ico-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6v12M15 6v12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    <svg class="mq__ico-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 6.2v11.6L18 12z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+  </button>
+  </div>
 
   <div class="container intro__body">
     <div class="intro__grid">
@@ -58,7 +74,7 @@ const rowB = [...occasions.slice(6), ...occasions.slice(0, 6)];
     </div>
 
     <dl class="intro__stats" data-stagger="0.1">
-      {stats.map((s) => (
+      {figures.map((s) => (
         <div class="intro__stat">
           <dt class="intro__stat-label">{s.label}</dt>
           <dd class="intro__stat-value">
@@ -78,13 +94,19 @@ const rowB = [...occasions.slice(6), ...occasions.slice(0, 6)];
     position: relative;
     padding-block: clamp(1.6rem, 3.4vw, 2.8rem);
     border-block: 1px solid var(--line);
+    /* Ivory: a paper-white lift (a bronze wash reads as a smudge on ivory); Onyx: faint champagne glow */
     background:
-      radial-gradient(60% 120% at 50% 50%, rgb(var(--accent-rgb) / 0.07), transparent 70%),
+      radial-gradient(60% 120% at 50% 50%, var(--bg-3), transparent 70%),
       var(--bg);
     display: grid;
     gap: clamp(0.9rem, 1.8vw, 1.5rem);
     -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
     mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  }
+  :global([data-theme='dark']) .mq {
+    background:
+      radial-gradient(60% 120% at 50% 50%, rgb(var(--accent-rgb) / 0.07), transparent 70%),
+      var(--bg);
   }
   .mq__row { overflow: hidden; }
   .mq__track { display: flex; width: max-content; will-change: transform; }
@@ -125,6 +147,31 @@ const rowB = [...occasions.slice(6), ...occasions.slice(0, 6)];
     transform: translateY(0.06em);
   }
   .mq__dash { flex: none; width: 2.4rem; height: 1px; margin-inline: 1.5rem 1.2rem; background: rgb(var(--accent-rgb) / 0.6); }
+
+  /* Pause/play: a small disc sitting on the ticker's bottom rule, aligned to the container edge */
+  .mq-wrap { position: relative; }
+  .mq__toggle {
+    position: absolute;
+    right: max(var(--gutter), (100% - var(--container)) / 2);
+    bottom: 0;
+    z-index: 2;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1px solid var(--line-strong);
+    background: var(--bg);
+    color: var(--muted);
+    transform: translateY(50%);
+    transition: border-color 0.4s var(--ease-out), background 0.4s var(--ease-out), color 0.4s var(--ease-out);
+  }
+  .mq__toggle[hidden] { display: none; }
+  .mq__toggle svg { width: 16px; height: 16px; }
+  .mq__toggle:hover { border-color: var(--text); color: var(--bg); background: var(--text); }
+  .mq__toggle .mq__ico-play { display: none; }
+  .mq__toggle[aria-pressed='true'] .mq__ico-pause { display: none; }
+  .mq__toggle[aria-pressed='true'] .mq__ico-play { display: block; }
 
   /* ---------- Statement ---------- */
   .intro__body { padding-block: clamp(4.5rem, 10vw, 9rem) clamp(2.5rem, 5vw, 4rem); }
@@ -244,19 +291,35 @@ const rowB = [...occasions.slice(6), ...occasions.slice(0, 6)];
 
     let hover = 1;
     let boost = 0;
+    let paused = false;
+    let inView = false;
     const apply = (dur = 0.6) => loops.forEach((t) => gsap.to(t, { timeScale: hover * (1 + boost), duration: dur, ease: 'power2.out', overwrite: true }));
     const skewTo = gsap.quickTo(tracks, 'skewX', { duration: 0.7, ease: 'power3.out' });
+    const run = () => loops.forEach((t) => (inView && !paused ? t.play() : t.pause()));
 
     mq.addEventListener('mouseenter', () => { hover = 0.22; apply(0.9); });
     mq.addEventListener('mouseleave', () => { hover = 1; apply(0.9); });
 
+    // Pause/play control (keyboard, touch and mouse alike)
+    const toggle = mq.parentElement?.querySelector<HTMLButtonElement>('[data-mq-toggle]');
+    if (toggle) {
+      toggle.hidden = false;
+      toggle.addEventListener('click', () => {
+        paused = !paused;
+        toggle.setAttribute('aria-pressed', String(paused));
+        if (paused) skewTo(0);
+        run();
+      });
+    }
+
     let idle = 0;
-    ScrollTrigger.create({
+    const st = ScrollTrigger.create({
       trigger: mq,
       start: 'top bottom',
       end: 'bottom top',
-      onToggle: (self) => loops.forEach((t) => (self.isActive ? t.play() : t.pause())),
+      onToggle: (self) => { inView = self.isActive; run(); },
       onUpdate: (self) => {
+        if (paused) return;
         const v = self.getVelocity();
         boost = gsap.utils.clamp(0, 3.2, Math.abs(v) / 900);
         skewTo(gsap.utils.clamp(-7, 7, v / -260));
@@ -265,20 +328,24 @@ const rowB = [...occasions.slice(6), ...occasions.slice(0, 6)];
         idle = window.setTimeout(() => { boost = 0; skewTo(0); apply(1.2); }, 140);
       },
     });
+    inView = st.isActive;
+    run();
   }
 
   /* ---------- Statement: scroll-scrubbed word highlight ---------- */
   const statement = document.querySelector<HTMLElement>('[data-statement]');
   if (statement && !reduce) {
     const words = statement.querySelectorAll<HTMLElement>('.intro__w');
+    // Words start at half strength (still >= 3:1 against the page) and the whole line is fully lit by the
+    // time it reaches the middle of the screen, so it is never dim where it is read.
     gsap.fromTo(
       words,
-      { opacity: 0.2 },
+      { opacity: 0.5 },
       {
         opacity: 1,
         ease: 'none',
         stagger: 0.12,
-        scrollTrigger: { trigger: statement, start: 'top 85%', end: 'bottom 38%', scrub: 0.6 },
+        scrollTrigger: { trigger: statement, start: 'top 88%', end: 'center 56%', scrub: 0.6 },
       },
     );
   }

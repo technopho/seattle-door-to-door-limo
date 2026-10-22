@@ -1,32 +1,89 @@
 ---
 import '@fontsource-variable/inter';
-import '@fontsource-variable/inter/wght-italic.css';
 import '@fontsource-variable/inter-tight';
-import '@fontsource-variable/inter-tight/wght-italic.css';
 import '../styles/global.css';
+// Preload the two Latin font files every page paints above the fold, so they start downloading
+// with the HTML instead of after the stylesheet (same hashed files the @font-face rules use).
+import interWoff2 from '@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url';
+import interTightWoff2 from '@fontsource-variable/inter-tight/files/inter-tight-latin-wght-normal.woff2?url';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import Icon from '../components/Icon.astro';
 import { site } from '../data/site';
+import { localBusiness, website } from '../lib/seo';
 
-interface Props { title?: string; description?: string; preloader?: boolean; footer?: boolean; darkHero?: boolean }
+interface Props {
+  title?: string;
+  description?: string;
+  preloader?: boolean;
+  footer?: boolean;
+  darkHero?: boolean;
+  /** Social share image, absolute or site-relative. Only the default /og-image.jpg declares its size (1200×630). */
+  ogImage?: string;
+  ogType?: 'website' | 'article';
+  /** Page-specific JSON-LD objects (see src/lib/seo.ts). LocalBusiness is always included. */
+  jsonLd?: object | object[];
+  noindex?: boolean;
+  /**
+   * Closing call-to-action at the top of the footer.
+   * 'compact' (default): a slim concierge band. 'full': the large centered statement, for pages
+   * that end without their own booking block. false: none, for pages that already close on one.
+   */
+  footerCta?: 'compact' | 'full' | false;
+  /** Show the header's Reserve button (hide it on the booking page itself). */
+  headerCta?: boolean;
+}
 const {
-  title = `${site.name} | Luxury Chauffeur & Limousine Service in Seattle`,
-  description = 'Private chauffeured transportation across Seattle, Bellevue and the Puget Sound. Airport transfers, corporate travel, weddings and nights out. 24/7.',
+  // Home page defaults (≤ 60 / 140–160 chars); every other page passes its own.
+  title = `${site.name} | Luxury Chauffeur Service`,
+  description = 'Private chauffeured travel across Seattle, Bellevue and Puget Sound: airport transfers, corporate cars, weddings and nights out. Reserve online or call 24/7.',
   preloader = false,
   footer = true,
+  footerCta = 'compact',
+  headerCta = true,
   darkHero = false,
+  ogImage = '/og-image.jpg',
+  ogType = 'website',
+  jsonLd = [],
+  noindex = false,
 } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site ?? site.url).href;
+const ogImageUrl = new URL(ogImage, Astro.site ?? site.url).href;
+// Width/height are only known for the default share image; page-specific images are left for crawlers to measure.
+const ogImageIsDefault = ogImage === '/og-image.jpg';
+const isHome = Astro.url.pathname === '/';
+// WebSite (site name for search results) lives on the home page only, per Google's site-name guidance.
+const schemas = [localBusiness(), ...(isHome ? [website()] : []), ...(Array.isArray(jsonLd) ? jsonLd : [jsonLd])];
 ---
 <!doctype html>
 <html lang="en" data-theme="light">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#f4efe7" />
+    <meta name="theme-color" content={darkHero ? '#0a0a0c' : '#f4efe7'} data-dark-hero={darkHero ? '' : undefined} />
     <title>{title}</title>
     <meta name="description" content={description} />
+    {/* A noindex page (e.g. the 404 served for every unknown URL) declares no canonical or og:url. */}
+    {!noindex && <link rel="canonical" href={canonical} />}
+    {noindex && <meta name="robots" content="noindex, follow" />}
+    <link rel="preload" href={interTightWoff2} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={interWoff2} as="font" type="font/woff2" crossorigin />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:type" content={ogType} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    {!noindex && <meta property="og:url" content={canonical} />}
+    <meta property="og:image" content={ogImageUrl} />
+    {ogImageIsDefault && <meta property="og:image:width" content="1200" />}
+    {ogImageIsDefault && <meta property="og:image:height" content="630" />}
+    <meta property="og:locale" content="en_US" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImageUrl} />
+    {schemas.map((schema) => <script type="application/ld+json" set:html={JSON.stringify(schema)} />)}
     <link rel="preconnect" href="https://www.seattledoortodoorlimo.com" />
     <script is:inline>
       (function () {
@@ -34,30 +91,50 @@ const {
         try { t = localStorage.getItem('sdd-theme') || 'light'; } catch (e) {}
         d.setAttribute('data-theme', t === 'dark' ? 'dark' : 'light');
         d.classList.add('js');
+        // Repeat visits (and reduced motion) skip the preloader: hide it before first paint
+        // instead of letting it flash until the deferred global.ts removes it.
+        try { if (sessionStorage.getItem('sdd-pre') || matchMedia('(prefers-reduced-motion: reduce)').matches) d.classList.add('pre-skip'); } catch (e) {}
+        // Over a dark hero the browser bar starts dark whatever the page theme (global.ts keeps it in sync).
         var m = document.querySelector('meta[name="theme-color"]');
-        if (m) m.setAttribute('content', t === 'dark' ? '#0a0a0c' : '#f4efe7');
+        if (m) m.setAttribute('content', t === 'dark' || m.hasAttribute('data-dark-hero') ? '#0a0a0c' : '#f4efe7');
       })();
     </script>
+    {isHome && (
+      <script is:inline>
+        // The old single-page site linked to /#about and /#contact; those sections now have their own pages.
+        (function () { var h = { '#about': '/about/', '#contact': '/contact/' }[location.hash]; if (h) location.replace(h); })();
+      </script>
+    )}
   </head>
   <body data-dark-hero={darkHero ? '' : undefined}>
+    <a class="skip-link" href="#main">Skip to content</a>
     {preloader && (
-      <div class="preloader" data-preloader aria-hidden="true">
+      <div class="preloader" data-preloader aria-hidden="true" data-theme={darkHero ? 'dark' : undefined}>
         <div class="preloader__inner">
-          <span class="preloader__mask"><span data-pre-word>Seattle</span></span>
+          <span class="preloader__mask preloader__mask--mark">
+            <svg class="preloader__mark" data-pre-word viewBox="0 0 40 48">
+              <path d="M20 2 L21.4 15 L20 46 L18.6 15 Z" fill="currentColor" />
+              <ellipse cx="20" cy="14" rx="11" ry="2.8" fill="none" stroke="currentColor" stroke-width="1.6" />
+              <path d="M13 18 L17.5 46 M27 18 L22.5 46" stroke="currentColor" stroke-width="1" fill="none" opacity=".7" />
+              <path d="M8 46 H32" stroke="currentColor" stroke-width="1.2" />
+            </svg>
+          </span>
+          <span class="preloader__mask"><span data-pre-word>Seattle · Since {site.since}</span></span>
           <span class="preloader__mask preloader__big"><span data-pre-word>Door <em>to</em> Door</span></span>
           <span class="preloader__line" data-pre-line></span>
         </div>
       </div>
     )}
-    <Header />
-    <main id="main">
+    <Header cta={headerCta} darkHero={darkHero} />
+    <main id="main" tabindex="-1">
       <slot />
     </main>
-    {footer && <Footer />}
+    {footer && <Footer cta={footerCta} />}
 
     <nav class="mobile-bar" aria-label="Quick actions">
-      <a href={site.phoneHref} class="mobile-bar__btn"><Icon name="phone" /> Call</a>
-      <a href={site.smsHref} class="mobile-bar__btn"><Icon name="chat" /> Text</a>
+      <a href={site.phoneHref} class="mobile-bar__btn" aria-label={`Call ${site.phone}`}><Icon name="phone" /> Call</a>
+      <span class="mobile-bar__sep" aria-hidden="true"></span>
+      <a href={site.smsHref} class="mobile-bar__btn" aria-label={`Text ${site.phone}`}><Icon name="chat" /> Text</a>
       <a href="/book/" class="mobile-bar__btn mobile-bar__btn--gold">Reserve <Icon name="arrow" /></a>
     </nav>
 
@@ -68,14 +145,43 @@ const {
 </html>
 
 <style>
-  .preloader { position: fixed; inset: 0; z-index: 10000; display: grid; place-items: center; background: var(--bg); clip-path: inset(0 0 0 0); }
-  .preloader__inner { display: grid; justify-items: center; gap: 0.6rem; }
-  .preloader__mask { display: block; overflow: hidden; }
-  .preloader__mask > span { display: block; font-size: 0.7rem; letter-spacing: 0.5em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
-  .preloader__big > span { font-family: var(--font-display); font-weight: 500; font-size: clamp(2.4rem, 6vw, 4.4rem); letter-spacing: -0.035em; text-transform: none; color: var(--text); line-height: 1.05; }
-  .preloader__big em { font-style: normal; color: var(--accent); }
-  .preloader__line { display: block; width: min(320px, 60vw); height: 1px; background: var(--accent-grad); transform-origin: left; margin-top: 0.8rem; }
+  /* ---------- Skip link (visible on keyboard focus) ---------- */
+  .skip-link {
+    position: fixed;
+    top: 14px;
+    left: 14px;
+    z-index: 10001;
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 1.3rem;
+    border-radius: 999px;
+    background: var(--cta-bg);
+    color: var(--cta-fg);
+    font-size: 0.74rem;
+    font-weight: 600;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    transform: translateY(-250%);
+    transition: transform 0.4s var(--ease-out);
+  }
+  .skip-link:focus, .skip-link:focus-visible { transform: none; outline-offset: 4px; box-shadow: var(--cta-glow); }
 
+  /* ---------- Preloader ----------
+     Page-themed (ivory / obsidian), except over a dark hero: there it is an always-dark island
+     (data-theme="dark") so it wipes away into the hero and matches the dark browser top bar. */
+  .preloader { position: fixed; inset: 0; z-index: 10000; display: grid; place-items: center; background: radial-gradient(80% 60% at 50% 40%, var(--bg-3) 0%, var(--bg) 70%); clip-path: inset(0 0 0 0); }
+  :global(.pre-skip) .preloader { display: none; }
+  .preloader__inner { display: grid; justify-items: center; gap: 0.7rem; }
+  .preloader__mask { display: block; overflow: hidden; }
+  .preloader__mask > span { display: block; font-size: 0.68rem; letter-spacing: 0.42em; margin-right: -0.42em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .preloader__mask--mark { padding-bottom: 0.4rem; }
+  .preloader__mark { width: 30px; height: 36px; color: var(--accent); }
+  .preloader__big > span { font-family: var(--font-display); font-weight: 500; font-size: clamp(2.4rem, 6vw, 4.4rem); letter-spacing: -0.035em; margin-right: 0; text-transform: none; color: var(--text); line-height: 1.08; }
+  .preloader__big em { font-style: normal; font-weight: 300; color: var(--accent); }
+  .preloader__line { display: block; width: min(280px, 56vw); height: 1px; background: var(--accent-grad); transform-origin: left; margin-top: 0.9rem; }
+
+  /* ---------- Mobile quick-action bar ---------- */
   .mobile-bar { display: none; }
   @media (max-width: 760px) {
     .mobile-bar {
@@ -85,21 +191,34 @@ const {
       bottom: calc(10px + env(safe-area-inset-bottom));
       z-index: 80;
       display: grid;
-      grid-template-columns: 1fr 1fr 1.4fr;
-      gap: 6px;
+      grid-template-columns: 1fr 1px 1fr 1.35fr;
+      align-items: center;
+      gap: 4px;
       padding: 6px;
       border-radius: 999px;
-      background: rgb(var(--bg-rgb) / 0.82);
+      background: rgb(var(--bg-rgb) / 0.8);
       border: 1px solid var(--line-strong);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
+      box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.35), 0 18px 40px -18px rgb(var(--fg-rgb) / 0.4);
+      /* Prefixed first: lightningcss (build minifier) drops the unprefixed property when it comes first */
+      -webkit-backdrop-filter: blur(18px) saturate(160%);
+      backdrop-filter: blur(18px) saturate(160%);
       transform: translateY(150%);
-      transition: transform 0.6s var(--ease-out);
+      /* Off screen it is also hidden from focus and assistive tech (visibility flips after the slide-out) */
+      visibility: hidden;
+      transition: transform 0.6s var(--ease-out), visibility 0s linear 0.6s;
     }
-    :global(body.past-hero) .mobile-bar { transform: none; }
-    :global(body.menu-open) .mobile-bar { transform: translateY(150%); }
-    .mobile-bar__btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem; min-height: 48px; border-radius: 999px; font-size: 0.74rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
-    .mobile-bar__btn :global(svg) { width: 16px; height: 16px; }
-    .mobile-bar__btn--gold { background: var(--cta-bg); color: var(--cta-fg); }
+    :global(html[data-theme='dark']) .mobile-bar { box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05), 0 18px 40px -16px rgb(0 0 0 / 0.8); }
+    /* Shown once past a dark hero; immediately on pages without one */
+    :global(body.past-hero) .mobile-bar,
+    :global(body:not([data-dark-hero])) .mobile-bar { transform: none; visibility: visible; transition: transform 0.6s var(--ease-out), visibility 0s; }
+    :global(body.menu-open) .mobile-bar { transform: translateY(150%); visibility: hidden; transition: transform 0.6s var(--ease-out), visibility 0s linear 0.6s; }
+    .mobile-bar__sep { width: 1px; height: 22px; background: var(--line-strong); }
+    .mobile-bar__btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem; min-height: 48px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.13em; text-transform: uppercase; color: var(--text); transition: background 0.3s; }
+    .mobile-bar__btn:active { background: rgb(var(--fg-rgb) / 0.06); }
+    .mobile-bar__btn :global(svg) { width: 16px; height: 16px; color: var(--accent); }
+    .mobile-bar__btn--gold { background: var(--cta-bg); color: var(--cta-fg); box-shadow: var(--cta-glow); }
+    .mobile-bar__btn--gold:active { background: var(--cta-bg); filter: brightness(1.08); }
+    .mobile-bar__btn--gold :global(svg) { color: currentColor; }
+    .mobile-bar__btn:focus-visible { outline-offset: -3px; }
   }
 </style>

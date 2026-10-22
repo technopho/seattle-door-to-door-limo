@@ -5,8 +5,11 @@ const { class: cls = '', compact = false } = Astro.props;
 // Unique gradient id per instance: the header and footer logos can sit in different
 // theme scopes, and a shared id would paint both with the first instance's colors.
 const gid = `lg-${Math.random().toString(36).slice(2, 8)}`;
+// The accessible name starts with the visible wordmark (WCAG 2.5.3 label in name), so voice users
+// can say what they see; the icon-only compact logo carries the full business name.
+const label = compact ? 'Seattle Door to Door Limo, home' : 'Door to Door Seattle Limousine, home';
 ---
-<a href="/" class:list={['logo', cls, compact && 'logo--compact']} aria-label="Seattle Door to Door Limo — home" data-cursor="Home">
+<a href="/" class:list={['logo', cls, compact && 'logo--compact']} aria-label={label} data-cursor="Home">
   <svg class="logo__mark" viewBox="0 0 40 48" aria-hidden="true">
     <defs>
       <linearGradient id={gid} x1="0" y1="0" x2="1" y2="1">
@@ -20,7 +23,7 @@ const gid = `lg-${Math.random().toString(36).slice(2, 8)}`;
   </svg>
   {!compact && (
     <span class="logo__text">
-      <span class="logo__name">Door <em>to</em> Door</span>
+      <span class="logo__name">Door <em>to</em> Door</span>{' '}{/* keeps "Door Seattle" two words in the text (grid ignores it) */}
       <span class="logo__sub">Seattle <i aria-hidden="true"></i> Limousine</span>
     </span>
   )}
@@ -33,12 +36,12 @@ const gid = `lg-${Math.random().toString(36).slice(2, 8)}`;
   .logo__text { display: grid; justify-items: start; line-height: 1; gap: 6px; padding-left: 0.75rem; border-left: 1px solid var(--line-strong); }
   .logo__name { font-family: var(--font-display); font-weight: 600; font-size: 1.12rem; letter-spacing: 0.2em; margin-right: -0.2em; text-transform: uppercase; white-space: nowrap; }
   .logo__name em { font-style: normal; font-weight: 300; color: var(--accent); }
-  .logo__sub { display: inline-flex; align-items: center; gap: 0.5em; font-size: 0.56rem; letter-spacing: 0.4em; text-transform: uppercase; color: var(--muted); font-weight: 600; white-space: nowrap; }
+  .logo__sub { display: inline-flex; align-items: center; gap: 0.5em; font-size: 0.6rem; letter-spacing: 0.32em; margin-right: -0.32em; text-transform: uppercase; color: var(--muted); font-weight: 600; white-space: nowrap; }
   .logo__sub i { width: 3px; height: 3px; border-radius: 50%; background: var(--accent); margin-right: 0.4em; }
   @media (max-width: 420px) {
     .logo { gap: 0.6rem; }
     .logo__text { padding-left: 0.6rem; gap: 5px; }
     .logo__name { font-size: 1rem; letter-spacing: 0.17em; margin-right: -0.17em; }
-    .logo__sub { font-size: 0.52rem; letter-spacing: 0.36em; }
+    .logo__sub { font-size: 0.58rem; letter-spacing: 0.28em; margin-right: -0.28em; }
   }
 </style>

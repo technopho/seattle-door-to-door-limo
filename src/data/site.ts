@@ -3,6 +3,7 @@ const IMG = 'https://www.seattledoortodoorlimo.com';
 
 export const site = {
   name: 'Seattle Door to Door Limo',
+  url: 'https://www.seattledoortodoorlimo.com',
   short: 'Door to Door',
   tagline: 'Private chauffeured travel across Seattle & the Puget Sound',
   phone: '(206) 647-5930',
@@ -31,15 +32,11 @@ export const images = {
   studioSedan: 'https://images.unsplash.com/photo-1485291571150-772bcfc10da5?auto=format&fit=crop&w=1600&q=80',
 };
 
-export const stats = [
-  { value: 20, suffix: '+', label: 'Years of experience' },
-  { value: 100, suffix: '%', label: 'On-time record' },
-  { value: 1000, suffix: '+', label: 'Trips completed' },
-  { value: 24, suffix: '/7', label: 'Concierge support' },
-];
-
 export type Service = {
+  /** Booking `type` value (URL contract) — do not change. */
   slug: string;
+  /** SEO landing page path segment: /services/<page>/ */
+  page: string;
   title: string;
   kicker: string;
   blurb: string;
@@ -50,6 +47,7 @@ export type Service = {
 export const services: Service[] = [
   {
     slug: 'airport',
+    page: 'airport-transfers',
     title: 'Airport Transfers',
     kicker: 'SeaTac · Paine Field · Boeing Field',
     blurb: 'Real-time flight tracking and a chauffeur waiting at arrivals, so a delayed flight never means a missed ride.',
@@ -58,14 +56,16 @@ export const services: Service[] = [
   },
   {
     slug: 'corporate',
+    page: 'corporate-car-service',
     title: 'Corporate & Executive',
     kicker: 'Point-to-point · Roadshows · VIP guests',
-    blurb: 'Discreet black car service for executives, clients and roadshows. Quiet cabins, Wi-Fi and chauffeurs who know every shortcut.',
-    points: ['Corporate accounts & invoicing', 'Wi-Fi & charging on board', 'Multi-stop itineraries', 'Strict confidentiality'],
+    blurb: 'Discreet black car service for executives, clients and roadshows. Quiet cabins, Wi-Fi in select vehicles and chauffeurs who know every shortcut.',
+    points: ['Corporate accounts & invoicing', 'Wi-Fi on request', 'Multi-stop itineraries', 'Strict confidentiality'],
     image: images.chauffeur,
   },
   {
     slug: 'weddings',
+    page: 'wedding-limo',
     title: 'Weddings',
     kicker: 'Bridal party · Guest shuttles · Getaway car',
     blurb: 'From the first look to the grand exit, a meticulously timed fleet so the day runs exactly as rehearsed.',
@@ -74,6 +74,7 @@ export const services: Service[] = [
   },
   {
     slug: 'cruise',
+    page: 'cruise-transfers',
     title: 'Cruise Terminal Transfers',
     kicker: 'Pier 66 · Pier 91',
     blurb: 'Door-to-gangway service for Alaskan cruise departures, with room for every suitcase and a seamless curbside drop.',
@@ -82,6 +83,7 @@ export const services: Service[] = [
   },
   {
     slug: 'events',
+    page: 'special-events',
     title: 'Special Events & Nights Out',
     kicker: 'Prom · Bachelor/ette · Concerts · Sports',
     blurb: 'Arrive together and leave in style. Stretch limousines and party Sprinters with ambient lighting, sound and a bar.',
@@ -90,6 +92,7 @@ export const services: Service[] = [
   },
   {
     slug: 'hourly',
+    page: 'hourly-and-wine-tours',
     title: 'Hourly & Wine Tours',
     kicker: 'As-directed · Woodinville wine country',
     blurb: 'Keep a chauffeur on call for meetings, shopping or a slow afternoon touring Woodinville wineries. Your schedule, your route.',
@@ -134,7 +137,7 @@ export const fleet: Vehicle[] = [
     luggage: 6,
     features: ['Spacious cabin', 'Entertainment system', 'Privacy partition', 'Refreshments'],
     image: images.escalade,
-    bestFor: 'Families, small groups, VIP security',
+    bestFor: 'Families, small groups, VIP arrivals',
   },
   {
     id: 'electric',
@@ -179,15 +182,25 @@ export const fleet: Vehicle[] = [
 ];
 
 export const areas = [
-  { city: 'Seattle', detail: 'Downtown · Capitol Hill · Fremont · Pier 66 · Pier 91', lat: 47.6062, lng: -122.3321, eta: '25 min from SeaTac' },
-  { city: 'Bellevue', detail: 'Downtown · Crossroads · Factoria', lat: 47.6101, lng: -122.2015, eta: '25 min from SeaTac' },
-  { city: 'Kirkland', detail: 'Downtown · Juanita · Totem Lake', lat: 47.6769, lng: -122.2060, eta: '35 min from SeaTac' },
-  { city: 'Redmond', detail: 'Microsoft Campus · Town Center', lat: 47.6740, lng: -122.1215, eta: '35 min from SeaTac' },
-  { city: 'Tacoma', detail: 'Downtown · University Place', lat: 47.2529, lng: -122.4443, eta: '30 min from SeaTac' },
-  { city: 'Everett', detail: 'Downtown · Mill Creek · Mukilteo', lat: 47.9790, lng: -122.2021, eta: '45 min from SeaTac' },
+  { slug: 'seattle', city: 'Seattle', detail: 'Downtown · Capitol Hill · Fremont · Pier 66 · Pier 91', lat: 47.6062, lng: -122.3321, eta: '25 min from SeaTac' },
+  { slug: 'bellevue', city: 'Bellevue', detail: 'Downtown · Crossroads · Factoria', lat: 47.6101, lng: -122.2015, eta: '25 min from SeaTac' },
+  { slug: 'kirkland', city: 'Kirkland', detail: 'Downtown · Juanita · Totem Lake', lat: 47.6769, lng: -122.2060, eta: '35 min from SeaTac' },
+  { slug: 'redmond', city: 'Redmond', detail: 'Microsoft Campus · Town Center', lat: 47.6740, lng: -122.1215, eta: '35 min from SeaTac' },
+  { slug: 'tacoma', city: 'Tacoma', detail: 'Downtown · University Place', lat: 47.2529, lng: -122.4443, eta: '30 min from SeaTac' },
+  { slug: 'everett', city: 'Everett', detail: 'Downtown · Mill Creek · Mukilteo', lat: 47.9790, lng: -122.2021, eta: '45 min from SeaTac' },
 ];
 
 export const hub = { city: 'SeaTac Airport', lat: 47.4502, lng: -122.3088 };
+
+// Only figures the site can back up: "100% on-time" and "1,000+ trips" were carried over from the old
+// site without a source (and the Terms disclaim delays), so they are replaced by the review count shown
+// with the platform badges and the number of cities with their own page.
+export const stats = [
+  { value: 20, suffix: '+', label: 'Years of experience' },
+  { value: Number(site.rating.count.replace(/\D/g, '')), suffix: '+', label: 'Client reviews' },
+  { value: areas.length, suffix: '', label: 'Cities served' },
+  { value: 24, suffix: '/7', label: 'Concierge support' },
+];
 
 export const landmarks = [
   { name: 'Pier 66 — Bell Street Cruise Terminal', text: 'A major departure point for Alaskan cruises with quick curbside drop-off and pickup.' },
@@ -196,11 +209,14 @@ export const landmarks = [
   { name: 'Event Venues & Stadiums', text: 'Lumen Field, T-Mobile Park, Climate Pledge Arena and private venues.' },
 ];
 
+// Verbatim as published on the client's current site: customer quotes are never reworded.
+// TODO (client): confirm these are real customers, or replace them with verbatim Google/Yelp reviews
+// (first name + initial, platform, month/year). If they cannot be confirmed, remove them.
 export const testimonials = [
-  { quote: 'Absolutely exceptional service. The driver was professional, the vehicle was immaculate, and they were perfectly on time for our wedding. Couldn’t have asked for better.', name: 'Sarah Johnson', context: 'Wedding Transportation' },
+  { quote: 'Absolutely exceptional service! The driver was professional, the vehicle was immaculate, and they were perfectly on time for our wedding. Couldn’t have asked for better!', name: 'Sarah Johnson', context: 'Wedding Transportation' },
   { quote: 'I use Seattle Door to Door Limo for all my corporate events. Their reliability and professionalism make them my go-to choice for important client meetings.', name: 'Michael Chen', context: 'Corporate Events' },
-  { quote: 'The airport pickup was seamless. The driver was waiting when I landed, helped with luggage, and the ride was incredibly comfortable. Will definitely use again.', name: 'Emily Rodriguez', context: 'Airport Transfer' },
-  { quote: 'Booked the limo for my bachelor party. The experience was unforgettable: great service, amazing vehicle, and the driver was fantastic.', name: 'David Thompson', context: 'Bachelor Party' },
+  { quote: 'The airport pickup was seamless. Driver was waiting when I landed, helped with luggage, and the ride was incredibly comfortable. Will definitely use again!', name: 'Emily Rodriguez', context: 'Airport Transfer' },
+  { quote: 'Booked the Hummer limo for my bachelor party. The experience was unforgettable - great service, amazing vehicle, and the driver was fantastic!', name: 'David Thompson', context: 'Bachelor Party' },
 ];
 
 export const ratings = [
@@ -210,18 +226,21 @@ export const ratings = [
 ];
 
 export const faqs = [
-  { q: 'How do I book a ride?', a: 'Reserve online in under a minute or call us 24/7. Every booking is confirmed by a real person within minutes, with your chauffeur’s details sent before pickup.' },
+  { q: 'How do I book a ride?', a: 'Reserve online in four quick steps or call us 24/7. Every request is reviewed and confirmed by a real person, with your chauffeur’s details sent before pickup.' },
   { q: 'What vehicles are in the fleet?', a: 'Executive sedans, luxury SUVs, an electric Tesla, classic stretch limousines, executive Sprinters and party coaches for up to 20 guests.' },
   { q: 'Are your chauffeurs professionally trained?', a: 'Yes. Every chauffeur is licensed, background-checked and trained in discreet, safety-first service. They know Seattle inside out.' },
   { q: 'What happens if my flight is delayed?', a: 'We track your flight in real time and adjust your pickup automatically. Your chauffeur is at arrivals when you land, not when you were scheduled to.' },
-  { q: 'Is pricing all-inclusive?', a: 'Quotes are transparent with no hidden fees. You’ll see the full rate before you confirm.' },
+  { q: 'Is pricing all-inclusive?', a: 'Your quote shows the full rate before you confirm and spells out what’s included, such as gratuity, tolls and airport fees. No hidden fees; if your trip changes, we confirm any rate change first.' },
   { q: 'Which areas do you serve?', a: 'All of greater Seattle, including Bellevue, Kirkland, Redmond, Tacoma and Everett, plus SeaTac, Paine Field and both cruise terminals. Custom routes on request.' },
 ];
 
 export const nav = [
   { label: 'Fleet', href: '/fleet/' },
-  { label: 'Services', href: '/#services' },
-  { label: 'Experience', href: '/#experience' },
-  { label: 'Service Areas', href: '/#areas' },
-  { label: 'Reviews', href: '/#reviews' },
+  { label: 'Services', href: '/services/' },
+  { label: 'Service Areas', href: '/service-areas/' },
+  { label: 'About', href: '/about/' },
+  { label: 'Contact', href: '/contact/' },
 ];
+
+export const serviceHref = (s: Service) => `/services/${s.page}/`;
+export const areaHref = (a: { slug: string }) => `/service-areas/${a.slug}/`;

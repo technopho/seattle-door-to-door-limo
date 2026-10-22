@@ -1,0 +1,35 @@
+---
+import Base from '../layouts/Base.astro';
+import AboutHero from '../components/company/AboutHero.astro';
+import AboutStory from '../components/company/AboutStory.astro';
+import AboutStandard from '../components/company/AboutStandard.astro';
+import AboutNumbers from '../components/company/AboutNumbers.astro';
+import AboutFleet from '../components/company/AboutFleet.astro';
+import AboutReviews from '../components/company/AboutReviews.astro';
+import AboutServices from '../components/company/AboutServices.astro';
+import { breadcrumbs, businessId } from '../lib/seo';
+import { site } from '../data/site';
+
+const title = 'About Seattle Door to Door Limo | Chauffeurs Since 2008';
+const description =
+  'Meet Seattle Door to Door Limo: licensed, background-checked chauffeurs, a 24/7 concierge and a 4.9-rated service since 2008. Read our story, then reserve.';
+
+const aboutPage = {
+  '@context': 'https://schema.org',
+  '@type': 'AboutPage',
+  name: title,
+  description,
+  url: new URL('/about/', site.url).href,
+  about: { '@id': businessId },
+  mainEntity: { '@id': businessId },
+};
+---
+<Base title={title} description={description} jsonLd={[breadcrumbs([['About', '/about/']]), aboutPage]}>
+  <AboutHero />
+  <AboutStory />
+  <AboutStandard />
+  <AboutNumbers />
+  <AboutFleet />
+  <AboutReviews />
+  <AboutServices />
+</Base>

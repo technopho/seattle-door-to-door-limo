@@ -3,10 +3,19 @@
 // with long-exposure light trails, passing street lamps, rain and atmospheric haze.
 import * as THREE from 'three';
 import { Reflector } from 'three/examples/jsm/objects/Reflector.js';
-import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
-import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+// Bloom post-processing is desktop-only, so it is loaded on demand (see "Rendering pipeline") and
+// never ships in the chunk phones download.
+import type { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import type { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+
+function loadBloom() {
+  return Promise.all([
+    import('three/examples/jsm/postprocessing/EffectComposer.js'),
+    import('three/examples/jsm/postprocessing/RenderPass.js'),
+    import('three/examples/jsm/postprocessing/UnrealBloomPass.js'),
+    import('three/examples/jsm/postprocessing/OutputPass.js'),
+  ]).then(([a, b, c, d]) => ({ EffectComposer: a.EffectComposer, RenderPass: b.RenderPass, UnrealBloomPass: c.UnrealBloomPass, OutputPass: d.OutputPass }));
+}
 
 export interface HeroSceneOptions {
   reducedMotion?: boolean;
@@ -95,6 +104,8 @@ export function createHeroScene(canvas: HTMLCanvasElement, opts: HeroSceneOption
   const isDesktop = window.matchMedia('(min-width: 900px) and (hover: hover) and (pointer: fine)').matches;
   const cores = navigator.hardwareConcurrency || 4;
   const useBloom = isDesktop && cores >= 4;
+  // Phones and tablets render at 30fps: the glide reads the same and the main thread gets half its time back.
+  const minFrameMs = isDesktop ? 0 : 1000 / 30;
   const rand = mulberry32(20080);
   const rr = (a: number, b: number) => a + (b - a) * rand();
 
@@ -104,6 +115,9 @@ export function createHeroScene(canvas: HTMLCanvasElement, opts: HeroSceneOption
   } catch {
     return null;
   }
+  // Shader-error checks call getProgramInfoLog, which blocks until every program has linked; in production
+  // that stall is pure cost (the shaders are fixed), so it only runs in dev.
+  renderer.debug.checkShaderErrors = import.meta.env.DEV;
   renderer.setClearColor(0x050608, 1);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.05;
@@ -868,16 +882,22 @@ export function createHeroScene(canvas: HTMLCanvasElement, opts: HeroSceneOption
   let bloom: UnrealBloomPass | null = null;
   let bloomOn = useBloom;
   let dprCap = Math.min(window.devicePixelRatio || 1, useBloom ? 1.0 : 1.75);
-  if (useBloom) {
-    const rt = new THREE.WebGLRenderTarget(2, 2, { type: THREE.HalfFloatType, samples: 4 });
-    composer = new EffectComposer(renderer, rt);
-    composer.addPass(new RenderPass(scene, camera));
-    bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.6, 0.38, 0.74);
-    const bloomSetSize = bloom.setSize.bind(bloom);
-    bloom.setSize = (bw: number, bh: number) => bloomSetSize(Math.max(4, Math.round(bw * 0.5)), Math.max(4, Math.round(bh * 0.5)));
-    composer.addPass(bloom);
-    composer.addPass(new OutputPass());
-  }
+  const bloomReady: Promise<void> = useBloom
+    ? loadBloom()
+        .then((P) => {
+          const rt = new THREE.WebGLRenderTarget(2, 2, { type: THREE.HalfFloatType, samples: 4 });
+          composer = new P.EffectComposer(renderer, rt);
+          composer.addPass(new P.RenderPass(scene, camera));
+          bloom = new P.UnrealBloomPass(new THREE.Vector2(256, 256), 0.6, 0.38, 0.74);
+          const bloomSetSize = bloom.setSize.bind(bloom);
+          bloom.setSize = (bw: number, bh: number) => bloomSetSize(Math.max(4, Math.round(bw * 0.5)), Math.max(4, Math.round(bh * 0.5)));
+          composer.addPass(bloom);
+          composer.addPass(new P.OutputPass());
+        })
+        .catch(() => {
+          bloomOn = false;
+        })
+    : Promise.resolve();
 
   /* ---------- Camera state ---------- */
   const state = {
@@ -953,8 +973,11 @@ export function createHeroScene(canvas: HTMLCanvasElement, opts: HeroSceneOption
     camera.updateProjectionMatrix();
     // Oncoming headlights converge where the mobile eyebrow sits, so they are calmer on tall screens
     U.uHeadGain.value = aspect < 0.7 ? 0.5 : 1;
-    // Lens shift: horizon sits low-centre on desktop, high on phones (headline sits below it)
-    state.shiftX = aspect < 1.15 ? 0 : -0.12;
+    // Lens shift: horizon sits low-centre on desktop, high on phones (headline sits below it).
+    // On squarer landscape screens (4:3 tablets, small laptops) the Needle would slide behind the
+    // quote card, so the frame eases left as the aspect narrows; 16:10 and wider are unchanged.
+    const wide = THREE.MathUtils.clamp((aspect - 1.25) / (1.6 - 1.25), 0, 1);
+    state.shiftX = aspect < 1.15 ? 0 : THREE.MathUtils.lerp(0.06, -0.12, wide);
     state.shiftY = aspect < 0.7 ? -0.3 : aspect < 1.15 ? -0.12 : 0.16;
     applyShift();
     const fovRad = THREE.MathUtils.degToRad(camera.fov);
@@ -965,8 +988,9 @@ export function createHeroScene(canvas: HTMLCanvasElement, opts: HeroSceneOption
       composer.setPixelRatio(dpr);
       composer.setSize(w, h);
     }
-    canvas.dataset.quality = `${dpr.toFixed(2)}${bloomOn ? '+bloom' : ''}`;
-    if (reduced || !running) {
+    canvas.dataset.quality = `${dpr.toFixed(2)}${bloomOn ? '+bloom' : ''}${minFrameMs ? '@30' : ''}`;
+    // Nothing is drawn until the shaders have compiled off the main thread (see "Start" below)
+    if (compiled && (reduced || !running)) {
       updateCamera();
       render();
       afterFrame();
@@ -978,6 +1002,8 @@ export function createHeroScene(canvas: HTMLCanvasElement, opts: HeroSceneOption
   let last = 0;
   let running = false;
   let active = true;
+  let compiled = false;
+  let disposed = false;
 
   /* Adaptive quality: once the intro is under way, sample ~90 frames; if the trimmed mean frame
      time is over budget, step down (DPR first, then bloom) and measure again. */
@@ -1012,11 +1038,14 @@ export function createHeroScene(canvas: HTMLCanvasElement, opts: HeroSceneOption
     const mean = s.reduce((a, b) => a + b, 0) / s.length;
     perfSamples = [];
     perfWarm = 20;
-    if (mean <= 18.5 || !degrade()) perfDone = true;
+    // budget: ~55fps, or the 30fps cap plus a little slack on phones
+    if (mean <= (minFrameMs ? minFrameMs + 3.5 : 18.5) || !degrade()) perfDone = true;
   }
 
   function frame(now: number) {
     raf = requestAnimationFrame(frame);
+    // frame cap (phones): skip display refreshes until the next 30fps slot is due
+    if (minFrameMs && now - last < minFrameMs - 2) return;
     const ms = now - last;
     const dt = Math.min(0.05, Math.max(0, ms / 1000));
     last = now;
@@ -1026,7 +1055,7 @@ export function createHeroScene(canvas: HTMLCanvasElement, opts: HeroSceneOption
     sampleFrame(ms);
   }
   function sync() {
-    const should = active && !document.hidden && !reduced && !lost;
+    const should = compiled && active && !document.hidden && !reduced && !lost && !disposed;
     if (should && !running) {
       running = true;
       last = performance.now();
@@ -1053,16 +1082,39 @@ export function createHeroScene(canvas: HTMLCanvasElement, opts: HeroSceneOption
   const ro = new ResizeObserver(() => resize());
   ro.observe(canvas);
 
-  // Warm up: advance a little so trails are spread out, then draw the first frame.
+  // Warm up: advance a little so trails are spread out and size the canvas (nothing is drawn yet).
   U.uTime.value = 6;
   U.uTravel.value = 40;
   updateCamera();
   resize();
-  if (reduced) {
-    render();
-    afterFrame();
-  }
-  sync();
+
+  /* ---------- Start ----------
+     Compile every scene shader in parallel (KHR_parallel_shader_compile) before the first draw, so the
+     first frame never blocks the main thread on a synchronous program link. Programs differ by target:
+     drawing into a render target (the road reflection, and the bloom composer's scene pass) uses the
+     linear, un-tonemapped variant; drawing straight to the canvas (no bloom) uses the tonemapped sRGB one. */
+  const compiling: Promise<unknown>[] = [bloomReady];
+  renderer.setRenderTarget(reflector.getRenderTarget());
+  compiling.push(renderer.compileAsync(scene, camera));
+  renderer.setRenderTarget(null);
+  if (!useBloom) compiling.push(renderer.compileAsync(scene, camera));
+  Promise.all(compiling)
+    .then(() => {
+      if (disposed || lost) return;
+      compiled = true;
+      resize(); // draws the first frame
+      sync();
+      // Desktop: also warm the direct-to-canvas variant in the background, so if the adaptive quality
+      // step ever turns bloom off (see degrade()) the switch does not stall on a synchronous compile.
+      if (useBloom) {
+        window.setTimeout(() => {
+          if (!disposed && !lost) renderer.compileAsync(scene, camera).catch(() => {});
+        }, 1200);
+      }
+    })
+    .catch(() => {
+      if (!disposed) opts.onContextLost?.();
+    });
 
   return {
     setScroll(p: number) {
@@ -1081,6 +1133,7 @@ export function createHeroScene(canvas: HTMLCanvasElement, opts: HeroSceneOption
     },
     dispose() {
       active = false;
+      disposed = true;
       sync();
       ro.disconnect();
       document.removeEventListener('visibilitychange', onVis);

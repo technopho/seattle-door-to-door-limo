@@ -1,87 +1,244 @@
 ---
 import Logo from './Logo.astro';
 import Icon from './Icon.astro';
-import { site, services, fleet, areas } from '../data/site';
+import { site, services, fleet, areas, serviceHref, areaHref } from '../data/site';
+
+interface Props {
+  /**
+   * Closing call-to-action (Base `footerCta`).
+   * 'compact' (default): a slim concierge band. 'full': the large centered statement for pages
+   * that end without their own booking block. false: none, for pages that already close on one.
+   */
+  cta?: 'compact' | 'full' | false;
+}
+const { cta = 'compact' } = Astro.props;
 const year = new Date().getFullYear();
+// Let long addresses break cleanly after the @ instead of mid-word.
+const [emailUser, emailDomain] = site.email.split('@');
+
+// Social profiles render only once real URLs are filled in (TODO: confirm with client).
+const social: { label: string; icon: string; href: string }[] = [
+  { label: 'Instagram', icon: 'instagram', href: '' },
+  { label: 'Facebook', icon: 'facebook', href: '' },
+].filter((s) => s.href);
+
+const legal = [
+  { label: 'About', href: '/about/' },
+  { label: 'FAQ', href: '/faq/' },
+  { label: 'Journal', href: '/blog/' },
+  { label: 'Privacy', href: '/privacy/' },
+  { label: 'Terms', href: '/terms/' },
+];
 ---
-<footer class="footer">
+<footer class:list={['footer', cta ? `footer--${cta}` : 'footer--bare']}>
+  <div class="footer__glow" aria-hidden="true"></div>
   <div class="container">
-    <div class="footer__cta">
-      <p class="eyebrow">Available 24 hours, 7 days</p>
-      <h2 class="footer__title" data-split>Your chauffeur <em>is waiting.</em></h2>
-      <div class="footer__cta-actions" data-reveal>
-        <a href="/book/" class="btn btn--gold btn--lg" data-magnetic>Reserve your ride <Icon name="arrow" /></a>
-        <a href={site.phoneHref} class="btn btn--ghost btn--lg"><Icon name="phone" /> {site.phone}</a>
+    {cta === 'full' && (
+      <div class="footer__cta">
+        <p class="eyebrow">Available 24 hours, 7 days</p>
+        <h2 class="footer__title" data-split>Your chauffeur <em>is waiting.</em></h2>
+        <p class="footer__lead">Reserve online in four quick steps, or call us 24/7 and a real person will plan it with you.</p>
+        <div class="footer__cta-actions" data-reveal>
+          <a href="/book/" class="btn btn--gold btn--lg" data-magnetic>Reserve your ride <Icon name="arrow" /></a>
+          <a href={site.phoneHref} class="btn btn--ghost btn--lg"><Icon name="phone" /> {site.phone}</a>
+        </div>
       </div>
-    </div>
+    )}
+
+    {cta === 'compact' && (
+      <div class="footer__band" data-reveal>
+        <div class="footer__band-copy">
+          <p class="eyebrow">Available 24 hours, 7 days</p>
+          <h2 class="footer__band-title">Your chauffeur <em>is waiting.</em></h2>
+          <p class="footer__band-lead">Reserve online in four quick steps, or call and a real person will plan it with you.</p>
+        </div>
+        <div class="footer__band-actions">
+          <a href="/book/" class="btn btn--gold" data-magnetic="0.2">Reserve your ride <Icon name="arrow" /></a>
+          <a href={site.phoneHref} class="btn btn--ghost" aria-label={`Call ${site.phone}`}><Icon name="phone" /> {site.phone}</a>
+        </div>
+      </div>
+    )}
 
     <div class="footer__grid">
       <div class="footer__brand">
         <Logo />
-        <p class="muted small">Seattle’s private chauffeur service since {site.since}. Airport, corporate, weddings and nights out, handled door to door.</p>
-        <div class="footer__social">
-          <a href="#" aria-label="Instagram"><Icon name="instagram" /></a>
-          <a href="#" aria-label="Facebook"><Icon name="facebook" /></a>
-          <a href={site.smsHref} aria-label="Text us"><Icon name="chat" /></a>
-        </div>
+        <p class="footer__blurb">Seattle’s private chauffeur service since {site.since}. Airport, corporate, weddings and nights out, handled door to door.</p>
+        {social.length > 0 && (
+          <div class="footer__social">
+            {social.map((s) => <a href={s.href} aria-label={s.label} rel="noopener" target="_blank"><Icon name={s.icon} /></a>)}
+          </div>
+        )}
       </div>
-      <div>
-        <p class="footer__h">Services</p>
-        <ul role="list">{services.map((s) => <li><a href="/#services">{s.title}</a></li>)}</ul>
-      </div>
-      <div>
-        <p class="footer__h">Fleet</p>
-        <ul role="list">{fleet.map((v) => <li><a href={`/fleet/#${v.id}`}>{v.name}</a></li>)}</ul>
-      </div>
-      <div>
-        <p class="footer__h">Service Areas</p>
-        <ul role="list">{areas.map((a) => <li><a href="/#areas">{a.city}, WA</a></li>)}</ul>
-      </div>
-      <div>
+
+      <nav class="footer__col footer__col--services" aria-labelledby="ft-services">
+        <p class="footer__h" id="ft-services">Services</p>
+        <ul role="list">
+          {services.map((s) => <li><a href={serviceHref(s)}>{s.title}</a></li>)}
+          <li><a href="/services/" class="footer__all">All services <Icon name="arrow" /></a></li>
+        </ul>
+      </nav>
+      <nav class="footer__col footer__col--fleet" aria-labelledby="ft-fleet">
+        <p class="footer__h" id="ft-fleet">Fleet</p>
+        <ul role="list">
+          {fleet.map((v) => <li><a href={`/fleet/#${v.id}`}>{v.name}</a></li>)}
+          <li><a href="/fleet/" class="footer__all">All vehicles <Icon name="arrow" /></a></li>
+        </ul>
+      </nav>
+      <nav class="footer__col footer__col--areas" aria-labelledby="ft-areas">
+        <p class="footer__h" id="ft-areas">Service areas</p>
+        <ul role="list">
+          {areas.map((a) => <li><a href={areaHref(a)}>{a.city}, WA</a></li>)}
+          <li><a href="/service-areas/" class="footer__all">All areas <Icon name="arrow" /></a></li>
+        </ul>
+      </nav>
+      <div class="footer__col footer__contact">
         <p class="footer__h">Contact</p>
         <ul role="list">
-          <li><a href={site.phoneHref}>{site.phone}</a></li>
-          <li><a href={`mailto:${site.email}`}>{site.email}</a></li>
-          <li class="muted">{site.region}</li>
+          <li><a href={site.phoneHref} class="footer__phone">{site.phone}</a></li>
+          <li><a href={`mailto:${site.email}`} class="footer__email">{emailUser}@<wbr />{emailDomain}</a></li>
+          <li><a href="/contact/">Contact &amp; quotes</a></li>
+          <li><a href="/book/">Reserve online</a></li>
+          <li class="footer__region"><Icon name="pin" /> {site.region}</li>
         </ul>
       </div>
     </div>
 
-    <div class="footer__word" aria-hidden="true">Door <em>to</em> Door</div>
+    <div class="footer__word" aria-hidden="true">
+      <span class="footer__word-in">Door <span>to</span> Door</span>
+    </div>
 
     <div class="footer__legal">
-      <span>© {year} {site.name}. All rights reserved.</span>
-      <span class="footer__legal-links"><a href="#">Privacy</a><a href="#">Terms</a></span>
+      <p>© {year} {site.name}. All rights reserved.</p>
+      <nav aria-label="Company and legal">
+        <ul role="list" class="footer__legal-links">
+          {legal.map((l) => <li><a href={l.href}>{l.label}</a></li>)}
+        </ul>
+      </nav>
     </div>
   </div>
 </footer>
 
 <style>
-  .footer { position: relative; padding-top: var(--section-y); background: linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%); border-top: 1px solid var(--line); overflow: hidden; }
-  .footer::before { content: ''; position: absolute; left: 50%; top: -30%; width: 120vw; height: 70%; transform: translateX(-50%); background: radial-gradient(closest-side, rgb(var(--accent-rgb) / 0.12), transparent); pointer-events: none; }
-  .footer__cta { position: relative; display: grid; justify-items: center; text-align: center; gap: 1.6rem; padding-bottom: clamp(4rem, 9vw, 7rem); border-bottom: 1px solid var(--line); }
+  .footer {
+    --word-ink: 0.09;
+    --word-to: 0.18;
+    position: relative;
+    padding-top: clamp(3.5rem, 7vw, 6rem);
+    background: linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
+    border-top: 1px solid var(--line);
+    overflow: hidden;
+    isolation: isolate;
+  }
+  :global(html[data-theme='dark']) .footer { --word-ink: 0.11; --word-to: 0.26; }
+  .footer--compact { padding-top: clamp(2rem, 4vw, 3.5rem); }
+  .footer--bare { padding-top: 0; }
+  .footer__glow { position: absolute; z-index: -1; left: 50%; top: -22%; width: 120vw; height: 70%; transform: translateX(-50%); background: radial-gradient(closest-side, rgb(var(--accent-rgb) / 0.11), transparent); pointer-events: none; }
+
+  /* ---------- Closing CTA: full statement ---------- */
+  .footer__cta { position: relative; display: grid; justify-items: center; text-align: center; gap: 1.4rem; padding-bottom: clamp(3.5rem, 7vw, 6rem); border-bottom: 1px solid var(--line); }
   .footer__title { font-size: var(--fs-h1); }
-  .footer__cta-actions { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; }
-  .footer__grid { display: grid; grid-template-columns: 1.6fr repeat(4, 1fr); gap: 2.5rem; padding-block: clamp(3.5rem, 7vw, 5rem); }
-  .footer__brand { display: grid; gap: 1.2rem; align-content: start; max-width: 32ch; }
+  .footer__lead { max-width: 46ch; color: var(--text-2); font-size: var(--fs-lead); }
+  .footer__cta-actions { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; margin-top: 0.6rem; }
+
+  /* ---------- Closing CTA: compact concierge band (raised card, the footer's own surface) ---------- */
+  .footer__band {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 1.75rem 3rem;
+    padding: clamp(1.75rem, 3.6vw, 2.75rem) clamp(1.4rem, 4vw, 3.25rem);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-l);
+    background:
+      radial-gradient(70% 140% at 100% 0%, rgb(var(--accent-rgb) / 0.09), transparent 60%),
+      var(--card-bg);
+    box-shadow: var(--card-highlight), var(--card-shadow);
+    overflow: hidden;
+  }
+  .footer__band-copy { display: grid; gap: 0.85rem; }
+  .footer__band-title { font-size: clamp(1.75rem, 3vw, 2.6rem); line-height: 1.05; }
+  .footer__band-lead { max-width: 64ch; color: var(--text-2); text-wrap: pretty; }
+  .footer__band-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: flex-end; }
+
+  /* ---------- Link grid ---------- */
+  .footer__grid { display: grid; grid-template-columns: 1.5fr repeat(4, minmax(0, 1fr)); gap: 2.5rem; padding-block: clamp(3.5rem, 7vw, 5.5rem) clamp(2.5rem, 5vw, 4rem); }
+  .footer__brand { display: grid; gap: 1.25rem; align-content: start; max-width: 32ch; }
+  .footer__blurb { font-size: var(--fs-small); color: var(--muted); }
   .footer__social { display: flex; gap: 0.6rem; }
-  .footer__social a { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--line-strong); transition: background 0.3s, color 0.3s, border-color 0.3s; }
-  .footer__social a:hover { background: var(--accent); color: var(--bg); border-color: var(--accent); }
-  .footer__social svg { width: 18px; height: 18px; }
-  .footer__h { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: var(--accent); margin-bottom: 1.1rem; }
-  .footer ul { display: grid; gap: 0.6rem; font-size: 0.9rem; color: var(--text-2); }
-  .footer ul a { transition: color 0.3s; }
-  .footer ul a:hover { color: var(--accent-2); }
-  .footer__word { font-family: var(--font-display); font-size: clamp(4rem, 17vw, 16rem); line-height: 0.85; text-align: center; letter-spacing: -0.03em; white-space: nowrap; background: linear-gradient(180deg, rgb(var(--fg-rgb) / 0.14), rgb(var(--fg-rgb) / 0)); -webkit-background-clip: text; background-clip: text; color: transparent; user-select: none; }
-  .footer__word em { font-style: italic; }
-  .footer__legal { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; padding-block: 1.6rem 2rem; border-top: 1px solid var(--line); font-size: 0.8rem; color: var(--muted); }
-  .footer__legal-links { display: flex; gap: 1.4rem; }
+  .footer__social a { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line-strong); color: var(--text-2); background: rgb(var(--bg-rgb) / 0.35); transition: background 0.3s, color 0.3s, border-color 0.3s; }
+  .footer__social a:hover { background: var(--text); color: var(--bg); border-color: var(--text); }
+  .footer__social :global(svg) { width: 17px; height: 17px; }
+
+  .footer__h { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--accent); margin-bottom: 1rem; }
+  .footer__col ul { display: grid; gap: 0.15rem; font-size: 0.9rem; color: var(--text-2); }
+  .footer__col a { display: inline-flex; align-items: center; gap: 0.45rem; min-height: 32px; padding-block: 0.15rem; border-radius: 4px; transition: color 0.3s; }
+  .footer__col a:hover { color: var(--text); }
+  .footer__all { margin-top: 0.35rem; font-size: 0.74rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; white-space: nowrap; color: var(--accent); }
+  .footer__col .footer__all:hover { color: var(--accent-3); }
+  .footer__all :global(svg) { width: 13px; height: 13px; flex: none; transition: transform 0.4s var(--ease-out); }
+  .footer__all:hover :global(svg) { transform: translateX(3px); }
+  .footer__phone { font-family: var(--font-display); font-size: 1.12rem; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
+  .footer__email { overflow-wrap: anywhere; line-height: 1.4; }
+  .footer__region { display: inline-flex; align-items: center; gap: 0.45rem; min-height: 32px; color: var(--muted); }
+  .footer__region :global(svg) { width: 15px; height: 15px; color: var(--accent); }
+
+  /* ---------- Wordmark: sized to the container width; the legal hairline crops it decisively
+     (about 40% of the cap height sinks below the line, so it reads as intended, not clipped) ---------- */
+  .footer__word { container-type: inline-size; overflow: hidden; height: 9.5cqi; user-select: none; pointer-events: none; }
+  .footer__word-in {
+    display: block;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 19.4cqi;
+    line-height: 0.9;
+    letter-spacing: -0.055em;
+    text-align: center;
+    white-space: nowrap;
+    padding-right: 0.055em; /* optical balance for the negative tracking */
+    background: linear-gradient(180deg, rgb(var(--fg-rgb) / var(--word-ink)) 0%, rgb(var(--fg-rgb) / calc(var(--word-ink) * 0.45)) 60%, rgb(var(--fg-rgb) / 0) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .footer__word-in span { font-weight: 300; background: linear-gradient(180deg, rgb(var(--accent-rgb) / var(--word-to)) 0%, rgb(var(--accent-rgb) / calc(var(--word-to) * 0.35)) 60%, rgb(var(--accent-rgb) / 0) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+  /* ---------- Legal row ---------- */
+  .footer__legal { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1.5rem; padding-block: 1.2rem 1.6rem; border-top: 1px solid var(--line); font-size: 0.8rem; color: var(--muted); }
+  .footer__legal-links { display: flex; flex-wrap: wrap; gap: 0 1.5rem; }
+  .footer__legal-links a { display: inline-flex; align-items: center; min-height: 44px; transition: color 0.3s; }
   .footer__legal a:hover { color: var(--text); }
-  @media (max-width: 1000px) { .footer__grid { grid-template-columns: 1fr 1fr; } .footer__brand { grid-column: 1 / -1; } }
+
+  @media (max-width: 1100px) {
+    .footer__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .footer__brand { grid-column: 1 / -1; max-width: 46ch; }
+  }
+  @media (max-width: 960px) {
+    .footer__band { grid-template-columns: 1fr; }
+    .footer__band-actions { justify-content: flex-start; }
+  }
+  @media (max-width: 860px) {
+    /* Services | Fleet, then Service areas | Contact */
+    .footer__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2.75rem 1.5rem; }
+  }
+  /* Touch devices of any width get full-size targets */
+  @media (max-width: 760px), (pointer: coarse) {
+    .footer__col a { min-height: 44px; padding-block: 0.5rem; line-height: 1.35; }
+    .footer__col ul { gap: 0; }
+    .footer__region { min-height: 44px; }
+  }
   @media (max-width: 760px) {
-    .footer { padding-bottom: 76px; }
-    .footer__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2.5rem 1.5rem; }
-    .footer__grid > div:last-child { grid-column: 1 / -1; }
-    .footer ul a { overflow-wrap: anywhere; }
+    /* leave room for the fixed mobile action bar */
+    .footer { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
+    .footer__cta-actions { width: 100%; flex-direction: column; align-items: stretch; max-width: 360px; }
+    .footer__legal { flex-direction: column-reverse; align-items: flex-start; }
+    .footer__legal-links { gap: 0 1.25rem; }
+  }
+  @media (max-width: 560px) {
+    /* Phones: long service names get the full width; Fleet pairs with the short area list,
+       which takes only the width it needs */
+    .footer__grid { grid-template-columns: minmax(0, 1fr) auto; gap: 2.5rem 1.5rem; }
+    .footer__col--services, .footer__contact { grid-column: 1 / -1; }
+    .footer__band-actions { display: grid; justify-content: stretch; }
   }
 </style>

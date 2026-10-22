@@ -1,0 +1,85 @@
+---
+import Icon from '../Icon.astro';
+import { images } from '../../data/site';
+
+// Quick starts open the booking wizard with the service preselected (/book/?type=…).
+const starts = [
+  { type: 'airport', label: 'Airport', icon: 'plane' },
+  { type: 'hourly', label: 'Hourly', icon: 'hourglass' },
+  { type: 'weddings', label: 'Wedding', icon: 'rings' },
+  { type: 'corporate', label: 'Corporate', icon: 'briefcase' },
+];
+---
+<aside class="cb" aria-labelledby="cb-title" data-theme="dark">
+  <div class="cb__bg" aria-hidden="true">
+    <img src={images.darkCar} alt="" width="2600" height="1574" loading="lazy" decoding="async" />
+  </div>
+  <div class="cb__body">
+    <p class="eyebrow">Ready to book?</p>
+    <h2 id="cb-title" class="cb__title">Know the date and the route?</h2>
+    <p class="cb__lead">Reserve online in four quick steps. A concierge confirms your full rate before you commit, and nothing is charged now.</p>
+    <a href="/book/" class="btn btn--gold cb__cta" data-magnetic="0.2">Reserve online <Icon name="arrow" /></a>
+    <nav class="cb__starts" aria-label="Start a reservation by service">
+      <ul role="list">
+        {starts.map((s) => (
+          <li><a href={`/book/?type=${s.type}`} class="cb__start"><Icon name={s.icon} /> {s.label}</a></li>
+        ))}
+      </ul>
+    </nav>
+  </div>
+</aside>
+
+<style>
+  /* An always-dark card (forced Onyx theme) so the booking hand-off reads as the premium next step in both themes. */
+  .cb {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    border-radius: var(--radius-l);
+    border: 1px solid var(--line);
+    background: var(--bg);
+    box-shadow: 0 30px 60px -36px rgb(var(--bg-rgb) / 0.9);
+  }
+  .cb__bg { position: absolute; inset: 0; z-index: -1; }
+  .cb__bg img { width: 100%; height: 100%; object-fit: cover; object-position: 80% 55%; opacity: 0.55; }
+  .cb__bg::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(100deg, rgb(var(--bg-rgb) / 0.96) 0%, rgb(var(--bg-rgb) / 0.82) 52%, rgb(var(--bg-rgb) / 0.35) 100%),
+      radial-gradient(60% 80% at 0% 0%, rgb(var(--accent-rgb) / 0.14), transparent 70%);
+  }
+  .cb__body { display: grid; justify-items: start; gap: 1rem; padding: clamp(1.6rem, 3vw, 2.4rem); }
+  .cb__title { font-size: clamp(1.55rem, 2.2vw, 2rem); max-width: 16ch; }
+  .cb__lead { color: var(--text-2); font-size: 0.95rem; line-height: 1.6; max-width: 40ch; }
+  .cb__cta { margin-top: 0.3rem; }
+  .cb__starts { width: 100%; margin-top: 0.4rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+  .cb__starts ul { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .cb__start {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-height: 44px;
+    padding: 0 1rem;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--text-2);
+    background: rgb(var(--bg-rgb) / 0.4);
+    /* -webkit- first: lightningcss drops the standard declaration when it follows the prefixed one */
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    transition: border-color 0.3s, color 0.3s, background 0.3s;
+  }
+  .cb__start :global(svg) { width: 15px; height: 15px; color: var(--accent); }
+  .cb__start:hover { border-color: var(--accent); color: var(--text); }
+
+  @media (max-width: 640px) {
+    .cb { border-radius: var(--radius); }
+    .cb__body { padding: 1.5rem 1.15rem; }
+    .cb__cta { width: 100%; }
+    .cb__bg img { object-position: 70% 50%; }
+  }
+</style>

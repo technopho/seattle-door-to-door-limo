@@ -1,0 +1,47 @@
+---
+import Base from '../../layouts/Base.astro';
+import CityHero from '../../components/areas/CityHero.astro';
+import CityLocal from '../../components/areas/CityLocal.astro';
+import CityDestinations from '../../components/areas/CityDestinations.astro';
+import CityTrips from '../../components/areas/CityTrips.astro';
+import CityServices from '../../components/areas/CityServices.astro';
+import CityVehicles from '../../components/areas/CityVehicles.astro';
+import AreaFaq from '../../components/areas/AreaFaq.astro';
+import TripPlanner from '../../components/areas/TripPlanner.astro';
+import NearbyCities from '../../components/areas/NearbyCities.astro';
+import { areaHref } from '../../data/site';
+import { areaList, type AreaEntry } from '../../data/area-pages';
+import { breadcrumbs, serviceSchema, faqPage } from '../../lib/seo';
+
+export function getStaticPaths() {
+  return areaList.filter((a) => a.page).map((area) => ({ params: { city: area.slug }, props: { area } }));
+}
+
+interface Props { area: AreaEntry }
+const { area } = Astro.props;
+const { page } = area;
+const path = areaHref(area);
+
+const jsonLd = [
+  breadcrumbs([['Service Areas', '/service-areas/'], [area.city, path]]),
+  serviceSchema({
+    name: `Chauffeur & limousine service in ${area.city}`,
+    description: page.seo.description,
+    path,
+    areaServed: [`${area.city}, WA`],
+  }),
+  faqPage(page.faqs),
+];
+---
+<!-- The page closes on its own trip form, so the footer's concierge band is switched off. -->
+<Base title={page.seo.title} description={page.seo.description} jsonLd={jsonLd} footerCta={false}>
+  <CityHero area={area} />
+  <CityLocal area={area} />
+  <CityDestinations area={area} />
+  <CityVehicles area={area} />
+  <CityTrips area={area} />
+  <CityServices area={area} />
+  <AreaFaq city={area.city} faqs={page.faqs} />
+  <NearbyCities area={area} />
+  <TripPlanner city={area.city} />
+</Base>

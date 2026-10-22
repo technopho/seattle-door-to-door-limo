@@ -1,0 +1,92 @@
+---
+// Popular destinations in the city: public landmarks and venues, each a booking deep link.
+import Icon from '../Icon.astro';
+import { bookHref, type AreaEntry } from '../../data/area-pages';
+
+interface Props { area: AreaEntry }
+const { area } = Astro.props;
+const pad = (n: number) => String(n).padStart(2, '0');
+---
+<section class="section cd" aria-labelledby="cd-title">
+  <div class="container">
+    <header class="section-head section-head--split">
+      <div class="cd__title">
+        <p class="eyebrow" data-reveal="fade">Popular in {area.city}</p>
+        <h2 id="cd-title" data-split>Where we <em>go.</em></h2>
+      </div>
+      <p class="lead" data-reveal data-delay="0.1">{area.page.destinationsLead}</p>
+    </header>
+
+    <ol class="cd__grid" role="list" data-stagger="0.06">
+      {area.page.destinations.map((d, i) => (
+        <li>
+          <article class="dest card card--hover">
+            <div class="dest__top">
+              <span class="dest__kind"><Icon name={d.icon} /> {d.kind}</span>
+              <span class="dest__num" aria-hidden="true">{pad(i + 1)}</span>
+            </div>
+            <h3 class="dest__name">{d.name}</h3>
+            <p class="dest__text">{d.text}</p>
+            <a href={bookHref({ type: d.type, to: d.to })} class="dest__link">
+              Book a ride here<span class="sr-only">: {d.name}</span> <Icon name="arrow" />
+            </a>
+          </article>
+        </li>
+      ))}
+    </ol>
+  </div>
+</section>
+
+<style>
+  /* The vehicle strip continues this band below a hairline (CityVehicles: .cv), so the bottom
+     edge uses the tight spacing and the full section spacing closes the pair. */
+  .cd { padding-bottom: clamp(3.5rem, 7vw, 6rem); }
+  .cd__title { display: grid; gap: 1.2rem; }
+  .cd h2 :global(.split-line) { vertical-align: top; }
+  .cd__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(1rem, 1.6vw, 1.4rem);
+    margin: 0;
+    padding: 0;
+  }
+  .cd__grid > li { display: flex; }
+  .dest { position: relative; display: flex; flex-direction: column; width: 100%; padding: clamp(1.3rem, 2vw, 1.75rem); }
+  .dest__top { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.6rem; }
+  .dest__kind { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent); }
+  .dest__kind :global(svg) { width: 16px; height: 16px; }
+  .dest__num { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.14em; color: var(--muted-2); font-variant-numeric: tabular-nums; }
+  .dest__name { font-size: clamp(1.3rem, 1.7vw, 1.6rem); line-height: 1.15; letter-spacing: -0.025em; margin-bottom: 0.7rem; }
+  .dest__text { font-size: 0.92rem; line-height: 1.6; color: var(--text-2); margin-bottom: 1.4rem; }
+  .dest__link {
+    position: static;
+    margin-top: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    padding-top: 0.9rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text);
+    transition: color 0.35s;
+  }
+  /* The whole card is the hit area; the link text names the destination for assistive tech. */
+  .dest__link::after { content: ''; position: absolute; inset: 0; border-radius: inherit; }
+  .dest__link :global(svg) { width: 14px; height: 14px; color: var(--accent); transition: transform 0.5s var(--ease-out); }
+  .dest:hover .dest__link { color: var(--accent); }
+  .dest:hover .dest__link :global(svg) { transform: translateX(4px); }
+  .dest__link:focus-visible { outline: none; }
+  .dest:has(.dest__link:focus-visible) { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+  @media (max-width: 1000px) {
+    .cd__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 600px) {
+    .cd__grid { grid-template-columns: 1fr; }
+    .dest__top { margin-bottom: 1.1rem; }
+  }
+</style>

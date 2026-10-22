@@ -1,0 +1,192 @@
+---
+// Overview: what's included + how it works, beside a sticky quick-quote card (first, right under the hero, on tablet/phone).
+import Icon from '../Icon.astro';
+import QuickQuote from './QuickQuote.astro';
+import type { Service } from '../../data/site';
+import type { ServicePage } from '../../data/service-pages';
+
+interface Props { service: Service; page: ServicePage }
+const { service: s, page: p } = Astro.props;
+const pad = (n: number) => String(n).padStart(2, '0');
+---
+<div class="ov section" id="overview">
+  <div class="container ov__grid">
+    {/* The quick quote comes first in the DOM so phones and tablets see it right under the hero;
+        on desktop it is placed in the sticky right-hand column. */}
+    <aside class="ov__aside" aria-label="Quick reservation">
+      <div class="ov__sticky" data-reveal data-delay="0.1">
+        <QuickQuote slug={s.slug} title={s.title} heading={p.quote.title} mode={p.quote.mode} fromPlaceholder={p.quote.fromPlaceholder} toPlaceholder={p.quote.toPlaceholder} />
+      </div>
+    </aside>
+
+    <div class="ov__main">
+      <section class="ov__block" aria-labelledby="ov-included">
+        <header class="ov__head">
+          <p class="eyebrow" data-reveal="fade">What’s included</p>
+          <h2 id="ov-included" data-split>{p.includedTitle.text} <em>{p.includedTitle.em}</em></h2>
+          <p class="lead" data-reveal data-delay="0.1">{p.intro[1]}</p>
+        </header>
+        <ul class="hl" role="list" data-stagger="0.06">
+          {p.highlights.map((h) => (
+            <li class="hl__item">
+              <span class="hl__icon" aria-hidden="true"><Icon name={h.icon} /></span>
+              <h3 class="hl__title">{h.title}</h3>
+              <p class="hl__text">{h.text}</p>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section class="ov__block ov__how" id="how-it-works" aria-labelledby="ov-how">
+        <header class="ov__head">
+          <p class="eyebrow" data-reveal="fade">How it works</p>
+          <h2 id="ov-how" data-split>{p.stepsTitle.text} <em>{p.stepsTitle.em}</em></h2>
+        </header>
+        <div class="st" data-st>
+          <span class="st__rail" aria-hidden="true"><span class="st__fill" data-st-fill></span></span>
+          <ol class="st__list" role="list">
+            {p.steps.map((st, i) => (
+              <li class="st__item" data-st-item>
+                <span class="st__node" aria-hidden="true"><span>{pad(i + 1)}</span></span>
+                <div class="st__body" data-reveal>
+                  <p class="st__k"><span class="sr-only">Step {i + 1} of {p.steps.length}: </span>Step {pad(i + 1)}</p>
+                  <h3 class="st__title">{st.title}</h3>
+                  <p class="st__text">{st.text}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+    </div>
+
+  </div>
+</div>
+
+<style>
+  .ov { padding-top: clamp(3.5rem, 7vw, 6rem); }
+  .ov__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(330px, 390px);
+    gap: clamp(3rem, 6vw, 6.5rem);
+    align-items: start;
+  }
+  .ov__aside { grid-column: 2; grid-row: 1; align-self: stretch; }
+  .ov__sticky { position: sticky; top: calc(var(--header-h) + 1.25rem); }
+  .ov__main { grid-column: 1; grid-row: 1; display: grid; gap: clamp(4.5rem, 9vw, 7.5rem); min-width: 0; }
+  .ov__head { display: grid; gap: 1.2rem; justify-items: start; margin-bottom: clamp(2rem, 4vw, 3rem); }
+  .ov__head h2 { max-width: 16ch; }
+  .ov__head h2 :global(.split-line) { vertical-align: top; }
+  .ov__head .lead { max-width: 60ch; }
+
+  /* ---------- Highlights: one hairline-ruled sheet ---------- */
+  .hl {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-l);
+    background: var(--line);
+    box-shadow: 0 1px 2px rgb(var(--fg-rgb) / 0.04), 0 30px 60px -44px rgb(var(--fg-rgb) / 0.3);
+  }
+  :global([data-theme='dark']) .hl { box-shadow: none; }
+  .hl__item {
+    position: relative;
+    display: grid;
+    align-content: start;
+    gap: 0.6rem;
+    padding: clamp(1.4rem, 2.6vw, 2rem);
+    background: var(--bg-3);
+    transition: background 0.5s var(--ease-out);
+  }
+  :global([data-theme='dark']) .hl__item { background: var(--bg-2); }
+  .hl__item::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(70% 90% at 0% 0%, rgb(var(--accent-rgb) / 0.08), rgb(var(--accent-rgb) / 0) 70%);
+    opacity: 0; transition: opacity 0.6s var(--ease-out);
+  }
+  .hl__item:hover::after { opacity: 1; }
+  .hl__icon {
+    display: grid; place-items: center;
+    width: 46px; height: 46px; margin-bottom: 0.4rem;
+    border-radius: 50%;
+    border: 1px solid rgb(var(--accent-rgb) / 0.3);
+    background: rgb(var(--accent-rgb) / 0.07);
+    color: var(--accent);
+    transition: transform 0.6s var(--ease-out), background 0.5s, color 0.5s, border-color 0.5s;
+  }
+  .hl__icon :global(svg) { width: 20px; height: 20px; }
+  .hl__item:hover .hl__icon { transform: translateY(-2px); background: var(--cta-bg); color: var(--cta-fg); border-color: transparent; }
+  .hl__title { font-size: 1.14rem; font-weight: 500; letter-spacing: -0.02em; line-height: 1.25; }
+  .hl__text { font-size: 0.94rem; line-height: 1.6; color: var(--muted); max-width: 42ch; }
+
+  /* ---------- Steps: scroll-drawn rail ---------- */
+  .st { position: relative; --node: 52px; }
+  .st__rail { position: absolute; left: calc(var(--node) / 2); top: calc(var(--node) / 2); bottom: calc(var(--node) / 2); width: 1px; background: var(--line-strong); }
+  .st__fill { position: absolute; inset: 0; background: var(--accent-grad); transform-origin: top; }
+  :global(.js) .st__fill { transform: scaleY(0); }
+  .st__list { display: grid; gap: clamp(1.8rem, 3.5vw, 2.6rem); }
+  .st__item { position: relative; display: grid; grid-template-columns: var(--node) minmax(0, 1fr); gap: clamp(1.2rem, 2.5vw, 2rem); align-items: start; }
+  .st__node {
+    position: relative;
+    display: grid; place-items: center;
+    width: var(--node); height: var(--node);
+    border-radius: 50%;
+    border: 1px solid var(--line-strong);
+    background: var(--bg);
+    font-size: 0.74rem; font-weight: 600; letter-spacing: 0.08em; color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    transition: color 0.5s, border-color 0.5s, box-shadow 0.6s var(--ease-out);
+  }
+  .st__node::before { content: ''; position: absolute; inset: -1px; border-radius: 50%; background: var(--cta-bg); opacity: 0; transform: scale(0.6); transition: opacity 0.5s var(--ease-out), transform 0.6s var(--ease-out); }
+  .st__node span { position: relative; }
+  .st__item.is-active .st__node, :global(html:not(.js)) .st__node { color: var(--cta-fg); border-color: transparent; box-shadow: var(--cta-glow); }
+  .st__item.is-active .st__node::before, :global(html:not(.js)) .st__node::before { opacity: 1; transform: none; }
+  .st__body { display: grid; gap: 0.4rem; padding-top: 0.2rem; }
+  .st__k { font-size: 0.64rem; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--accent); }
+  .st__title { font-size: clamp(1.3rem, 1.9vw, 1.6rem); }
+  .st__text { color: var(--muted); max-width: 52ch; line-height: 1.65; }
+
+  @media (max-width: 1080px) {
+    .ov__grid { grid-template-columns: minmax(0, 1fr); gap: clamp(3.5rem, 8vw, 4.5rem); }
+    .ov__aside, .ov__main { grid-column: 1; grid-row: auto; }
+    .ov__aside { align-self: auto; }
+    .ov__sticky { position: static; max-width: 620px; }
+  }
+  @media (max-width: 640px) {
+    .hl { grid-template-columns: 1fr; border-radius: var(--radius); }
+    .hl__item { grid-template-columns: auto minmax(0, 1fr); column-gap: 1rem; row-gap: 0.3rem; padding: 1.3rem 1.2rem; }
+    .hl__icon { grid-row: span 2; margin: 0; width: 42px; height: 42px; }
+    .st { --node: 44px; }
+    .st__item { gap: 1rem; }
+  }
+</style>
+
+<script>
+  import gsap from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+  gsap.registerPlugin(ScrollTrigger);
+
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.querySelectorAll<HTMLElement>('[data-st]').forEach((st) => {
+    const fill = st.querySelector<HTMLElement>('[data-st-fill]');
+    const items = Array.from(st.querySelectorAll<HTMLElement>('[data-st-item]'));
+    if (reduce) {
+      if (fill) fill.style.transform = 'none';
+      items.forEach((i) => i.classList.add('is-active'));
+      return;
+    }
+    if (fill) {
+      gsap.fromTo(fill, { scaleY: 0 }, { scaleY: 1, ease: 'none', scrollTrigger: { trigger: st, start: 'top 62%', end: 'bottom 62%', scrub: 0.5 } });
+    }
+    items.forEach((item) => {
+      ScrollTrigger.create({
+        trigger: item,
+        start: 'top 64%',
+        onEnter: () => item.classList.add('is-active'),
+        onLeaveBack: () => item.classList.remove('is-active'),
+      });
+    });
+  });
+</script>

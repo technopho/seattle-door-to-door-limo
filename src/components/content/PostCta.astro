@@ -1,0 +1,95 @@
+---
+// End-of-article call to action, tailored to the post's most relevant service.
+import Icon from '../Icon.astro';
+import { site, serviceHref } from '../../data/site';
+import { type Post, postService } from '../../data/posts';
+
+interface Props { post: Post }
+const { post } = Astro.props;
+const s = postService(post);
+
+const copy: Record<string, { kicker: string; title: string; text: string }> = {
+  airport: {
+    kicker: 'Airport transfers',
+    title: 'Flying into SeaTac?',
+    text: 'Share your flight number and we’ll handle the rest: live flight tracking, a text with your meeting point, and help with every bag.',
+  },
+  cruise: {
+    kicker: 'Cruise transfers',
+    title: 'Sailing from Seattle?',
+    text: 'Tell us your ship, terminal and luggage count. We’ll plan the ride from your hotel or home to the pier, and from the pier to SeaTac.',
+  },
+};
+const more: Record<string, string> = {
+  airport: 'Airport transfers',
+  corporate: 'Corporate car service',
+  weddings: 'Wedding limousines',
+  cruise: 'Cruise transfers',
+  events: 'Special events',
+  hourly: 'Hourly & wine tours',
+};
+const c = copy[s.slug] ?? {
+  kicker: 'Reservations · 24/7',
+  title: 'Ready when you are.',
+  text: 'Reserve a sedan, SUV or Sprinter in four quick steps, or call the concierge 24/7 to plan something more involved.',
+};
+---
+<aside class="pcta" aria-labelledby="pcta-title">
+  <span class="pcta__glow" aria-hidden="true"></span>
+  <p class="pcta__kicker">{c.kicker}</p>
+  <h2 id="pcta-title" class="pcta__title">{c.title}</h2>
+  <p class="pcta__text">{c.text}</p>
+  <div class="pcta__actions">
+    <a href={`/book/?type=${s.slug}`} class="btn btn--gold" data-magnetic="0.2">Reserve your ride <Icon name="arrow" /></a>
+    <a href={site.phoneHref} class="btn btn--ghost" data-cursor="Call"><Icon name="phone" /> {site.phone}</a>
+  </div>
+  <a href={serviceHref(s)} class="link-underline pcta__more">Our {(more[s.slug] ?? s.title).toLowerCase()} <Icon name="arrow" size={14} /></a>
+</aside>
+
+<style>
+  .pcta {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    display: grid;
+    gap: 1rem;
+    justify-items: start;
+    max-width: 68ch;
+    margin-top: clamp(3rem, 6vw, 4.5rem);
+    padding: clamp(1.6rem, 4vw, 2.75rem);
+    border-radius: var(--radius-l);
+    background: var(--bg-3);
+    box-shadow: 0 1px 2px rgb(var(--fg-rgb) / 0.04), 0 30px 70px -40px rgb(var(--fg-rgb) / 0.35);
+  }
+  :global([data-theme='dark']) .pcta { background: var(--bg-2); box-shadow: 0 30px 70px -40px rgb(0 0 0 / 0.7); }
+  .pcta::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    pointer-events: none;
+    background: linear-gradient(140deg, rgb(var(--accent-2-rgb) / 0.45), rgb(var(--accent-2-rgb) / 0.06) 40%, rgb(var(--accent-2-rgb) / 0.06) 70%, rgb(var(--accent-2-rgb) / 0.3));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+  }
+  .pcta__glow { position: absolute; inset: -55% -25% auto auto; z-index: -1; width: 70%; aspect-ratio: 1; pointer-events: none; background: radial-gradient(closest-side, rgb(var(--accent-rgb) / 0.18), rgb(var(--accent-rgb) / 0)); opacity: 0.55; }
+  :global([data-theme='dark']) .pcta__glow { opacity: 1; }
+  .pcta__kicker { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--accent); }
+  .pcta__title { font-size: clamp(1.7rem, 2.8vw, 2.4rem); line-height: 1.08; letter-spacing: -0.033em; }
+  .pcta__text { color: var(--text-2); max-width: 50ch; }
+  .pcta__actions { display: flex; flex-wrap: wrap; gap: 0.7rem; margin-top: 0.5rem; }
+  .pcta__more { min-height: 44px; }
+  /* 44px tap target: keep the underline close to the text */
+  .pcta__more::after { bottom: 9px; }
+  @media (max-width: 560px) {
+    .pcta { border-radius: var(--radius); padding: 1.5rem 1.2rem 1.2rem; }
+    .pcta__actions { display: grid; width: 100%; }
+    .pcta__actions .btn { width: 100%; }
+  }
+  /* Keep the longest label ("Our corporate car service") on one line on 320px phones. */
+  @media (max-width: 359px) {
+    .pcta__more { font-size: 0.74rem; letter-spacing: 0.08em; }
+  }
+</style>

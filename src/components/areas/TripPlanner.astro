@@ -1,0 +1,182 @@
+---
+// Final CTA: a short trip form that deep-links into /book/ (GET, URL contract: type, from, to, date, pax).
+// Nothing is submitted here; the booking wizard picks the values up from the URL.
+import Icon from '../Icon.astro';
+import { site } from '../../data/site';
+import { SEA, PAE, BFI, PIER66, PIER91 } from '../../data/area-pages';
+
+interface Props {
+  /** City to prefill as the pickup ("from"). */
+  city?: string;
+}
+const { city } = Astro.props;
+
+const types = [
+  { value: 'airport', label: 'Airport transfer' },
+  { value: 'p2p', label: 'Point-to-point' },
+  { value: 'hourly', label: 'Hourly / as directed' },
+  { value: 'corporate', label: 'Corporate' },
+  { value: 'weddings', label: 'Wedding' },
+  { value: 'events', label: 'Special event' },
+  { value: 'cruise', label: 'Cruise terminal' },
+];
+const places = [SEA, PAE, BFI, PIER66, PIER91, 'Downtown Seattle', 'Downtown Bellevue', 'Kirkland', 'Redmond', 'Tacoma', 'Everett', 'Woodinville wine country'];
+const paxOptions = Array.from({ length: 20 }, (_, i) => i + 1);
+---
+<section class="section section--tight tp" aria-labelledby="tp-title">
+  <div class="container">
+    <div class="tp__card" data-reveal>
+      <span class="tp__glow" aria-hidden="true"></span>
+      <div class="tp__copy">
+        <p class="eyebrow">Reserve</p>
+        <h2 id="tp-title" class="tp__title">
+          {city ? <Fragment>Plan your ride from <em>{city}.</em></Fragment> : <Fragment>Plan your <em>next ride.</em></Fragment>}
+        </h2>
+        <p class="tp__text">Start here, finish on the booking page. A real dispatcher confirms every trip, with your chauffeur’s details sent before pickup.</p>
+        <ul class="tp__contact" role="list">
+          <li><a href={site.phoneHref} data-cursor="Call"><Icon name="phone" /> Call {site.phone}</a></li>
+          <li><a href={site.smsHref}><Icon name="chat" /> Text us</a></li>
+        </ul>
+      </div>
+
+      <form class="tp__form" action="/book/" method="get" data-tp data-airport={SEA}>
+        <div class="field tp__full">
+          <label for="tp-type">Service</label>
+          <select id="tp-type" name="type" class="input">
+            <option value="">Choose a service</option>
+            {types.map((t) => <option value={t.value}>{t.label}</option>)}
+          </select>
+        </div>
+        <div class="field">
+          <label for="tp-from">From</label>
+          <input id="tp-from" name="from" class="input" type="text" value={city ?? ''} placeholder="Pickup address or place" autocomplete="off" list="tp-places" maxlength="200" />
+        </div>
+        <div class="field">
+          <label for="tp-to">To</label>
+          <input id="tp-to" name="to" class="input" type="text" placeholder="Destination" autocomplete="off" list="tp-places" maxlength="200" />
+        </div>
+        <div class="field">
+          <label for="tp-date">Date</label>
+          <input id="tp-date" name="date" class="input" type="date" />
+        </div>
+        <div class="field">
+          <label for="tp-pax">Guests</label>
+          <select id="tp-pax" name="pax" class="input">
+            {paxOptions.map((n) => <option value={n} selected={n === 2}>{n} {n === 1 ? 'guest' : 'guests'}</option>)}
+          </select>
+        </div>
+        <datalist id="tp-places">
+          {places.map((p) => <option value={p} />)}
+        </datalist>
+        <button type="submit" class="btn btn--gold btn--lg tp__full tp__submit" data-magnetic="0.15">Continue to booking <Icon name="arrow" /></button>
+        <p class="tp__fine tp__full">Nothing is charged now. The full rate is confirmed before you commit.</p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<style>
+  .tp {
+    --tp-bg: var(--bg-3);
+    --tp-shadow: 0 1px 2px rgb(var(--fg-rgb) / 0.04), 0 40px 80px -50px rgb(var(--fg-rgb) / 0.4);
+  }
+  :global([data-theme='dark']) .tp { --tp-bg: var(--bg-2); --tp-shadow: 0 40px 80px -50px rgb(0 0 0 / 0.8); }
+  /* City pages: the nearby-areas strip above shares this surface, so don't double the gap. */
+  :global(.nb) + .tp { padding-top: 0; }
+  .tp__card {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    gap: clamp(2rem, 5vw, 5rem);
+    align-items: center;
+    padding: clamp(1.6rem, 5vw, 4.5rem);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-l);
+    background: var(--tp-bg);
+    box-shadow: var(--tp-shadow);
+  }
+  .tp__card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    padding: 1px;
+    pointer-events: none;
+    background: linear-gradient(140deg, rgb(var(--accent-2-rgb) / 0.4), rgb(var(--accent-2-rgb) / 0) 35%, rgb(var(--accent-2-rgb) / 0) 70%, rgb(var(--accent-2-rgb) / 0.2));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+  }
+  .tp__glow { position: absolute; z-index: -1; width: 60%; aspect-ratio: 1; left: -20%; top: -40%; pointer-events: none; background: radial-gradient(closest-side, rgb(var(--accent-rgb) / 0.12), transparent); }
+
+  .tp__copy { display: grid; gap: 1.2rem; justify-items: start; }
+  .tp__title { font-size: var(--fs-h2); max-width: 13ch; }
+  .tp__text { color: var(--text-2); max-width: 42ch; line-height: 1.65; }
+  .tp__contact { display: flex; flex-wrap: wrap; gap: 0.2rem 1.6rem; margin: 0.2rem 0 0; padding: 0; }
+  .tp__contact a { display: inline-flex; align-items: center; gap: 0.55rem; min-height: 44px; font-size: 0.9rem; font-weight: 600; color: var(--text); transition: color 0.3s; }
+  .tp__contact a:hover { color: var(--accent); }
+  .tp__contact :global(svg) { width: 16px; height: 16px; color: var(--accent); }
+
+  .tp__form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem 1rem; }
+  .tp__full { grid-column: 1 / -1; }
+  .tp__submit { margin-top: 0.4rem; width: 100%; }
+  .tp__fine { font-size: 0.78rem; color: var(--muted); text-align: center; }
+  .tp__form input[type='date'] { min-width: 0; }
+
+  @media (max-width: 960px) {
+    .tp__card { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 560px) {
+    .tp__card { padding: 1.5rem 1.15rem; border-radius: var(--radius); }
+    .tp__form { grid-template-columns: 1fr; gap: 0.85rem; }
+    .tp__submit { padding-inline: 1rem; }
+  }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLFormElement>('[data-tp]').forEach((form) => {
+    const date = form.querySelector<HTMLInputElement>('input[type="date"]');
+    if (date) {
+      const d = new Date();
+      date.min = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+    const type = form.querySelector<HTMLSelectElement>('select[name="type"]');
+    const from = form.querySelector<HTMLInputElement>('input[name="from"]');
+    const to = form.querySelector<HTMLInputElement>('input[name="to"]');
+    const airport = form.dataset.airport || '';
+    // Same test as the booking page: an airport named on either side sets the trip's direction.
+    const isAirport = (s: string) => /\((SEA|PAE|BFI)\)|airport|sea-?tac|paine field|boeing field/i.test(s);
+    let autoTo = false;
+    // "Airport transfer" with a city prefilled as pickup and no airport anywhere would open the
+    // booking page as an arrival from that city to nowhere. Default it to a SeaTac departure,
+    // visibly, so the guest can still change it; undo it if they pick another service.
+    const fitAirport = () => {
+      if (!type || !from || !to) return;
+      if (type.value === 'airport') {
+        if (!to.value.trim() && !isAirport(from.value)) { to.value = airport; autoTo = true; }
+      } else if (autoTo && to.value === airport) {
+        to.value = '';
+        autoTo = false;
+      }
+    };
+    type?.addEventListener('change', fitAirport);
+    to?.addEventListener('input', () => { autoTo = false; });
+
+    form.addEventListener('submit', () => {
+      // Belt and braces for autofill or a restored form: an airport trip must name an airport.
+      if (type?.value === 'airport' && from && to && !isAirport(from.value) && !isAirport(to.value)) {
+        if (!to.value.trim()) to.value = airport;
+        else if (!from.value.trim()) from.value = airport;
+      }
+      // Keep the deep link clean: empty fields are left out of the query string.
+      form.querySelectorAll<HTMLInputElement | HTMLSelectElement>('input[name], select[name]').forEach((el) => {
+        if (!el.value.trim()) el.disabled = true;
+      });
+      // Re-enable after navigation starts, so a back/forward visit finds a usable form.
+      window.setTimeout(() => form.querySelectorAll<HTMLInputElement | HTMLSelectElement>('[disabled]').forEach((el) => (el.disabled = false)), 0);
+    });
+  });
+</script>

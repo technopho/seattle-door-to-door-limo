@@ -1,0 +1,116 @@
+---
+// Long-form reading typography (Journal articles, legal documents).
+// Content arrives through a slot or set:html, so every child selector is :global().
+interface Props { class?: string; html?: string; size?: 'article' | 'legal' }
+const { class: cls, html, size = 'article' } = Astro.props;
+---
+{html ? (
+  <div class:list={['prose', `prose--${size}`, cls]} set:html={html} />
+) : (
+  <div class:list={['prose', `prose--${size}`, cls]}><slot /></div>
+)}
+
+<style>
+  .prose {
+    --measure: 68ch;
+    font-size: 1.075rem;
+    line-height: 1.75;
+    color: var(--text-2);
+    max-width: var(--measure);
+    overflow-wrap: break-word;
+  }
+  .prose--legal { font-size: 1rem; line-height: 1.75; }
+
+  .prose > :global(* + *) { margin-top: 1.15em; }
+  .prose :global(p) { text-wrap: pretty; }
+
+  .prose :global(h2) {
+    font-size: clamp(1.5rem, 2.2vw, 1.95rem);
+    line-height: 1.18;
+    letter-spacing: -0.028em;
+    margin-top: 2.4em;
+    margin-bottom: -0.2em;
+    scroll-margin-top: calc(var(--header-h) + 1.5rem);
+  }
+  .prose--legal :global(h2) {
+    display: flex;
+    align-items: baseline;
+    gap: 0.9rem;
+    font-size: clamp(1.3rem, 1.8vw, 1.6rem);
+    padding-top: 1.6em;
+    margin-top: 1.6em;
+    border-top: 1px solid var(--line);
+  }
+  .prose--legal > :global(h2:first-child) { margin-top: 0; padding-top: 0.4em; border-top: 0; }
+  /* Section numbers are presentational: a counter keeps them out of the heading text (snippets, crawlers)
+     and the alt-text form ( / "") keeps them out of the accessible name where supported. */
+  .prose--legal { counter-reset: legal-sec; }
+  .prose--legal :global(h2) { counter-increment: legal-sec; }
+  .prose--legal :global(h2::before) {
+    content: counter(legal-sec, decimal-leading-zero);
+    content: counter(legal-sec, decimal-leading-zero) / '';
+    flex: none;
+    min-width: 1.6em;
+    font-family: var(--font-sans);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+    transform: translateY(-0.2em);
+  }
+  .prose :global(h3) { font-size: 1.15rem; line-height: 1.3; letter-spacing: -0.015em; margin-top: 1.8em; }
+  .prose :global(h2:first-child), .prose :global(h3:first-child) { margin-top: 0; }
+
+  .prose :global(strong) { color: var(--text); font-weight: 600; }
+  .prose :global(a) {
+    color: var(--text);
+    text-decoration: underline;
+    text-decoration-color: rgb(var(--accent-rgb) / 0.55);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.22em;
+    transition: text-decoration-color 0.3s, color 0.3s;
+  }
+  .prose :global(a:hover) { color: var(--accent); text-decoration-color: currentColor; }
+
+  .prose :global(ul), .prose :global(ol) { padding-left: 0; list-style: none; display: grid; gap: 0.7em; }
+  .prose :global(li) { position: relative; padding-left: 1.7em; }
+  .prose :global(ul > li::before) {
+    content: '';
+    position: absolute;
+    left: 0.2em;
+    top: 0.78em;
+    width: 0.7em;
+    height: 1px;
+    background: var(--accent);
+  }
+  .prose :global(ol) { counter-reset: prose-ol; }
+  .prose :global(ol > li) { counter-increment: prose-ol; padding-left: 2.3em; }
+  .prose :global(ol > li::before) {
+    content: counter(prose-ol, decimal-leading-zero);
+    position: absolute;
+    left: 0;
+    top: 0.18em;
+    font-size: 0.74em;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .prose :global(blockquote) {
+    padding: 0.2em 0 0.2em 1.3em;
+    border-left: 2px solid var(--accent);
+    font-family: var(--font-display);
+    font-size: 1.3em;
+    line-height: 1.45;
+    letter-spacing: -0.015em;
+    color: var(--text);
+  }
+  .prose :global(hr) { border: 0; height: 1px; background: var(--line); margin-block: 2.4em; }
+
+  @media (max-width: 560px) {
+    .prose { font-size: 1.02rem; line-height: 1.72; }
+    .prose--legal { font-size: 0.98rem; }
+  }
+</style>

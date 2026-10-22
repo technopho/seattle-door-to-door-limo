@@ -9,5 +9,7 @@ dist/
 # env & OS
 .env
 .env.*
+!.env.example
 .DS_Store
 npm-debug.log*
+.claude/

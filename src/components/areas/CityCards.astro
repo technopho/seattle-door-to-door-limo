@@ -1,0 +1,140 @@
+---
+// Six city cards for /service-areas/: route glyph, neighborhoods, popular stops, ETA, link to the city page.
+import Icon from '../Icon.astro';
+import RouteGlyph from './RouteGlyph.astro';
+import { areaHref } from '../../data/site';
+import { areaList, etaMin } from '../../data/area-pages';
+
+const pad = (n: number) => String(n).padStart(2, '0');
+---
+<section class="section section--tight cc-sec" aria-labelledby="cities-title">
+  <div class="container">
+    <header class="section-head section-head--split">
+      <div class="cc-sec__title">
+        <p class="eyebrow" data-reveal="fade">Cities we serve</p>
+        <h2 id="cities-title" data-split>Six cities, <em>one standard.</em></h2>
+      </div>
+      <p class="lead" data-reveal data-delay="0.1">
+        The same background-checked chauffeurs and real-person dispatch, whether you are in Belltown or University Place. Choose a city for local routes, landmarks and answers.
+      </p>
+    </header>
+
+    <ol class="cc-grid" role="list" data-stagger="0.07">
+      {areaList.map((a, i) => (
+        <li>
+          <article class="cc card card--hover">
+            <div class="cc__head">
+              <span class="cc__num">{pad(i + 1)} <span class="cc__state">· WA</span></span>
+              <h3 class="cc__name">
+                <a href={areaHref(a)} class="cc__link">{a.city}</a>
+              </h3>
+              <span class="cc__tile" aria-hidden="true"><RouteGlyph slug={a.slug} /></span>
+            </div>
+            <p class="cc__hoods">{a.page.neighborhoods.slice(0, 5).join(' · ')}</p>
+            <div class="cc__pop">
+              <span class="cc__pop-label">Popular</span>
+              <span class="cc__pop-list">{a.page.destinations.slice(0, 3).map((d) => d.name).join(', ')}</span>
+            </div>
+            <div class="cc__foot">
+              <span class="cc__eta"><Icon name="plane" /><b>{etaMin(a.eta)}</b> from SeaTac</span>
+              <span class="cc__go" aria-hidden="true">Explore <span class="cc__go-ico"><Icon name="arrow" /></span></span>
+            </div>
+          </article>
+        </li>
+      ))}
+    </ol>
+    <p class="cc-sec__note" data-reveal="fade">Drive times are typical from SeaTac; traffic and time of day vary.</p>
+  </div>
+</section>
+
+<style>
+  .cc-sec__title { display: grid; gap: 1.2rem; }
+  .cc-sec h2 :global(.split-line) { vertical-align: top; }
+  .cc-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(1rem, 1.6vw, 1.5rem);
+    margin: 0;
+    padding: 0;
+  }
+  .cc-grid > li { display: flex; }
+  .cc {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    padding: clamp(1.4rem, 2vw, 1.9rem);
+    overflow: hidden;
+  }
+  /* Warm wash from the glyph corner on hover */
+  .cc::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(70% 60% at 100% 0%, rgb(var(--accent-rgb) / 0.09), transparent 70%);
+    opacity: 0;
+    transition: opacity 0.6s var(--ease-out);
+    pointer-events: none;
+  }
+  .cc:hover::before, .cc:focus-within::before { opacity: 1; }
+  .cc:hover, .cc:focus-within { --rg-play: running; }
+
+  .cc__head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: 1fr auto;
+    column-gap: 1rem;
+    margin-bottom: 1.1rem;
+  }
+  .cc__num { align-self: start; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .cc__state { color: var(--muted-2); }
+  /* Mini map tile: dotted chart paper with the city's route from SeaTac */
+  .cc__tile {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    position: relative;
+    width: 118px;
+    height: 132px;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    background:
+      radial-gradient(circle, rgb(var(--fg-rgb) / 0.1) 1px, transparent 1.3px) 0 0 / 11px 11px,
+      var(--bg);
+    transition: border-color 0.5s;
+  }
+  :global([data-theme='dark']) .cc__tile { background: radial-gradient(circle, rgb(var(--fg-rgb) / 0.09) 1px, transparent 1.3px) 0 0 / 11px 11px, rgb(var(--fg-rgb) / 0.02); }
+  .cc:hover .cc__tile { border-color: rgb(var(--accent-rgb) / 0.35); }
+  .cc__tile :global(.rg) { position: absolute; inset: 6px 0; width: 100%; height: calc(100% - 12px); }
+
+  .cc__name { align-self: end; font-size: clamp(1.9rem, 2.6vw, 2.5rem); line-height: 1; letter-spacing: -0.035em; padding-bottom: 0.1rem; }
+  .cc__link { color: inherit; transition: color 0.4s; }
+  .cc__link::after { content: ''; position: absolute; inset: 0; z-index: 1; border-radius: inherit; }
+  .cc__link:focus-visible { outline: none; }
+  .cc:has(.cc__link:focus-visible) { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .cc:hover .cc__link { color: var(--accent-3); }
+  :global([data-theme='dark']) .cc:hover .cc__link { color: var(--accent-2); }
+
+  .cc__hoods { font-size: 0.86rem; line-height: 1.55; color: var(--text-2); margin-bottom: 1.2rem; }
+  .cc__pop { display: grid; gap: 0.3rem; padding: 0.95rem 0; border-top: 1px solid var(--line); margin-top: auto; }
+  .cc__pop-label { font-size: 0.64rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); }
+  .cc__pop-list { font-size: 0.84rem; color: var(--muted); line-height: 1.5; }
+  .cc__foot { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-top: 0.95rem; border-top: 1px solid var(--line); }
+  .cc__eta { display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.8rem; color: var(--muted); }
+  .cc__eta :global(svg) { width: 15px; height: 15px; color: var(--accent); }
+  .cc__eta b { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .cc__go { display: inline-flex; align-items: center; gap: 0.6rem; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-2); }
+  .cc__go-ico { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line-strong); transition: background 0.45s var(--ease-out), border-color 0.45s, color 0.45s, transform 0.6s var(--ease-out); }
+  .cc__go-ico :global(svg) { width: 14px; height: 14px; }
+  .cc:hover .cc__go-ico { background: var(--cta-bg); border-color: transparent; color: var(--cta-fg); transform: translateX(3px); }
+
+  .cc-sec__note { margin-top: 1.4rem; font-size: 0.78rem; color: var(--muted); }
+
+  @media (max-width: 1080px) {
+    .cc-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 640px) {
+    .cc-grid { grid-template-columns: 1fr; }
+    .cc__tile { width: 100px; height: 112px; }
+  }
+</style>

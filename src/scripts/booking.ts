@@ -1,7 +1,11 @@
-// Booking wizard for /book/: 4-step reservation request with live summary,
-// URL prefill, per-step validation, draft persistence and an animated success state.
+// Booking wizard for /book/: 4-step reservation request with live summary, URL prefill,
+// per-step validation, draft persistence and delivery through src/lib/submit.ts with three
+// outcomes: sent (success), no endpoint configured ("One last step": text/email/call it in),
+// or failed (inline retry).
 import gsap from 'gsap';
 import { fleet, site } from '../data/site';
+import { submitLead } from '../lib/submit';
+import { cropStyle, vehicleMedia } from '../components/book/vehicleMedia';
 
 declare global {
   interface Window { dataLayer?: Record<string, unknown>[] }
@@ -49,8 +53,8 @@ const TYPES: Record<string, string> = {
 const ADDONS: Record<string, string> = {
   'child-seat': 'Child seat',
   'meet-greet': 'Meet & greet sign',
-  champagne: 'Champagne on ice',
-  'extra-luggage': 'Extra luggage',
+  champagne: 'Champagne',
+  'extra-luggage': 'Extra luggage space',
   'red-carpet': 'Red carpet',
 };
 const CONTACT: Record<string, string> = { call: 'Call', text: 'Text', email: 'Email' };
@@ -65,6 +69,8 @@ const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const AIRPORT_RE = /\((SEA|PAE|BFI)\)|airport|sea-?tac|paine field|boeing field/i;
 const DEFAULT_AIRPORT = 'Seattle-Tacoma International Airport (SEA)';
 const isAirport = (s: string) => AIRPORT_RE.test(s);
+const MAPS_KEY = import.meta.env.PUBLIC_GOOGLE_MAPS_KEY as string | undefined;
+const HOURS = { min: 1, max: 12, fallback: 3 };
 const FLIGHT_NOTE: Record<string, string> = {
   arriving: 'We track your flight in real time and adjust pickup automatically.',
   departing: 'Optional for departures. Helps your chauffeur drop you at the right doors.',
@@ -74,22 +80,8 @@ const CLOSE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 const CAR_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 17h14M3 13.5l2-5A2.5 2.5 0 0 1 7.3 7h9.4a2.5 2.5 0 0 1 2.3 1.5l2 5V17a1 1 0 0 1-1 1h-1.5M3 13.5V17a1 1 0 0 0 1 1h1.5M3 13.5h18"/><circle cx="7.5" cy="17.5" r="1.8"/><circle cx="16.5" cy="17.5" r="1.8"/></svg>';
 
 /* ---------------------------------------------------------------------------
-   Network
+   Lead payload
    --------------------------------------------------------------------------- */
-/**
- * submitBooking — the ONLY place the reservation leaves the browser.
- *
- * TODO(backend): replace the simulated delay with the real reservations endpoint
- * (e.g. `await fetch('/api/reservations', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })`)
- * or the client's dispatch/CRM webhook. Resolve with the confirmed reference, or throw so
- * the UI shows the "please call us" fallback message.
- */
-export async function submitBooking(data: BookingData): Promise<{ reference: string }> {
-  void data; // payload is ready to send once an endpoint exists
-  await new Promise((resolve) => setTimeout(resolve, 1200));
-  return { reference: makeReference() };
-}
-
 function makeReference() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   const bytes = new Uint8Array(6);
@@ -97,8 +89,18 @@ function makeReference() {
   return 'SDD-' + Array.from(bytes, (b) => chars[b % chars.length]).join('');
 }
 
+/*
+ * Analytics (GTM dataLayer). The ONE conversion event is `booking_submitted`, pushed by src/lib/submit.ts
+ * only when the reservations endpoint accepts the request. Its details are the `booking_*` data layer
+ * variables pushed just before sending (see submit()). Everything else here is funnel telemetry:
+ * booking_step, booking_validation_error, booking_terms_view, booking_submit_error, booking_retry,
+ * booking_handoff_shown / booking_handoff (no endpoint: the guest texts, emails, calls or copies it in).
+ */
 function track(event: string, payload: Record<string, unknown> = {}) {
   try { window.dataLayer?.push({ event, ...payload }); } catch { /* analytics must never break booking */ }
+}
+function setLayer(vars: Record<string, unknown>) {
+  try { window.dataLayer?.push(vars); } catch { /* ignore */ }
 }
 
 /* ---------------------------------------------------------------------------
@@ -109,19 +111,100 @@ function todayISO() { const d = new Date(); return `${d.getFullYear()}-${pad(d.g
 function nowHM() { const d = new Date(); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; }
 function parseISO(iso: string) { const [y, m, d] = iso.split('-').map(Number); return new Date(y, (m || 1) - 1, d || 1); }
 function fmtDate(iso: string) { return parseISO(iso).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }); }
-function fmtTime(t: string) {
+// On screen the time never splits from its AM/PM (no-break space); messages and the payload use a plain space.
+function fmtTime(t: string, nbsp = true) {
   const [h, m] = t.split(':').map(Number);
   if (Number.isNaN(h)) return t;
-  return `${h % 12 || 12}:${pad(m || 0)} ${h >= 12 ? 'PM' : 'AM'}`;
+  return `${h % 12 || 12}:${pad(m || 0)}${nbsp ? '\u00a0' : ' '}${h >= 12 ? 'PM' : 'AM'}`;
 }
+// "Point-to-point" never breaks at its hyphens on screen.
+const nbHyphen = (s: string) => s.replace(/-/g, '\u2011');
 function fmtWhen(date: string, time: string) { return [date && fmtDate(date), time && fmtTime(time)].filter(Boolean).join(' · '); }
+function fmtDateFull(iso: string) { return parseISO(iso).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }); }
 function plural(n: number, one: string, many = one + 's') { return `${n} ${n === 1 ? one : many}`; }
 function clampInt(v: unknown, min: number, max: number, fallback: number) {
   const n = parseInt(String(v), 10);
   return Number.isNaN(n) ? fallback : Math.min(max, Math.max(min, n));
 }
+/** Adds or removes one id in a space-separated attribute such as aria-describedby. */
+function setToken(el: Element, attr: string, token: string, on: boolean) {
+  const list = (el.getAttribute(attr) || '').split(/\s+/).filter((t) => t && t !== token);
+  if (on) list.push(token);
+  if (list.length) el.setAttribute(attr, list.join(' '));
+  else el.removeAttribute(attr);
+}
 function esc(s: string) {
   return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string);
+}
+/**
+ * The request as flat fields: this is what the reservations endpoint receives (plus the honeypot).
+ * Readable values for people, plus machine-friendly ones for CRM / Zapier automation:
+ * service_type (booking slug), vehicle_id, date_iso (YYYY-MM-DD), time_24h (HH:MM) and the same for the return.
+ */
+function leadFields(d: BookingData, reference: string): Record<string, string> {
+  const v = fleetById.get(d.vehicle);
+  const hourly = d.type === 'hourly';
+  const airport = d.type === 'airport';
+  const round = d.roundTrip && !hourly;
+  const ret = round ? [d.returnDate && fmtDateFull(d.returnDate), d.returnTime && fmtTime(d.returnTime, false)].filter(Boolean).join(' · ') : '';
+  return {
+    reference,
+    service: TYPES[d.type] ? `${TYPES[d.type]}${airport ? (d.direction === 'arriving' ? ' (arriving)' : ' (departing)') : ''}` : '',
+    service_type: d.type,
+    pickup: d.from,
+    stops: d.stops.filter(Boolean).join('; '),
+    dropoff: d.to || (hourly ? 'As directed' : ''),
+    date: d.date ? fmtDateFull(d.date) : '',
+    time: d.time ? fmtTime(d.time, false) : '',
+    date_iso: d.date,
+    time_24h: d.time,
+    return: ret,
+    return_date_iso: round ? d.returnDate : '',
+    return_time_24h: round ? d.returnTime : '',
+    flight: airport ? [d.airline, d.flight].filter(Boolean).join(' ') : '',
+    hours: hourly ? plural(d.hours, 'hour') : '',
+    passengers: String(d.pax),
+    luggage: d.luggage ? plural(d.luggage, 'bag') : 'None',
+    vehicle: v ? `${v.name} (${v.category})` : '',
+    vehicle_id: v ? v.id : '',
+    add_ons: d.addons.map((a) => ADDONS[a] || a).join(', '),
+    name: d.name,
+    phone: d.phone,
+    email: d.email,
+    lead_passenger: d.leadName,
+    contact_preference: CONTACT[d.contact] || 'Text',
+    notes: d.requests,
+  };
+}
+
+/** The request as a message the guest sends themselves (text / email / copy): same labels as the review step. */
+function messageText(d: BookingData, reference: string): string {
+  const v = fleetById.get(d.vehicle);
+  const hourly = d.type === 'hourly';
+  const airport = d.type === 'airport';
+  const when = (date: string, time: string) => [date && fmtDateFull(date), time && fmtTime(time, false)].filter(Boolean).join(' · ');
+  let service = TYPES[d.type] || '';
+  if (airport) service += d.direction === 'arriving' ? ' (arriving)' : ' (departing)';
+  const lines: [string, string][] = [
+    ['Service', service],
+    ['When', when(d.date, d.time)],
+    ['Pickup', d.from],
+    ...d.stops.filter(Boolean).map((s, i): [string, string] => [`Stop ${i + 1}`, s]),
+    ['Drop-off', d.to || (hourly ? 'As directed' : '')],
+    ['Duration', hourly ? plural(d.hours, 'hour') : ''],
+    ['Flight', airport ? [d.airline, d.flight].filter(Boolean).join(' ') : ''],
+    ['Return', d.roundTrip && !hourly ? when(d.returnDate, d.returnTime) : ''],
+    ['Vehicle', v ? `${v.name} (${v.category})` : ''],
+    ['Party', `${plural(d.pax, 'passenger')} · ${d.luggage ? plural(d.luggage, 'bag') : 'no luggage'}`],
+    ['Name', d.name],
+    ['Mobile', d.phone],
+    ['Email', d.email],
+    ['Lead passenger', d.leadName],
+    ['Confirm by', CONTACT[d.contact] || 'Text'],
+    ['Add-ons', d.addons.map((a) => ADDONS[a] || a).join(', ')],
+    ['Requests', d.requests],
+  ];
+  return [`Reservation request ${reference}`, '', ...lines.filter(([, val]) => val).map(([k, val]) => `${k}: ${val}`)].join('\n');
 }
 function formatPhone(raw: string) {
   const d = raw.replace(/\D/g, '');
@@ -170,13 +253,19 @@ function initBooking(root: HTMLElement) {
   const success = root.querySelector<HTMLElement>('[data-success]')!;
   const layout = root.querySelector<HTMLElement>('[data-layout]')!;
   const restore = root.querySelector<HTMLElement>('[data-restore]')!;
-  const submitErr = root.querySelector<HTMLElement>('[data-err="submit"]')!;
+  const handoff = root.querySelector<HTMLElement>('[data-handoff]')!;
+  const honeypot = form.querySelector<HTMLInputElement>('input[name="company_website"]');
+  const fail = root.querySelector<HTMLElement>('[data-fail]')!;
+  const failTitle = root.querySelector<HTMLElement>('[data-fail-title]')!;
+  const failMsg = root.querySelector<HTMLElement>('[data-fail-msg]')!;
+  const routeEl = root.querySelector<HTMLElement>('[data-route]')!;
 
   let step = 1;
   let maxStep = 1;
   let busy = false;
   let submitting = false;
   let stopUid = 0;
+  let reference = '';
 
   const input = (name: string) => form.elements.namedItem(name) as HTMLInputElement | null;
 
@@ -194,7 +283,7 @@ function initBooking(root: HTMLElement) {
       roundTrip: fd.has('roundTrip'),
       returnDate: s('returnDate'),
       returnTime: s('returnTime'),
-      hours: clampInt(s('hours'), 2, 12, 3),
+      hours: clampInt(s('hours'), HOURS.min, HOURS.max, HOURS.fallback),
       direction: s('direction') || 'arriving',
       airline: s('airline'),
       flight: s('flight').toUpperCase(),
@@ -220,7 +309,7 @@ function initBooking(root: HTMLElement) {
     if (d.type !== undefined && TYPES[d.type]) setRadio('type', d.type);
     const textKeys = ['from', 'to', 'date', 'time', 'returnDate', 'returnTime', 'airline', 'flight', 'name', 'phone', 'email', 'leadName', 'requests'] as const;
     textKeys.forEach((k) => { const v = d[k]; const el = input(k); if (typeof v === 'string' && el) el.value = v; });
-    if (d.hours !== undefined) input('hours')!.value = String(clampInt(d.hours, 2, 12, 3));
+    if (d.hours !== undefined) input('hours')!.value = String(clampInt(d.hours, HOURS.min, HOURS.max, HOURS.fallback));
     if (d.pax !== undefined) input('pax')!.value = String(clampInt(d.pax, 1, 20, 2));
     if (d.luggage !== undefined) input('luggage')!.value = String(clampInt(d.luggage, 0, 20, 2));
     if (d.roundTrip !== undefined) input('roundTrip')!.checked = !!d.roundTrip;
@@ -295,7 +384,8 @@ function initBooking(root: HTMLElement) {
     if (isAirport(o)) swapRoute(false);
     else if (!a) airportEl.value = DEFAULT_AIRPORT;
     else return;
-    if (!reduce) gsap.from(airportEl, { color: '#e8d3a2', duration: 1.6, ease: 'power2.out', clearProps: 'color' });
+    const accent = getComputedStyle(root).getPropertyValue('--accent').trim();
+    if (!reduce && accent) gsap.from(airportEl, { color: accent, duration: 1.6, ease: 'power2.out', clearProps: 'color' });
     clearError('from');
     clearError('to');
   }
@@ -326,7 +416,7 @@ function initBooking(root: HTMLElement) {
       <span class="bk-route__marker bk-route__marker--stop" aria-hidden="true"></span>
       <div class="bk-route__field">
         <label class="bk-route__label" for="${id}">Stop</label>
-        <input class="bk-route__input" id="${id}" name="stop" type="text" autocomplete="off" list="bk-places" placeholder="Add an address" aria-describedby="err-stops" />
+        <input class="bk-route__input" id="${id}" name="stop" type="text" autocomplete="off" list="bk-places" maxlength="200" placeholder="Add an address" aria-describedby="err-stops" />
       </div>
       <button type="button" class="bk-route__remove" data-remove-stop aria-label="Remove stop">${CLOSE_SVG}</button>`;
     row.querySelector('input')!.value = value;
@@ -408,8 +498,9 @@ function initBooking(root: HTMLElement) {
 
   /* ---------- Vehicles ---------- */
   function updateVehicles(announce = true) {
-    const { pax, luggage } = read();
-    const rec = VEHICLES.find((v) => v.passengers >= pax && v.luggage >= luggage) ?? VEHICLES.find((v) => v.passengers >= pax);
+    const { pax } = read();
+    // Recommend on seats only: the per-vehicle luggage figures are placeholders until the client confirms them.
+    const rec = VEHICLES.find((v) => v.passengers >= pax);
     let fits = 0;
     let dropped = '';
     // FLIP: vehicles that seat the party move to the front; animate the reflow when step 2 is on screen.
@@ -424,8 +515,12 @@ function initBooking(root: HTMLElement) {
       radio.disabled = tooSmall;
       card.classList.toggle('is-disabled', tooSmall);
       card.style.order = tooSmall ? '1' : '0';
+      const isRec = card.dataset.vehicle === rec?.id;
       card.querySelector<HTMLElement>('[data-cap-note]')!.hidden = !tooSmall;
-      card.querySelector<HTMLElement>('[data-rec]')!.hidden = card.dataset.vehicle !== rec?.id;
+      card.querySelector<HTMLElement>('[data-rec]')!.hidden = !isRec;
+      // The option's description lists only what is on screen (a hidden badge would still be read if referenced).
+      setToken(radio, 'aria-describedby', `bk-v-${card.dataset.vehicle}-rec`, isRec);
+      setToken(radio, 'aria-describedby', `bk-v-${card.dataset.vehicle}-note`, tooSmall);
     });
     if (before) {
       vehicleCards.forEach((card) => {
@@ -473,7 +568,7 @@ function initBooking(root: HTMLElement) {
     const d = read();
     // Service
     summary.querySelectorAll<HTMLElement>('[data-sum-icon]').forEach((i) => { i.hidden = i.dataset.sumIcon !== (d.type || 'none'); });
-    let svc = TYPES[d.type] || '';
+    let svc = nbHyphen(TYPES[d.type] || '');
     if (d.type === 'airport') svc += d.direction === 'arriving' ? ' · Arrival' : ' · Departure';
     setSlot('service', svc, 'Choose a service');
     // Route
@@ -498,15 +593,23 @@ function initBooking(root: HTMLElement) {
     const thumb = sumSlot('thumb');
     if (v) {
       if (thumb.dataset.v !== v.id) {
+        // Same frame as the step 2 card (src/components/book/vehicleMedia.ts).
+        const m = vehicleMedia(v);
         thumb.dataset.v = v.id;
-        thumb.classList.toggle('is-studio', v.id === 'sprinter');
-        thumb.innerHTML = `<img src="${esc(v.image)}" alt="" decoding="async" />`;
-        if (!reduce) gsap.fromTo(thumb.firstElementChild, { scale: 1.2, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.8, ease: 'expo.out' });
+        thumb.classList.toggle('is-studio', !!m.studio);
+        thumb.classList.toggle('bk-crop', !!m.crop);
+        thumb.classList.toggle('is-graded', !!m.grade);
+        thumb.style.cssText = cropStyle(m) ?? '';
+        // White-background studio shot: an ivory backdrop (forced light tokens) for the photo to multiply into.
+        const backdrop = m.studio ? '<span class="bk-studio" data-theme="light" aria-hidden="true"></span>' : '';
+        const pos = m.position && !m.crop ? ` style="object-position:${esc(m.position)}"` : '';
+        thumb.innerHTML = `${backdrop}<img src="${esc(m.src)}" alt="" width="${m.width}" height="${m.height}" decoding="async"${pos} />`;
+        if (!reduce) gsap.fromTo(thumb.querySelector('img'), { scale: 1.2, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.8, ease: 'expo.out', clearProps: 'transform,opacity' });
       }
       setSlot('vehicle', v.name);
       sumSlot('vehicle-sub').textContent = `${v.category} · seats up to ${v.passengers}`;
     } else {
-      if (thumb.dataset.v) { thumb.dataset.v = ''; thumb.classList.remove('is-studio'); thumb.innerHTML = CAR_SVG; }
+      if (thumb.dataset.v) { thumb.dataset.v = ''; thumb.classList.remove('is-studio', 'bk-crop', 'is-graded'); thumb.style.cssText = ''; thumb.innerHTML = CAR_SVG; }
       setSlot('vehicle', '', step >= 2 ? 'Choose below' : 'Select in step 2');
       sumSlot('vehicle-sub').textContent = '';
     }
@@ -539,18 +642,20 @@ function initBooking(root: HTMLElement) {
   summary.addEventListener('scroll', syncSummaryFade, { passive: true });
 
   /* ---------- Review ---------- */
+  // Editable on step 4 (under the step's h3); read-only on the outcome panels, which sit under an h2.
   function reviewHTML(d: BookingData, editable: boolean) {
     const v = fleetById.get(d.vehicle);
+    const h = editable ? 'h4' : 'h3';
     const row = (k: string, val: string, wide = false) => val ? `<div class="${wide ? 'is-wide' : ''}"><dt>${k}</dt><dd>${val}</dd></div>` : '';
     const block = (title: string, n: number, body: string) => `
       <section class="bk-review__block">
         <div class="bk-review__head">
-          <h4 class="bk-review__title">${title}</h4>
+          <${h} class="bk-review__title">${title}</${h}>
           ${editable ? `<button type="button" class="bk-review__edit" data-goto="${n}" aria-label="Edit ${title.toLowerCase().replace('&amp;', 'and')}">Edit</button>` : ''}
         </div>
         <dl class="bk-review__list">${body}</dl>
       </section>`;
-    let service = esc(TYPES[d.type] || '');
+    let service = esc(nbHyphen(TYPES[d.type] || ''));
     if (d.type === 'airport') service += ` <span class="muted">· ${d.direction === 'arriving' ? 'Arriving' : 'Departing'}</span>`;
     const flight = d.type === 'airport' ? esc([d.airline, d.flight].filter(Boolean).join(' ')) : '';
     const trip = [
@@ -581,10 +686,21 @@ function initBooking(root: HTMLElement) {
 
   /* ---------- Errors & validation ---------- */
   function errEl(key: string) { return root.querySelector<HTMLElement>(`[data-err="${key}"]`); }
+  // Radio groups carry their error on every option as well as on the group: focus lands on an option,
+  // and screen readers read that option's own state and description, not the group's.
+  function markGroup(key: 'type' | 'vehicle', invalid: boolean) {
+    const group = root.querySelector<HTMLElement>(`[data-group="${key}"]`);
+    if (!group) return;
+    [group, ...Array.from(group.querySelectorAll<HTMLInputElement>('input[type="radio"]'))].forEach((el) => {
+      if (invalid) el.setAttribute('aria-invalid', 'true');
+      else el.removeAttribute('aria-invalid');
+      if (el !== group) setToken(el, 'aria-describedby', `err-${key}`, invalid);
+    });
+  }
   function clearError(key: string) {
     const el = errEl(key);
     if (el) { el.textContent = ''; el.classList.remove('is-shown'); }
-    if (key === 'type' || key === 'vehicle') root.querySelector(`[data-group="${key}"]`)?.removeAttribute('aria-invalid');
+    if (key === 'type' || key === 'vehicle') markGroup(key, false);
     else if (key === 'stops') stopsWrap.querySelectorAll('input').forEach((i) => i.removeAttribute('aria-invalid'));
     else input(key)?.removeAttribute('aria-invalid');
   }
@@ -636,11 +752,13 @@ function initBooking(root: HTMLElement) {
         el.classList.add('is-shown');
         if (!reduce) gsap.fromTo(el, { opacity: 0, y: -4 }, { opacity: 1, y: 0, duration: 0.5, ease: 'expo.out' });
       }
-      if (key === 'type' || key === 'vehicle') root.querySelector(`[data-group="${key}"]`)?.setAttribute('aria-invalid', 'true');
+      if (key === 'type' || key === 'vehicle') markGroup(key, true);
       else (mark || [focus]).forEach((m) => m?.setAttribute('aria-invalid', 'true'));
     });
 
     if (issues.length) {
+      // Focus (below) reads the first field and its message; this tells screen-reader users how many more there are.
+      announce_(issues.length === 1 ? 'One field needs your attention.' : `${issues.length} fields need your attention.`);
       const first = issues[0].focus;
       if (first) {
         first.focus({ preventScroll: true });
@@ -683,10 +801,10 @@ function initBooking(root: HTMLElement) {
     backBtn.tabIndex = step === 1 ? -1 : 0;
     backBtn.setAttribute('aria-hidden', String(step === 1));
     const final = step === stepEls.length;
-    nextLabel.textContent = final ? 'Request reservation' : step === 3 ? 'Review booking' : 'Continue';
+    nextLabel.textContent = final ? (fail.hidden ? 'Request reservation' : 'Try again') : step === 3 ? 'Review booking' : 'Continue';
     nextBtn.classList.toggle('is-final', final);
     nextBtn.classList.toggle('btn--lg', final);
-    hint.textContent = ['Takes about a minute', 'Every vehicle is chauffeur-driven', 'Your details stay private', 'A concierge confirms within minutes'][step - 1];
+    hint.textContent = ['Four quick steps', 'Every vehicle is chauffeur-driven', 'Your details stay private', 'A concierge confirms your ride'][step - 1];
   }
 
   function goTo(n: number, focusHeading = true) {
@@ -696,6 +814,7 @@ function initBooking(root: HTMLElement) {
     const dir = n > step ? 1 : -1;
     if (n === 2) updateVehicles(false);
     if (n === 4) review.innerHTML = reviewHTML(read(), true);
+    hideFail();
     step = n;
     maxStep = Math.max(maxStep, n);
     updateChrome();
@@ -772,7 +891,7 @@ function initBooking(root: HTMLElement) {
       const atEnd = t.selectionStart === t.value.length;
       if (atEnd && !(e as InputEvent).inputType?.startsWith('delete')) t.value = formatPhone(t.value);
     }
-    if (t.name === 'pax' || t.name === 'luggage') updateVehicles();
+    if (t.name === 'pax') updateVehicles();
     renderSummary();
     saveDraftSoon();
   });
@@ -861,7 +980,8 @@ function initBooking(root: HTMLElement) {
   }
   function clearDraft() { try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ } }
 
-  /* ---------- URL prefill (?type=&from=&to=&date=&time=&pax=&hours=&vehicle=) ---------- */
+  /* ---------- URL prefill (?type=&from=&to=&date=&time=&pax=&hours=&direction=&vehicle=) ---------- */
+  const PREFILL_KEYS = ['type', 'from', 'to', 'date', 'time', 'pax', 'hours', 'direction', 'vehicle'];
   function fromUrl(): Partial<BookingData> {
     const q = new URLSearchParams(location.search);
     const out: Partial<BookingData> = {};
@@ -872,7 +992,7 @@ function initBooking(root: HTMLElement) {
     const date = q.get('date'); if (date && /^\d{4}-\d{2}-\d{2}$/.test(date) && date >= todayISO()) out.date = date;
     const time = q.get('time'); if (time && /^\d{2}:\d{2}$/.test(time)) out.time = time;
     const pax = q.get('pax'); if (pax) out.pax = clampInt(pax, 1, 20, 2);
-    const hours = q.get('hours'); if (hours) out.hours = clampInt(hours, 2, 12, 3);
+    const hours = q.get('hours'); if (hours) out.hours = clampInt(hours, HOURS.min, HOURS.max, HOURS.fallback);
     if (out.type === 'airport') {
       // The URL contract has no required direction: honour ?direction= if present, otherwise
       // infer it (an airport in "to" means the guest is flying out).
@@ -891,9 +1011,10 @@ function initBooking(root: HTMLElement) {
 
   function hydrate(useDraft: boolean) {
     const url = fromUrl();
-    // A deep link (hero widget, service or fleet card) describes a new trip: keep only the guest's
-    // contact details from an older draft so routes and stops never mix.
-    const deepLink = !!(url.type || url.from || url.to);
+    // A deep link (hero widget, quick quote, service, area or fleet card, including vehicle-only
+    // ?vehicle= links) describes a new trip: keep only the guest's contact details from an older draft
+    // so routes, stops, party size and vehicles never mix.
+    const deepLink = Object.keys(url).length > 0;
     let draft = useDraft ? loadDraft() : null;
     if (draft && deepLink) {
       const { name, phone, email, contact } = draft;
@@ -907,6 +1028,18 @@ function initBooking(root: HTMLElement) {
     renderSummary();
     const meaningful = !deepLink && draft && (draft.from || draft.to || draft.name || draft.type);
     restore.hidden = !meaningful;
+    if (deepLink) {
+      // The link has done its job: drop its prefill parameters from the address bar (other parameters,
+      // such as utm_*, stay) and save the trip as the draft. A reload or a discarded mobile tab then
+      // restores everything entered since, instead of applying the same link again as a new trip.
+      try {
+        const q = new URLSearchParams(location.search);
+        PREFILL_KEYS.forEach((k) => q.delete(k));
+        const rest = q.toString();
+        history.replaceState(history.state, '', `${location.pathname}${rest ? `?${rest}` : ''}${location.hash}`);
+      } catch { /* keep the URL as it is */ }
+      saveDraft();
+    }
   }
 
   root.querySelector('[data-restart]')!.addEventListener('click', () => {
@@ -922,57 +1055,240 @@ function initBooking(root: HTMLElement) {
   });
 
   /* ---------- Submit ---------- */
-  async function submit() {
-    submitting = true;
-    submitErr.classList.remove('is-shown');
-    submitErr.textContent = '';
-    nextBtn.classList.add('is-loading');
-    nextBtn.setAttribute('aria-busy', 'true');
-    announce_('Sending your reservation request');
-    const data = read();
-    try {
-      const { reference } = await submitBooking(data);
-      track('booking_submit', { service_type: data.type, vehicle: data.vehicle, passengers: data.pax, hours: data.type === 'hourly' ? data.hours : undefined, round_trip: data.roundTrip, add_ons: data.addons.length });
-      clearDraft();
-      showSuccess(reference, data);
-    } catch {
-      submitting = false;
-      nextBtn.classList.remove('is-loading');
-      nextBtn.removeAttribute('aria-busy');
-      submitErr.textContent = `We couldn't send your request. Please try again or call ${site.phone}.`;
-      submitErr.classList.add('is-shown');
-    }
+  function setLoading(on: boolean) {
+    nextBtn.classList.toggle('is-loading', on);
+    if (on) nextBtn.setAttribute('aria-busy', 'true');
+    else nextBtn.removeAttribute('aria-busy');
   }
 
-  function showSuccess(reference: string, data: BookingData) {
-    success.querySelector<HTMLElement>('[data-ref]')!.textContent = reference;
-    const confirmBy = CONFIRM_BY[data.contact] || 'by text';
-    success.querySelector<HTMLElement>('[data-confirm-by]')!.textContent = confirmBy;
-    const confirmBy2 = success.querySelector<HTMLElement>('[data-confirm-by-2]');
-    if (confirmBy2) confirmBy2.textContent = confirmBy;
-    success.querySelector<HTMLElement>('[data-success-summary]')!.innerHTML = `<div class="bk-review">${reviewHTML(data, false)}</div>`;
+  async function submit() {
+    if (submitting) return;
+    submitting = true;
+    if (!fail.hidden) track('booking_retry', { reference });
+    hideFail();
+    setLoading(true);
+    announce_('Sending your reservation request');
+    const data = read();
+    reference ||= makeReference();
+    const fields = leadFields(data, reference);
+    const trap = (honeypot?.value ?? '').trim();
+    const pause = new Promise((r) => setTimeout(r, reduce ? 0 : 650)); // spinner floor: the hand-off never feels like a glitch
+
+    // Honeypot hit. Browser autofill or a password manager can fill a hidden field for a real guest, so a
+    // hit never gets the "Request received" screen (that would hide a lost booking behind a false
+    // confirmation). Nothing is sent to the endpoint; the guest gets "One last step" and can still text,
+    // email or call the request in. A bot simply stops here.
+    if (trap) {
+      await pause;
+      track('booking_handoff_shown', { reason: 'check', service_type: data.type, vehicle: data.vehicle, reference });
+      showOutcome('handoff', data);
+      return;
+    }
+
+    // Details for the `booking_submitted` conversion that submit.ts pushes on success.
+    setLayer({
+      booking_reference: reference,
+      booking_service_type: data.type,
+      booking_vehicle: data.vehicle,
+      booking_passengers: data.pax,
+      booking_hours: data.type === 'hourly' ? data.hours : undefined,
+      booking_round_trip: data.roundTrip,
+      booking_add_ons: data.addons.length,
+    });
+    const [result] = await Promise.all([submitLead('booking', { ...fields, company_website: '' }), pause]);
+
+    if (result.ok) {
+      clearDraft();
+      showOutcome('success', data);
+      return;
+    }
+    if (result.reason === 'no-endpoint') {
+      // Nothing was sent: the guest sends the prefilled request themselves. The draft stays until they do.
+      track('booking_handoff_shown', { reason: 'no-endpoint', service_type: data.type, vehicle: data.vehicle, reference });
+      showOutcome('handoff', data);
+      return;
+    }
+    submitting = false;
+    setLoading(false);
+    track('booking_submit_error', { reason: result.reason, status: result.status });
+    showFail(result.reason, result.status);
+  }
+
+  /* ---------- Delivery failure (network / rejected) ---------- */
+  // The main button becomes "Try again" while the notice shows, so there is one primary action, not two.
+  function showFail(reason: 'network' | 'rejected', status?: number) {
+    fail.hidden = false;
+    updateChrome();
+    // Fill the alert region after it is visible so screen readers announce it.
+    requestAnimationFrame(() => {
+      failTitle.textContent = 'We couldn’t send your request';
+      failMsg.textContent = reason === 'network'
+        ? `Check your connection and try again, or call us at ${site.phone}. Your details are still here.`
+        : `Our reservations system didn’t accept it${status ? ` (error ${status})` : ''}. Try again, or call us at ${site.phone}.`;
+      // A guest who scrolled up to re-read the review and pressed the sticky button must see why nothing happened.
+      const r = fail.getBoundingClientRect();
+      if (r.top < 80 || r.bottom > window.innerHeight - 120) smoothScrollTo(fail, -window.innerHeight / 3);
+    });
+    if (!reduce) gsap.fromTo(fail, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.6, ease: 'expo.out', clearProps: 'opacity,transform' });
+  }
+  function hideFail() {
+    if (fail.hidden) return;
+    fail.hidden = true;
+    failTitle.textContent = '';
+    failMsg.textContent = '';
+    updateChrome();
+  }
+
+  /* ---------- End states ---------- */
+  function showOutcome(kind: 'success' | 'handoff', data: BookingData) {
+    const panel = kind === 'success' ? success : handoff;
+    panel.querySelectorAll<HTMLElement>('[data-ref]').forEach((el) => { el.textContent = reference; });
+    panel.querySelector<HTMLElement>('[data-outcome-summary]')!.innerHTML = `<div class="bk-review">${reviewHTML(data, false)}</div>`;
+
+    if (kind === 'success') {
+      const confirmBy = CONFIRM_BY[data.contact] || 'by text';
+      panel.querySelectorAll<HTMLElement>('[data-confirm-by], [data-confirm-by-2]').forEach((el) => { el.textContent = confirmBy; });
+    } else {
+      prepareHandoff(data);
+    }
+
+    const announcement = kind === 'success'
+      ? `Request received. Reference ${reference}.`
+      : `One last step. Your request ${reference} has not been sent yet. Text, email or call it in.`;
 
     const reveal = () => {
       form.hidden = true;
       summary.hidden = true;
-      if (head) head.hidden = true;
+      // The page h1 stays in the accessibility tree (visually hidden) above the outcome's own heading.
+      head?.classList.add('is-collapsed');
       layout.classList.add('is-complete');
-      success.hidden = false;
+      panel.hidden = false;
       if (window.lenis) window.lenis.scrollTo(0, { immediate: true });
       else window.scrollTo(0, 0);
-      success.focus({ preventScroll: true });
-      announce_(`Request received. Reference ${reference}.`);
+      panel.focus({ preventScroll: true });
+      announce_(announcement);
       if (reduce) return;
-      const paths = Array.from(success.querySelectorAll<SVGGeometryElement>('[data-draw]'));
+      const paths = Array.from(panel.querySelectorAll<SVGGeometryElement>('[data-draw]'));
       paths.forEach((p) => { const len = p.getTotalLength(); gsap.set(p, { strokeDasharray: len, strokeDashoffset: len }); });
       const tl = gsap.timeline();
-      tl.fromTo(success, { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 1, ease: 'expo.out' })
+      tl.fromTo(panel, { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 1, ease: 'expo.out', clearProps: 'opacity,transform' })
         .to(paths[0], { strokeDashoffset: 0, duration: 1.1, ease: 'expo.inOut' }, 0.1)
-        .to(paths[1], { strokeDashoffset: 0, duration: 0.7, ease: 'expo.out' }, 0.75)
-        .fromTo(success.querySelectorAll('[data-s-anim]'), { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 1, ease: 'expo.out', stagger: 0.08 }, 0.5);
+        .to(paths.slice(1), { strokeDashoffset: 0, duration: 0.8, ease: 'expo.out', stagger: 0.12 }, 0.75)
+        .fromTo(panel.querySelectorAll('[data-s-anim]'), { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 1, ease: 'expo.out', stagger: 0.08 }, 0.5);
     };
     if (reduce) { reveal(); return; }
     gsap.to([form, summary], { opacity: 0, y: -16, duration: 0.45, ease: 'power2.in', onComplete: reveal });
+  }
+
+  /* ---------- "One last step": text, email or call the request in ---------- */
+  let plainText = '';
+  // Prefilled sms:/mailto: links stay under about 2,000 characters, where Windows protocol handlers and
+  // Outlook truncate or reject them. A long request shortens only its Requests line; Copy details always
+  // carries the full text.
+  const LINK_MAX = 1900;
+  function fitLink(build: (text: string) => string, data: BookingData) {
+    let href = build(plainText);
+    const chars = Array.from(data.requests); // code points, so an emoji is never split (encodeURIComponent would throw)
+    let n = chars.length;
+    while (href.length > LINK_MAX && n > 0) {
+      n = Math.max(0, n - Math.max(20, Math.ceil((href.length - LINK_MAX) / 3)));
+      const requests = n ? `${chars.slice(0, n).join('').trimEnd()}… (shortened to fit this message)` : 'Too long for this message, sent separately';
+      href = build(messageText({ ...data, requests }, reference));
+    }
+    return href;
+  }
+  function prepareHandoff(data: BookingData) {
+    plainText = messageText(data, reference);
+    const sms = handoff.querySelector<HTMLAnchorElement>('[data-send="sms"]')!;
+    const email = handoff.querySelector<HTMLAnchorElement>('[data-send="email"]')!;
+    // "?&body=" opens prefilled on both iOS and Android.
+    sms.href = fitLink((t) => `${site.smsHref}?&body=${encodeURIComponent(t)}`, data);
+    const subject = encodeURIComponent(`Reservation request ${reference}`);
+    email.href = fitLink((t) => `mailto:${site.email}?subject=${subject}&body=${encodeURIComponent(t.replace(/\n/g, '\r\n'))}`, data);
+    // Lead with the likeliest channel for this device: Messages on phones, email on computers. Computers
+    // often have no Messages app (sms: does nothing on most Windows/Linux machines), so text goes last there.
+    const touch = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+    sms.classList.toggle('is-primary', touch);
+    email.classList.toggle('is-primary', !touch);
+    // Reorder the list itself (not with CSS order) so the Tab order matches what is on screen.
+    const list = handoff.querySelector<HTMLElement>('[data-send-list]');
+    if (list) {
+      const order = touch ? ['sms', 'email', 'call'] : ['email', 'call', 'sms'];
+      order.forEach((k) => { const li = list.querySelector(`[data-send="${k}"]`)?.closest('li'); if (li) list.append(li); });
+    }
+    const smsNote = handoff.querySelector<HTMLElement>('[data-sms-note]');
+    // The number never splits across lines (no-break space and hyphen).
+    const phone = site.phone.replace(/ /g, '\u00a0').replace(/-/g, '\u2011');
+    if (smsNote) smsNote.textContent = touch ? 'Opens Messages, ready to send' : `Send from your phone to ${phone}`;
+  }
+
+  handoff.querySelectorAll<HTMLAnchorElement>('[data-send]').forEach((a) => {
+    a.addEventListener('click', () => {
+      track('booking_handoff', { channel: a.dataset.send, reference });
+      clearDraft();
+    });
+  });
+
+  const copyBtn = handoff.querySelector<HTMLButtonElement>('[data-copy]')!;
+  const copyLabel = handoff.querySelector<HTMLElement>('[data-copy-label]')!;
+  const copyStatus = handoff.querySelector<HTMLElement>('[data-copy-status]')!;
+  let copyTimer = 0;
+  async function copyText(text: string) {
+    if (navigator.clipboard?.writeText) return navigator.clipboard.writeText(text);
+    // Older browsers: a temporary off-screen textarea.
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.cssText = 'position:fixed;top:0;left:-9999px;opacity:0';
+    document.body.append(ta);
+    ta.select();
+    const ok = document.execCommand('copy');
+    ta.remove();
+    copyBtn.focus();
+    if (!ok) throw new Error('copy failed');
+  }
+  copyBtn.addEventListener('click', async () => {
+    try {
+      await copyText(plainText);
+      copyLabel.textContent = 'Copied';
+      copyStatus.textContent = 'Request details copied';
+      track('booking_handoff', { channel: 'copy', reference });
+    } catch {
+      copyLabel.textContent = 'Copy unavailable';
+    }
+    clearTimeout(copyTimer);
+    copyTimer = window.setTimeout(() => { copyLabel.textContent = 'Copy details'; copyStatus.textContent = ''; }, 2400);
+  });
+
+  // Back to the review step to change something; the same reference is kept.
+  handoff.querySelector<HTMLButtonElement>('[data-handoff-edit]')!.addEventListener('click', () => {
+    handoff.hidden = true;
+    form.hidden = false;
+    summary.hidden = false;
+    head?.classList.remove('is-collapsed');
+    layout.classList.remove('is-complete');
+    submitting = false;
+    setLoading(false);
+    gsap.set([form, summary], { clearProps: 'opacity,transform' });
+    if (window.lenis) window.lenis.scrollTo(0, { immediate: true });
+    else window.scrollTo(0, 0);
+    stepEls[step - 1].querySelector<HTMLElement>('.bk-step__title')?.focus({ preventScroll: true });
+    if (!reduce) gsap.fromTo([form, summary], { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.7, ease: 'expo.out', stagger: 0.06, clearProps: 'opacity,transform' });
+    syncSummaryScroll();
+    track('booking_handoff_edit', { reference });
+  });
+
+  /* ---------- Optional address suggestions (Google Places) ---------- */
+  // Loaded on the first focus of an address field, and only when a Maps key is configured.
+  if (MAPS_KEY) {
+    const start = (e: FocusEvent) => {
+      if (!(e.target as HTMLElement).classList?.contains('bk-route__input')) return;
+      routeEl.removeEventListener('focusin', start);
+      import('../components/book/places')
+        .then(({ initPlaces }) => initPlaces(routeEl, MAPS_KEY))
+        .catch((err) => console.warn('[booking] Address suggestions unavailable:', err));
+    };
+    routeEl.addEventListener('focusin', start);
   }
 
   /* ---------- Boot ---------- */
@@ -982,10 +1298,25 @@ function initBooking(root: HTMLElement) {
   input('date')!.addEventListener('change', () => { const v = input('date')!.value; input('returnDate')!.min = v || today; });
   hydrate(true);
   relabelStops();
-  // Warm the vehicle images while the guest fills step 1, so step 2 appears fully loaded.
-  const warm = () => root.querySelectorAll<HTMLImageElement>('.bk-vehicle img').forEach((img) => { img.loading = 'eager'; });
-  if (document.readyState === 'complete') setTimeout(warm, 1200);
-  else window.addEventListener('load', () => setTimeout(warm, 1200), { once: true });
+  // Warm the step 2 photos only once the guest shows intent (types a route, or reaches for Continue), or
+  // when the route arrived prefilled, so step 2 appears fully loaded without every step 1 visit paying
+  // for six photos. Never on Save-Data or slow connections: there they load when step 2 is shown.
+  const conn = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+  if (!conn?.saveData && !/(^|-)2g|3g/.test(conn?.effectiveType ?? '')) {
+    let warmed = false;
+    const warm = () => {
+      if (warmed) return;
+      warmed = true;
+      root.querySelectorAll<HTMLImageElement>('.bk-vehicle img').forEach((img) => { img.loading = 'eager'; });
+    };
+    routeEl.addEventListener('input', warm, { once: true });
+    (['pointerenter', 'focus', 'touchstart'] as const).forEach((ev) => nextBtn.addEventListener(ev, warm, { once: true, passive: true }));
+    const { from, to, type } = read();
+    if (from && (to || type === 'hourly')) {
+      if (document.readyState === 'complete') setTimeout(warm, 1200);
+      else window.addEventListener('load', () => setTimeout(warm, 1200), { once: true });
+    }
+  }
   updateChrome();
   gsap.set(progFill, { scaleX: 0 });
 }

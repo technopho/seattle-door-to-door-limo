@@ -1,0 +1,79 @@
+---
+// Mini route map: the SeaTac hub and a dashed route to the highlighted city, framed to fit that
+// route, with any other service-area cities that fall inside the frame. Positions come from the
+// real lat/lng in site.ts. Decorative (aria-hidden): the surrounding copy states city and ETA.
+import { areas, hub } from '../../data/site';
+
+interface Props {
+  /** Highlighted city (site.ts areas[].slug). Omit to frame the whole network. */
+  slug?: string;
+  class?: string;
+}
+const { slug, class: cls } = Astro.props;
+
+const VBW = 100;
+const VBH = 110;
+const M = 20; // inner margin, viewBox units
+const KM = 111; // km per degree of latitude
+const cosLat = Math.cos((47.6 * Math.PI) / 180);
+const xy = (p: { lat: number; lng: number }) => ({ x: p.lng * cosLat * KM, y: -p.lat * KM });
+const r1 = (n: number) => Math.round(n * 10) / 10;
+
+const target = areas.find((a) => a.slug === slug);
+const focus = target ? [hub, target] : [hub, ...areas];
+const fx = focus.map((p) => xy(p).x);
+const fy = focus.map((p) => xy(p).y);
+const minX = Math.min(...fx), maxX = Math.max(...fx), minY = Math.min(...fy), maxY = Math.max(...fy);
+const scale = Math.min((VBW - M * 2) / Math.max(maxX - minX, 0.001), (VBH - M * 2) / Math.max(maxY - minY, 0.001), 3.6);
+const cx = (minX + maxX) / 2;
+const cy = (minY + maxY) / 2;
+const P = (p: { lat: number; lng: number }) => {
+  const q = xy(p);
+  return { x: r1(VBW / 2 + (q.x - cx) * scale), y: r1(VBH / 2 + (q.y - cy) * scale) };
+};
+const inView = (p: { x: number; y: number }) => p.x > -6 && p.x < VBW + 6 && p.y > -6 && p.y < VBH + 6;
+
+const h = P(hub);
+const t = target ? P(target) : null;
+const others = areas.filter((a) => a.slug !== slug).map(P).filter(inView);
+let d = '';
+if (t) {
+  const dx = t.x - h.x;
+  const dy = t.y - h.y;
+  const len = Math.hypot(dx, dy) || 1;
+  const bend = Math.min(14, len * 0.22);
+  d = `M${h.x} ${h.y} Q${r1((h.x + t.x) / 2 - (dy / len) * bend)} ${r1((h.y + t.y) / 2 + (dx / len) * bend)} ${t.x} ${t.y}`;
+}
+---
+<svg class:list={['rg', cls]} viewBox={`0 0 ${VBW} ${VBH}`} aria-hidden="true" focusable="false">
+  {others.map((p) => <circle class="rg__dot" cx={p.x} cy={p.y} r="2.6" />)}
+  {d && <path class="rg__route" d={d} />}
+  <circle class="rg__hub-ring" cx={h.x} cy={h.y} r="6.5" />
+  <circle class="rg__hub" cx={h.x} cy={h.y} r="2.8" />
+  {t && (
+    <g>
+      <circle class="rg__halo" cx={t.x} cy={t.y} r="9" />
+      <circle class="rg__pin" cx={t.x} cy={t.y} r="4" />
+    </g>
+  )}
+</svg>
+
+<style>
+  .rg { display: block; width: 100%; height: 100%; overflow: hidden; }
+  .rg__dot { fill: rgb(var(--fg-rgb) / 0.24); }
+  .rg__route {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-dasharray: 2.5 3.5;
+    animation: rg-march 2.4s linear infinite;
+    animation-play-state: var(--rg-play, paused);
+  }
+  .rg__hub-ring { fill: none; stroke: rgb(var(--fg-rgb) / 0.35); stroke-width: 1; }
+  .rg__hub { fill: var(--text); }
+  .rg__halo { fill: rgb(var(--accent-rgb) / 0.14); stroke: rgb(var(--accent-rgb) / 0.4); stroke-width: 0.9; }
+  .rg__pin { fill: var(--accent); }
+  @keyframes rg-march { to { stroke-dashoffset: -60; } }
+  @media (prefers-reduced-motion: reduce) { .rg__route { animation: none; } }
+</style>

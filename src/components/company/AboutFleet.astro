@@ -1,0 +1,190 @@
+---
+import Icon from '../Icon.astro';
+import { fleet } from '../../data/site';
+import { meta, cropStyle } from '../fleet/fleetMeta';
+
+// Smallest to largest, so the list reads like a ladder of party sizes.
+const vehicles = [...fleet].sort((a, b) => a.passengers - b.passengers).map((v) => ({
+  ...v,
+  alt: meta[v.id]?.alt ?? v.name,
+  position: meta[v.id]?.position ?? '50% 50%',
+  crop: cropStyle(v.id),
+}));
+const first = vehicles.findIndex((v) => v.id === 'escalade');
+const active = first >= 0 ? first : 0;
+const pad = (n: number) => String(n).padStart(2, '0');
+---
+<section class="section fl surface-2" aria-labelledby="fl-title" data-fl>
+  <div class="container fl__grid">
+    <div class="fl__intro">
+      <div class="fl__copy">
+        <p class="eyebrow" data-reveal="fade">The fleet</p>
+        <h2 id="fl-title" data-split>Sedan to coach. <em>One standard.</em></h2>
+        <p class="lead" data-reveal data-delay="0.15">Choose by party size and occasion: a sedan for a client dinner, the Escalade when the family and the luggage ride together, the stretch for a big night out, a Sprinter when the whole team travels as one.</p>
+        <a href="/fleet/" class="btn btn--ghost fl__all" data-reveal data-delay="0.25">Explore the fleet <Icon name="arrow" /></a>
+      </div>
+
+      <div class="fl__frame" aria-hidden="true" data-reveal="scale">
+        {vehicles.map((v, i) => (
+          <span class:list={['fl__img', i === active && 'is-active']} data-fl-img={v.id}>
+            <span class:list={['fl__crop', v.crop && 'has-crop']} style={v.crop}>
+              <img src={v.image} alt="" width="1200" height="800" loading="lazy" decoding="async" style={`object-position:${v.position}`} />
+            </span>
+          </span>
+        ))}
+        <span class="fl__frame-tag" data-theme="dark"><span data-fl-cat>{vehicles[active].category}</span></span>
+      </div>
+    </div>
+
+    <ol class="fl__list" role="list" data-stagger="0.06">
+      {vehicles.map((v, i) => (
+        <li>
+          <a href={`/fleet/#${v.id}`} class:list={['fl__row', i === active && 'is-active']} data-fl-row={v.id} data-cat={v.category}>
+            <span class="fl__thumb" aria-hidden="true">
+              <span class:list={['fl__crop', v.crop && 'has-crop']} style={v.crop}>
+                <img src={v.image} alt="" width="160" height="110" loading="lazy" decoding="async" style={`object-position:${v.position}`} />
+              </span>
+            </span>
+            <span class="fl__idx" aria-hidden="true">{pad(i + 1)}</span>
+            <span class="fl__name">
+              <span class="fl__model">{v.name}</span>
+              <span class="fl__cat">{v.category} · {v.bestFor}</span>
+            </span>
+            <span class="fl__pax"><Icon name="users" /> {v.passengers}<span class="sr-only"> passengers</span></span>
+            <span class="fl__go" aria-hidden="true"><Icon name="arrow-up-right" /></span>
+          </a>
+        </li>
+      ))}
+    </ol>
+  </div>
+</section>
+
+<style>
+  .fl__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+    gap: clamp(2.5rem, 6vw, 6rem);
+    align-items: start;
+  }
+  .fl__intro { display: grid; gap: clamp(2rem, 3.4vw, 2.6rem); }
+  @media (min-width: 981px) { .fl__intro { position: sticky; top: calc(var(--header-h) + 1.5rem); } }
+  .fl__copy { display: grid; gap: 1.4rem; justify-items: start; }
+  .fl__copy h2 :global(.split-line) { vertical-align: top; }
+  .fl__copy h2 em { white-space: nowrap; }
+  .fl__copy .lead { max-width: 44ch; }
+
+  /* Preview frame: stacked photos, the hovered/focused vehicle fades up */
+  .fl__frame {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 16 / 10;
+    border-radius: var(--radius-l);
+    background: var(--bg-4);
+    box-shadow: var(--card-shadow);
+  }
+  .fl__img { position: absolute; inset: 0; opacity: 0; transform: scale(1.06); transition: opacity 0.7s var(--ease-out), transform 1.2s var(--ease-out); }
+  .fl__img.is-active { opacity: 1; transform: none; }
+  .fl__crop { display: block; width: 100%; height: 100%; overflow: hidden; }
+  .fl__crop img { width: 100%; height: 100%; object-fit: cover; }
+  /* Editorial crop (fleetMeta), applied on a wrapper so reveal animations on the <img> never undo it:
+     frames only the detail, e.g. the S550 cabin without the person in the source photo. */
+  .fl__crop.has-crop { transform: scale(var(--crop-s, 1)); transform-origin: var(--crop-o, 50% 50%); }
+  .fl__crop.has-crop img { filter: grayscale(0.25) contrast(1.05) brightness(0.92); }
+  .fl__frame-tag {
+    position: absolute;
+    left: 1rem;
+    bottom: 1rem;
+    padding: 0.45rem 0.85rem;
+    border-radius: 999px;
+    font-size: 0.64rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    background: rgb(var(--bg-rgb) / 0.5);
+    border: 1px solid var(--line-strong);
+    /* -webkit- first: lightningcss drops the standard declaration when it follows the prefixed one */
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+  }
+
+  /* ---------- List ---------- */
+  .fl__list { display: grid; border-top: 1px solid var(--line-strong); }
+  .fl__list > li { border-bottom: 1px solid var(--line); }
+  .fl__row {
+    position: relative;
+    display: grid;
+    grid-template-columns: 2.6rem minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 1.2rem;
+    min-height: 104px;
+    padding: 1.2rem 0.4rem;
+    transition: padding 0.6s var(--ease-out);
+  }
+  .fl__thumb { display: none; }
+  .fl__idx { font-size: 0.78rem; font-weight: 500; color: var(--muted); font-variant-numeric: tabular-nums; transition: color 0.4s; }
+  .fl__name { display: grid; gap: 0.3rem; min-width: 0; }
+  .fl__model {
+    font-family: var(--font-display);
+    font-size: clamp(1.35rem, 2.2vw, 1.95rem);
+    font-weight: 500;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    color: var(--text);
+    transition: color 0.4s;
+  }
+  .fl__cat { font-size: 0.8rem; color: var(--muted); line-height: 1.4; }
+  .fl__pax { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; font-weight: 600; color: var(--text-2); font-variant-numeric: tabular-nums; }
+  .fl__pax :global(svg) { width: 16px; height: 16px; color: var(--accent); }
+  .fl__go {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1px solid var(--line-strong);
+    transition: background 0.4s var(--ease-out), color 0.4s, border-color 0.4s, transform 0.5s var(--ease-out);
+  }
+  .fl__go :global(svg) { width: 15px; height: 15px; }
+  .fl__row:hover, .fl__row:focus-visible { padding-left: 1rem; }
+  .fl__row:hover .fl__model, .fl__row.is-active .fl__model { color: var(--accent); }
+  .fl__row:hover .fl__idx, .fl__row.is-active .fl__idx { color: var(--accent); }
+  .fl__row:hover .fl__go { background: var(--cta-bg); color: var(--cta-fg); border-color: transparent; }
+  .fl__row:focus-visible { outline-offset: -2px; border-radius: 12px; }
+
+  @media (max-width: 980px) {
+    .fl__grid { grid-template-columns: 1fr; }
+    .fl__frame { display: none; }
+    .fl__row { grid-template-columns: 76px minmax(0, 1fr) auto; gap: 1rem; min-height: 84px; padding: 0.8rem 0; }
+    .fl__row:hover, .fl__row:focus-visible { padding-left: 0; }
+    .fl__row.is-active .fl__model, .fl__row.is-active .fl__idx { color: var(--text); }
+    .fl__thumb { display: block; width: 76px; height: 56px; overflow: hidden; border-radius: 10px; background: var(--bg-4); }
+    .fl__idx, .fl__go { display: none; }
+    .fl__model { font-size: 1.2rem; }
+  }
+  @media (max-width: 420px) {
+    .fl__cat { font-size: 0.74rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .fl__img { transform: none; }
+  }
+</style>
+
+<script>
+  // Hover/focus a vehicle row to swap the preview frame (desktop only; touch shows thumbnails).
+  const root = document.querySelector<HTMLElement>('[data-fl]');
+  if (root) {
+    const rows = Array.from(root.querySelectorAll<HTMLAnchorElement>('[data-fl-row]'));
+    const imgs = Array.from(root.querySelectorAll<HTMLElement>('[data-fl-img]'));
+    const cat = root.querySelector<HTMLElement>('[data-fl-cat]');
+    const show = (id: string) => {
+      imgs.forEach((el) => el.classList.toggle('is-active', el.dataset.flImg === id));
+      rows.forEach((r) => r.classList.toggle('is-active', r.dataset.flRow === id));
+      const row = rows.find((r) => r.dataset.flRow === id);
+      if (cat && row?.dataset.cat) cat.textContent = row.dataset.cat;
+    };
+    rows.forEach((r) => {
+      r.addEventListener('mouseenter', () => show(r.dataset.flRow!));
+      r.addEventListener('focus', () => show(r.dataset.flRow!));
+    });
+  }
+</script>

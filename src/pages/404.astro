@@ -1,0 +1,182 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import { site } from '../data/site';
+
+const title = 'Page Not Found | Seattle Door to Door Limo';
+const description = `The page you were looking for has moved or no longer exists. Head back home, reserve a ride or call Seattle Door to Door Limo 24/7 at ${site.phone}.`;
+
+// No footer CTA band (footerCta={false}): the hero CTAs and this routes card already offer booking and calling.
+const routes = [
+  { href: '/', icon: 'pin', label: 'Home', sub: 'Start again from the homepage' },
+  { href: '/book/', icon: 'calendar', label: 'Reserve a ride', sub: 'Book online in four quick steps' },
+  { href: '/fleet/', icon: 'car', label: 'The fleet', sub: 'Sedans, SUVs, limousines and Sprinters' },
+  { href: '/services/', icon: 'route', label: 'Services', sub: 'Airport, corporate, weddings and more' },
+  { href: '/contact/', icon: 'chat', label: 'Contact', sub: 'Call, text or email, 24/7' },
+];
+---
+<Base title={title} description={description} noindex footerCta={false}>
+  <section class="nf" aria-labelledby="nf-title">
+    <!-- Decorative street grid with a route that runs out -->
+    <svg class="nf__map" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
+      <g class="nf__streets" transform="rotate(-14 720 450)">
+        {Array.from({ length: 13 }).map((_, i) => <line x1="-300" x2="1800" y1={i * 110 - 250} y2={i * 110 - 250} />)}
+        {Array.from({ length: 19 }).map((_, i) => <line y1="-400" y2="1300" x1={i * 120 - 300} x2={i * 120 - 300} />)}
+        <path class="nf__avenue" d="M-300 820 C 200 760 520 900 880 700 S 1500 520 1800 560" />
+      </g>
+      <!-- The route climbs the open gutter between the copy and the card, then stops at a road-end bar -->
+      <path class="nf__route" pathLength="1" d="M 600 812 C 690 812 770 770 792 690 C 812 615 808 520 790 440 C 778 384 770 346 768 318" />
+      <path class="nf__tail" d="M 768 318 L 766 292" />
+      <circle class="nf__start" cx="600" cy="812" r="8" />
+      <circle class="nf__start-ring" cx="600" cy="812" r="19" />
+      <g transform="translate(765 278) rotate(-4)">
+        <g class="nf__end">
+          <circle class="nf__end-halo" r="30" />
+          <path class="nf__end-bar" d="M -21 0 H 21" />
+        </g>
+      </g>
+    </svg>
+
+    <div class="container nf__grid">
+      <div class="nf__copy">
+        <p class="eyebrow" data-reveal="fade">Error 404 · Off route</p>
+        <p class="nf__code" aria-hidden="true">404</p>
+        <h1 id="nf-title" class="nf__title" data-split>This road doesn’t lead <em>anywhere.</em></h1>
+        <p class="lead" data-reveal data-delay="0.2">The page you were looking for has moved or no longer exists. Let’s get you back on route.</p>
+        <div class="nf__ctas" data-reveal data-delay="0.3">
+          <a href="/" class="btn btn--gold btn--lg" data-magnetic>Back to home <Icon name="arrow" /></a>
+          <a href={site.phoneHref} class="btn btn--ghost btn--lg" data-cursor="Call"><Icon name="phone" /> {site.phone}</a>
+        </div>
+      </div>
+
+      <nav class="nf__routes glass" aria-labelledby="nf-routes-title" data-reveal data-delay="0.2">
+        <p class="nf__label" id="nf-routes-title">Suggested routes</p>
+        <ol class="nf__list" role="list">
+          {routes.map((r) => (
+            <li>
+              <a href={r.href} class="nf__route-link">
+                <span class="nf__icon" aria-hidden="true"><Icon name={r.icon} /></span>
+                <span class="nf__text">
+                  <span class="nf__name">{r.label}</span>
+                  <span class="nf__sub">{r.sub}</span>
+                </span>
+                <span class="nf__go" aria-hidden="true"><Icon name="arrow" /></span>
+              </a>
+            </li>
+          ))}
+        </ol>
+      </nav>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .nf {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    align-items: center;
+    min-height: min(100vh, 980px);
+    padding: calc(var(--header-h) + clamp(2.5rem, 6vw, 4.5rem)) 0 clamp(4rem, 8vw, 6.5rem);
+    overflow: clip;
+  }
+
+  /* ---------- Map ---------- */
+  .nf__map { position: absolute; inset: 0; z-index: -1; width: 100%; height: 100%; }
+  .nf__streets line { stroke: var(--line); stroke-width: 1; }
+  .nf__avenue { fill: none; stroke: rgb(var(--accent-rgb) / 0.09); stroke-width: 26; stroke-linecap: round; }
+  .nf__route { fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; animation: nf-draw 2.4s var(--ease-out) 0.3s forwards; }
+  .nf__tail { fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-linecap: round; stroke-dasharray: 2 10; opacity: 0; animation: nf-fade 0.8s ease 2.1s forwards; }
+  .nf__start { fill: var(--accent); }
+  .nf__start-ring { fill: none; stroke: rgb(var(--accent-rgb) / 0.35); stroke-width: 1.5; }
+  .nf__end { opacity: 0; transform-box: fill-box; transform-origin: center; animation: nf-pop 0.7s var(--ease-out) 2.5s forwards; }
+  .nf__end-halo { fill: rgb(var(--accent-rgb) / 0.07); stroke: rgb(var(--accent-rgb) / 0.22); stroke-width: 1; }
+  .nf__end-bar { fill: none; stroke: var(--accent); stroke-width: 5; stroke-linecap: round; opacity: 0.85; }
+  @keyframes nf-draw { to { stroke-dashoffset: 0; } }
+  @keyframes nf-fade { to { opacity: 0.9; } }
+  @keyframes nf-pop { from { opacity: 0; transform: scale(0.4); } to { opacity: 1; transform: none; } }
+  /* Fade the map toward the copy so the headline always sits on a clean field */
+  .nf::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(70% 70% at 22% 55%, var(--bg) 0%, rgb(var(--bg-rgb) / 0.88) 45%, rgb(var(--bg-rgb) / 0) 80%),
+      linear-gradient(180deg, var(--bg) 0%, rgb(var(--bg-rgb) / 0) 22%, rgb(var(--bg-rgb) / 0) 80%, var(--bg) 100%);
+  }
+
+  /* ---------- Content ---------- */
+  .nf__grid {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.85fr);
+    gap: clamp(2.5rem, 6vw, 6rem);
+    align-items: center;
+  }
+  .nf__copy { display: grid; gap: 1.4rem; justify-items: start; }
+  .nf__code {
+    font-family: var(--font-display);
+    font-size: clamp(5.5rem, 15vw, 12.5rem);
+    font-weight: 300;
+    line-height: 0.8;
+    letter-spacing: -0.06em;
+    /* A numeral that fades out like a road into the distance (filled, so variable-font overlaps never show) */
+    color: transparent;
+    background: linear-gradient(180deg, rgb(var(--accent-rgb) / 0.5) 0%, rgb(var(--accent-rgb) / 0.06) 92%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    padding-bottom: 0.04em;
+    margin: 0.4rem 0 0 -0.04em;
+    user-select: none;
+  }
+  .nf__title { font-size: var(--fs-page-h1); max-width: 13ch; line-height: 1.02; letter-spacing: -0.038em; }
+  .nf__title :global(.split-line) { vertical-align: top; }
+  .nf__copy .lead { max-width: 44ch; }
+  .nf__ctas { display: flex; flex-wrap: wrap; gap: 0.8rem; margin-top: 0.4rem; }
+
+  .nf__routes { padding: clamp(1rem, 2.2vw, 1.5rem); border-radius: var(--radius-l); }
+  .nf__label { padding: 0.4rem 0.7rem 0.9rem; font-size: 0.64rem; font-weight: 600; letter-spacing: 0.24em; text-transform: uppercase; color: var(--accent); }
+  .nf__list li + li { border-top: 1px solid var(--line); }
+  .nf__route-link {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 1rem;
+    min-height: 68px;
+    padding: 0.75rem 0.7rem;
+    border-radius: 12px;
+    transition: background 0.4s var(--ease-out);
+  }
+  .nf__route-link:hover { background: rgb(var(--fg-rgb) / 0.04); }
+  .nf__icon { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--line-strong); color: var(--accent); transition: background 0.4s, color 0.4s, border-color 0.4s; }
+  .nf__icon :global(svg) { width: 18px; height: 18px; }
+  .nf__route-link:hover .nf__icon { background: var(--cta-bg); color: var(--cta-fg); border-color: transparent; }
+  .nf__text { display: grid; gap: 0.1rem; min-width: 0; }
+  .nf__name { font-family: var(--font-display); font-size: 1.15rem; font-weight: 500; letter-spacing: -0.02em; color: var(--text); }
+  .nf__sub { font-size: 0.8rem; color: var(--muted); }
+  .nf__go { color: var(--muted); transition: transform 0.4s var(--ease-out), color 0.4s; }
+  .nf__go :global(svg) { width: 16px; height: 16px; }
+  .nf__route-link:hover .nf__go { transform: translateX(3px); color: var(--accent); }
+
+  @media (max-width: 980px) {
+    .nf { min-height: 0; }
+    .nf__grid { grid-template-columns: 1fr; }
+    .nf__map { opacity: 0.7; }
+    /* Stacked layout: keep only the faint street grid behind the copy */
+    .nf__route, .nf__tail, .nf__start, .nf__start-ring, .nf__end { display: none; }
+  }
+  @media (max-width: 640px) {
+    .nf { padding-top: calc(var(--header-h) + 1.5rem); }
+    .nf__ctas { display: grid; width: 100%; }
+    .nf__ctas .btn { width: 100%; }
+    .nf__routes { margin-inline: -0.35rem; padding: 0.6rem 0.4rem; border-radius: var(--radius); }
+    .nf__route-link { gap: 0.8rem; padding: 0.6rem 0.5rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .nf__route { stroke-dashoffset: 0; animation: none; }
+    .nf__tail { opacity: 0.9; animation: none; }
+    .nf__end { opacity: 1; animation: none; }
+  }
+</style>

@@ -1,0 +1,24 @@
+---
+// Visible breadcrumb trail for page-themed (non-hero) company pages.
+// Pair with breadcrumbs() from src/lib/seo.ts for the JSON-LD version.
+interface Props { items: { label: string; href?: string }[]; class?: string }
+const { items, class: cls } = Astro.props;
+---
+<nav class:list={['crumbs', cls]} aria-label="Breadcrumb">
+  <ol role="list">
+    {items.map((it, i) => (
+      <li>
+        {it.href && i < items.length - 1 ? <a href={it.href}>{it.label}</a> : <span aria-current="page">{it.label}</span>}
+      </li>
+    ))}
+  </ol>
+</nav>
+
+<style>
+  .crumbs ol { display: flex; align-items: center; flex-wrap: wrap; }
+  .crumbs li { display: inline-flex; align-items: center; font-size: 0.66rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-2); }
+  .crumbs li + li::before { content: ''; width: 1.1rem; height: 1px; margin: 0 0.8rem; background: var(--line-strong); }
+  .crumbs a { display: inline-flex; align-items: center; min-height: 44px; color: var(--muted); transition: color 0.35s var(--ease-out); }
+  .crumbs a:hover { color: var(--text); }
+  .crumbs span { display: inline-flex; align-items: center; min-height: 44px; }
+</style>

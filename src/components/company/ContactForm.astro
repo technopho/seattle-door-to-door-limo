@@ -1,0 +1,396 @@
+---
+import Icon from '../Icon.astro';
+import { site } from '../../data/site';
+
+// value = what /contact/?topic=<value> preselects; label = what the team receives.
+const topics = [
+  { value: 'reservation', label: 'Reservation' },
+  { value: 'corporate', label: 'Corporate account' },
+  { value: 'event', label: 'Wedding or event' },
+  { value: 'other', label: 'Other' },
+];
+---
+<section class="cf card" aria-labelledby="cf-title" data-cf>
+  <!-- ============ Form ============ -->
+  <div class="cf__pane" data-cf-pane="form">
+    <header class="cf__head">
+      <p class="eyebrow">Send a message</p>
+      <h2 id="cf-title" class="cf__title">How can we <em>help?</em></h2>
+      <p class="cf__intro">Quotes, corporate accounts, weddings, events or anything else. For a ride in the next few hours, calling is fastest.</p>
+    </header>
+
+    <!-- method="post": if the script hasn't loaded, a native submit must never serialize the guest's details into the URL. -->
+    <form class="cf__form" method="post" novalidate data-cf-form>
+      <div class="field">
+        <label for="cf-name">Your name</label>
+        <input class="input" id="cf-name" name="name" type="text" autocomplete="name" placeholder="First and last name" aria-describedby="cf-err-name" required />
+        <p class="cf__err" id="cf-err-name" data-cf-err="name"></p>
+      </div>
+
+      <div class="cf__pair">
+        <div class="field">
+          <label for="cf-phone">Phone</label>
+          <input class="input" id="cf-phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="(206) 555-0123" aria-describedby="cf-hint-reply cf-err-phone" />
+          <p class="cf__err" id="cf-err-phone" data-cf-err="phone"></p>
+        </div>
+        <div class="field">
+          <label for="cf-email">Email</label>
+          <input class="input" id="cf-email" name="email" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" aria-describedby="cf-hint-reply cf-err-email" />
+          <p class="cf__err" id="cf-err-email" data-cf-err="email"></p>
+        </div>
+      </div>
+      <p class="cf__hint" id="cf-hint-reply" data-cf-hint><Icon name="check" /> Add a phone number, an email or both, so we can reply.</p>
+
+      <div class="field">
+        <label for="cf-topic">Topic</label>
+        <select class="input" id="cf-topic" name="topic">
+          {topics.map((t, i) => <option value={t.value} selected={i === 0}>{t.label}</option>)}
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="cf-message">Message</label>
+        <textarea class="input" id="cf-message" name="message" rows="5" maxlength="2000" placeholder="Dates, pickup and drop-off, number of guests, or your question" aria-describedby="cf-err-message" required></textarea>
+        <p class="cf__err" id="cf-err-message" data-cf-err="message"></p>
+      </div>
+
+      <!-- Honeypot: hidden from people and assistive tech, bots fill it in. Neutral id/label and the
+           password-manager opt-outs keep browser autofill away from it; a hit never shows the "received"
+           pane (see submit()), so a false positive still reaches the business via the fallback. -->
+      <div class="cf__hp" aria-hidden="true">
+        <label for="cf-hp">Leave this field blank</label>
+        <input id="cf-hp" name="company_website" type="text" tabindex="-1" autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore data-form-type="other" />
+      </div>
+
+      <div class="cf__submit">
+        <button type="submit" class="btn btn--gold btn--lg cf__send" data-cf-send>
+          <span data-cf-send-label>Send message</span>
+          <Icon name="arrow" />
+          <span class="cf__spinner" aria-hidden="true"></span>
+        </button>
+        <p class="cf__privacy">We only use your details to reply. See our <a href="/privacy/">privacy policy</a>.</p>
+      </div>
+
+      <div class="cf__alert" data-cf-error hidden role="alert">
+        <p><strong>We couldn’t send your message.</strong> Please try again, or call us. We answer 24/7.</p>
+        <div class="cf__alert-actions">
+          <button type="button" class="btn btn--sm btn--gold" data-cf-retry>Try again</button>
+          <a href={site.phoneHref} class="btn btn--sm btn--ghost"><Icon name="phone" /> Call {site.phone}</a>
+        </div>
+      </div>
+      <p class="sr-only" aria-live="polite" data-cf-announce></p>
+    </form>
+  </div>
+
+  <!-- ============ Sent ============ -->
+  <div class="cf__pane cf__state" data-cf-pane="done" hidden tabindex="-1">
+    <span class="cf__mark" aria-hidden="true">
+      <svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="29" /><path d="M20 33l8 8 16-17" /></svg>
+    </span>
+    <p class="eyebrow">Message received</p>
+    <h2 class="cf__title" id="cf-done-title">Thank you<span data-cf-first></span>.</h2>
+    <p class="cf__intro">Our team will reply <span data-cf-reply-by>shortly</span>. If your ride is within the next few hours, please call <a href={site.phoneHref} class="cf__inline">{site.phone}</a> so we can act right away.</p>
+    <div class="cf__state-actions">
+      <a href="/book/" class="btn btn--gold" data-magnetic="0.2">Reserve online <Icon name="arrow" /></a>
+      <button type="button" class="btn btn--ghost" data-cf-reset>Send another message</button>
+    </div>
+  </div>
+
+  <!-- ============ No endpoint: hand the message to the visitor's own apps ============ -->
+  <div class="cf__pane cf__state" data-cf-pane="fallback" hidden tabindex="-1">
+    <p class="eyebrow">One last step</p>
+    <h2 class="cf__title" id="cf-fb-title">Send it <em>your way.</em></h2>
+    <p class="cf__intro">Your message is ready. Call and talk it through now, or send it by text or email with everything filled in.</p>
+    <pre class="cf__preview" data-cf-preview></pre>
+    <!-- Call and text reach the team directly, so they lead; email stays secondary. -->
+    <div class="cf__fb-actions">
+      <a href={site.phoneHref} class="cf__fb cf__fb--primary">
+        <span class="cf__fb-icon" aria-hidden="true"><Icon name="phone" /></span>
+        <span class="cf__fb-text"><span class="cf__fb-k">Call now</span><span class="cf__fb-v">{site.phone}</span></span>
+      </a>
+      <a href={site.smsHref} class="cf__fb" data-cf-sms>
+        <span class="cf__fb-icon" aria-hidden="true"><Icon name="chat" /></span>
+        <span class="cf__fb-text"><span class="cf__fb-k">Text it</span><span class="cf__fb-v">Opens your messages</span></span>
+      </a>
+      <a href={`mailto:${site.email}`} class="cf__fb" data-cf-mailto>
+        <span class="cf__fb-icon" aria-hidden="true"><Icon name="mail" /></span>
+        <span class="cf__fb-text"><span class="cf__fb-k">Email it</span><span class="cf__fb-v">Opens your email app</span></span>
+      </a>
+    </div>
+    <button type="button" class="cf__back" data-cf-edit><Icon name="arrow-left" /> Edit message</button>
+  </div>
+</section>
+
+<style>
+  .cf { padding: clamp(1.5rem, 3.4vw, 2.8rem); border-radius: var(--radius-l); }
+  .cf__pane { display: grid; gap: 1.6rem; }
+  .cf__pane[hidden] { display: none; }
+  .cf__head { display: grid; gap: 0.9rem; }
+  .cf__title { font-size: clamp(1.8rem, 2.8vw, 2.5rem); }
+  .cf__intro { color: var(--text-2); line-height: 1.65; max-width: 52ch; }
+
+  .cf__form { display: grid; gap: 1.15rem; }
+  .cf__pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.15rem; }
+  .cf__hint { display: flex; align-items: center; gap: 0.45rem; margin-top: -0.4rem; font-size: 0.78rem; color: var(--muted); }
+  .cf__hint :global(svg) { width: 14px; height: 14px; flex: none; color: var(--accent); }
+  .cf__hint.is-error { color: var(--err); }
+  .cf__hint.is-error :global(svg) { display: none; }
+  .cf__hint.is-error::before { content: '!'; display: grid; place-items: center; flex: none; width: 16px; height: 16px; border-radius: 50%; border: 1px solid currentColor; font-size: 0.62rem; font-weight: 800; }
+  .cf__err { display: none; align-items: center; gap: 0.45rem; font-size: 0.8rem; line-height: 1.4; color: var(--err); }
+  .cf__err.is-shown { display: flex; }
+  .cf__err.is-shown::before { content: '!'; display: grid; place-items: center; flex: none; width: 16px; height: 16px; border-radius: 50%; border: 1px solid currentColor; font-size: 0.62rem; font-weight: 800; }
+  .cf textarea.input { min-height: 150px; }
+
+  .cf__hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+
+  .cf__submit { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.4rem; margin-top: 0.4rem; }
+  .cf__send { min-width: 220px; }
+  .cf__privacy { flex: 1 1 220px; font-size: 0.78rem; line-height: 1.5; color: var(--muted); }
+  .cf__privacy a { color: var(--text-2); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--line-strong); }
+  .cf__privacy a:hover { color: var(--text); }
+  /* Busy state: label fades, a hairline spinner takes the arrow's place */
+  .cf__spinner { display: none; width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid currentColor; border-right-color: transparent; animation: cf-spin 0.8s linear infinite; }
+  .cf__send.is-busy { pointer-events: none; }
+  .cf__send.is-busy :global(svg) { display: none; }
+  .cf__send.is-busy .cf__spinner { display: inline-block; }
+  @keyframes cf-spin { to { transform: rotate(360deg); } }
+
+  .cf__alert {
+    display: grid;
+    gap: 0.9rem;
+    padding: 1rem 1.1rem;
+    border: 1px solid color-mix(in srgb, var(--err) 40%, transparent);
+    border-radius: var(--radius-s);
+    background: color-mix(in srgb, var(--err) 7%, transparent);
+    font-size: 0.88rem;
+    line-height: 1.5;
+    color: var(--text-2);
+  }
+  .cf__alert[hidden] { display: none; }
+  .cf__alert strong { color: var(--err); font-weight: 600; }
+  .cf__alert-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+  .cf__alert-actions .btn { min-height: 44px; }
+
+  /* ---------- Result states ---------- */
+  .cf__state { justify-items: start; align-content: center; gap: 1.2rem; padding-block: clamp(0.5rem, 2vw, 1.5rem); }
+  @media (min-width: 981px) { .cf__state { min-height: 460px; } }
+  .cf__state:focus { outline: none; }
+  .cf__mark { width: 64px; height: 64px; color: var(--accent); }
+  .cf__mark svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .cf__mark circle { stroke-dasharray: 183; stroke-dashoffset: 183; animation: cf-draw 1s var(--ease-out) forwards; opacity: 0.6; }
+  .cf__mark path { stroke-width: 2; stroke-dasharray: 40; stroke-dashoffset: 40; animation: cf-draw 0.7s var(--ease-out) 0.45s forwards; }
+  @keyframes cf-draw { to { stroke-dashoffset: 0; } }
+  .cf__inline { color: var(--text); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--accent); white-space: nowrap; }
+  .cf__state-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.4rem; }
+
+  .cf__preview {
+    width: 100%;
+    max-height: 220px;
+    overflow: auto;
+    margin: 0;
+    padding: 1rem 1.1rem;
+    border: 1px dashed var(--line-strong);
+    border-radius: var(--radius-s);
+    background: rgb(var(--fg-rgb) / 0.025);
+    font-family: var(--font-sans);
+    font-size: 0.84rem;
+    line-height: 1.6;
+    color: var(--text-2);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  .cf__fb-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.6rem; width: 100%; }
+  .cf__fb {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 0.75rem;
+    min-height: 64px;
+    padding: 0.75rem 0.9rem;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-s);
+    background: var(--ghost-bg);
+    transition: border-color 0.3s, background 0.3s, transform 0.5s var(--ease-out);
+  }
+  .cf__fb:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .cf__fb--primary { background: var(--cta-bg); color: var(--cta-fg); border-color: transparent; box-shadow: var(--cta-glow); }
+  .cf__fb--primary:hover { border-color: transparent; }
+  .cf__fb--primary .cf__fb-v, .cf__fb--primary .cf__fb-icon { color: var(--cta-fg); }
+  .cf__fb-icon { display: grid; place-items: center; color: var(--accent); }
+  .cf__fb-icon :global(svg) { width: 20px; height: 20px; }
+  .cf__fb-text { display: grid; min-width: 0; line-height: 1.3; }
+  .cf__fb-k { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; }
+  .cf__fb-v { font-size: 0.78rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cf__back { display: inline-flex; align-items: center; gap: 0.5rem; min-height: 44px; font-size: 0.74rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); transition: color 0.3s; }
+  .cf__back :global(svg) { width: 16px; height: 16px; }
+  .cf__back:hover { color: var(--text); }
+
+  @media (max-width: 1180px) {
+    .cf__fb-actions { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 640px) {
+    .cf { padding: 1.4rem 1.1rem; border-radius: var(--radius); }
+    .cf__pair { grid-template-columns: 1fr; }
+    .cf__send { width: 100%; }
+    .cf__state-actions { display: grid; width: 100%; }
+    .cf__state-actions .btn { width: 100%; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cf__mark circle, .cf__mark path { stroke-dashoffset: 0; animation: none; }
+  }
+</style>
+
+<script>
+  import { submitLead, toPlainText } from '../../lib/submit';
+  import { site } from '../../data/site';
+
+  const root = document.querySelector<HTMLElement>('[data-cf]');
+  const form = root?.querySelector<HTMLFormElement>('[data-cf-form]');
+  if (root && form) {
+    const $ = <T extends HTMLElement>(sel: string) => root.querySelector<T>(sel)!;
+    const panes = { form: $('[data-cf-pane="form"]'), done: $('[data-cf-pane="done"]'), fallback: $('[data-cf-pane="fallback"]') };
+    const send = $<HTMLButtonElement>('[data-cf-send]');
+    const sendLabel = $('[data-cf-send-label]');
+    const errorBox = $('[data-cf-error]');
+    const hint = $('[data-cf-hint]');
+    const announce = $('[data-cf-announce]');
+    const field = (name: string) => form.elements.namedItem(name) as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+    const topicSelect = field('topic') as HTMLSelectElement;
+    let busy = false;
+
+    // Deep link: /contact/?topic=corporate preselects the topic.
+    const wanted = new URLSearchParams(location.search).get('topic');
+    if (wanted && Array.from(topicSelect.options).some((o) => o.value === wanted)) topicSelect.value = wanted;
+
+    const read = () => ({
+      name: field('name').value.trim(),
+      phone: field('phone').value.trim(),
+      email: field('email').value.trim(),
+      topic: topicSelect.options[topicSelect.selectedIndex]?.text ?? '',
+      message: field('message').value.trim(),
+      company_website: field('company_website').value,
+    });
+
+    /* ---------- Validation ---------- */
+    const setErr = (name: string, msg: string) => {
+      const el = root.querySelector<HTMLElement>(`[data-cf-err="${name}"]`);
+      const input = field(name);
+      if (el) { el.textContent = msg; el.classList.toggle('is-shown', !!msg); }
+      if (msg) input.setAttribute('aria-invalid', 'true');
+      else input.removeAttribute('aria-invalid');
+    };
+    const digits = (s: string) => s.replace(/\D/g, '');
+    const validPhone = (s: string) => { const d = digits(s); return d.length === 10 || (d.length === 11 && d.startsWith('1')) || (s.trim().startsWith('+') && d.length >= 8 && d.length <= 15); };
+    const validEmail = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s);
+
+    function validate(focus = true) {
+      const d = read();
+      const issues: string[] = [];
+      setErr('name', d.name.length < 2 ? 'Please add your name.' : '');
+      if (d.name.length < 2) issues.push('name');
+
+      const noContact = !d.phone && !d.email;
+      hint.classList.toggle('is-error', noContact);
+      setErr('phone', d.phone && !validPhone(d.phone) ? 'Enter a 10-digit phone number.' : '');
+      setErr('email', d.email && !validEmail(d.email) ? 'Enter a valid email address.' : '');
+      if (noContact) {
+        field('phone').setAttribute('aria-invalid', 'true');
+        field('email').setAttribute('aria-invalid', 'true');
+        issues.push('phone');
+      } else {
+        if (d.phone && !validPhone(d.phone)) issues.push('phone');
+        if (d.email && !validEmail(d.email)) issues.push('email');
+      }
+
+      setErr('message', d.message.length < 2 ? 'Tell us a little about what you need.' : '');
+      if (d.message.length < 2) issues.push('message');
+
+      if (issues.length && focus) {
+        field(issues[0]).focus();
+        announce.textContent = noContact
+          ? 'Please add a phone number or an email so we can reply.'
+          : `Please check ${issues.length === 1 ? 'one field' : `${issues.length} fields`}.`;
+      }
+      return issues.length === 0;
+    }
+
+    // Re-validate a field as soon as it has been corrected (never nag while typing a fresh field).
+    form.addEventListener('input', (e) => {
+      const t = e.target as HTMLInputElement;
+      if (!t.name || t.name === 'company_website') return;
+      const flagged = t.getAttribute('aria-invalid') === 'true' || hint.classList.contains('is-error');
+      if (flagged) validate(false);
+    });
+
+    /* ---------- Panes ---------- */
+    const show = (name: keyof typeof panes) => {
+      (Object.keys(panes) as (keyof typeof panes)[]).forEach((k) => (panes[k].hidden = k !== name));
+      const target = name === 'form' ? field('message') : panes[name];
+      target.focus({ preventScroll: true });
+      const top = root.getBoundingClientRect().top + window.scrollY - 110;
+      if (root.getBoundingClientRect().top < 80) {
+        if (window.lenis) window.lenis.scrollTo(top, { duration: 0.9 });
+        else window.scrollTo({ top, behavior: 'smooth' });
+      }
+    };
+
+    function setBusy(on: boolean) {
+      busy = on;
+      send.classList.toggle('is-busy', on);
+      send.setAttribute('aria-busy', String(on));
+      sendLabel.textContent = on ? 'Sending…' : 'Send message';
+    }
+
+    function prepareFallback(d: ReturnType<typeof read>) {
+      const body = toPlainText({ name: d.name, phone: d.phone, email: d.email, topic: d.topic, message: d.message });
+      $('[data-cf-preview]').textContent = body;
+      const subject = `Website enquiry: ${d.topic}`;
+      $<HTMLAnchorElement>('[data-cf-mailto]').href = `mailto:${site.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body.slice(0, 1800))}`;
+      const sms = `Hi, this is ${d.name}. ${d.topic}: ${d.message}${d.email ? ` (email: ${d.email})` : ''}`;
+      $<HTMLAnchorElement>('[data-cf-sms]').href = `${site.smsHref}?&body=${encodeURIComponent(sms.slice(0, 600))}`;
+    }
+
+    async function submit() {
+      if (busy) return;
+      errorBox.hidden = true;
+      announce.textContent = '';
+      if (!validate()) return;
+      const d = read();
+      // Honeypot hit. Autofill or a password manager can fill the hidden field for a real guest, so a hit
+      // never gets the "Thank you" pane (that would hide a lost lead behind a false confirmation). Nothing
+      // is sent; the guest gets "One last step" and can still call, text or email it in. A bot stops here.
+      if (d.company_website.trim()) {
+        prepareFallback(d);
+        show('fallback');
+        return;
+      }
+      setBusy(true);
+      const res = await submitLead('contact', { ...d, company_website: '' });
+      setBusy(false);
+      if (res.ok) {
+        const first = d.name.split(/\s+/)[0];
+        $('[data-cf-first]').textContent = first ? `, ${first}` : '';
+        $('[data-cf-reply-by]').textContent = d.phone && d.email ? 'by phone or email' : d.phone ? `at ${d.phone}` : `at ${d.email}`;
+        show('done');
+      } else if (res.reason === 'no-endpoint') {
+        prepareFallback(d);
+        show('fallback');
+      } else {
+        errorBox.hidden = false;
+        announce.textContent = 'Your message could not be sent. Try again or call us.';
+      }
+    }
+
+    form.addEventListener('submit', (e) => { e.preventDefault(); void submit(); });
+    $('[data-cf-retry]').addEventListener('click', () => void submit());
+    $('[data-cf-edit]').addEventListener('click', () => show('form'));
+    $('[data-cf-reset]').addEventListener('click', () => {
+      form.reset();
+      if (wanted && Array.from(topicSelect.options).some((o) => o.value === wanted)) topicSelect.value = wanted;
+      ['name', 'phone', 'email', 'message'].forEach((n) => setErr(n, ''));
+      hint.classList.remove('is-error');
+      show('form');
+      field('name').focus({ preventScroll: true });
+    });
+  }
+</script>

@@ -1,0 +1,155 @@
+---
+// /services/ grid: one editorial card per service (Reserve → booking with the type preset, Explore → landing page).
+// Card actions follow the home service cards: Reserve is the primary action, Explore the secondary text link.
+import Icon from '../Icon.astro';
+import { services, occasions, serviceHref } from '../../data/site';
+import { servicePages, serviceIcon, occasionService } from '../../data/service-pages';
+
+const pad = (n: number) => String(n).padStart(2, '0');
+// Kicker phrases render as unbreakable units so lines only wrap between phrases.
+const phrases = (k: string) => k.split(' · ');
+const occasionLinks = occasions.flatMap((o) => {
+  const s = services.find((x) => x.slug === occasionService[o]);
+  return s ? [{ label: o, href: serviceHref(s) }] : [];
+});
+---
+<section class="sg section" id="all-services" aria-labelledby="sg-title">
+  <div class="container">
+    <header class="section-head section-head--split sg__head">
+      <div class="sg__head-main">
+        <p class="eyebrow" data-reveal="fade">{services.length} services, one standard</p>
+        <h2 id="sg-title" data-split>Choose your <em>journey.</em></h2>
+      </div>
+      <p class="lead" data-reveal data-delay="0.1">Every service comes with a licensed, background-checked chauffeur, an immaculately detailed vehicle and a real person confirming your booking.</p>
+    </header>
+
+    <ul class="sg__grid" role="list">
+      {services.map((s, i) => {
+        const p = servicePages[s.slug];
+        const href = serviceHref(s);
+        return (
+          <li class="sg__cell" data-reveal data-delay={String((i % 2) * 0.08)}>
+            <article class="sgc" id={s.slug} aria-labelledby={`sgc-${s.slug}`}>
+              <a href={href} class="sgc__media" tabindex="-1" aria-hidden="true" data-cursor="Explore">
+                <img
+                  src={p?.hero.image ?? s.image}
+                  alt=""
+                  width={p?.hero.width ?? 1600}
+                  height={p?.hero.height ?? 1000}
+                  loading="lazy"
+                  decoding="async"
+                  style={p?.hero.position ? `object-position:${p.hero.position}` : undefined}
+                />
+                <span class="sgc__num">{pad(i + 1)}</span>
+              </a>
+              <div class="sgc__body">
+                <div class="sgc__top">
+                  <span class="sgc__icon" aria-hidden="true"><Icon name={serviceIcon[s.slug] ?? 'car'} /></span>
+                  <p class="sgc__kicker"><span class="sgc__kicker-in">{phrases(s.kicker).map((k) => <span>{k}</span>)}</span></p>
+                </div>
+                <h3 class="sgc__title" id={`sgc-${s.slug}`}><a href={href}>{s.title}</a></h3>
+                <p class="sgc__blurb">{s.blurb}</p>
+                <ul class="sgc__points" role="list">
+                  {s.points.map((pt) => <li><Icon name="check" /> {pt}</li>)}
+                </ul>
+                <div class="sgc__ctas">
+                  <a href={`/book/?type=${s.slug}`} class="btn btn--gold sgc__btn">Reserve<span class="sr-only"> {s.title.toLowerCase()}</span> <Icon name="arrow" /></a>
+                  <a href={href} class="link-underline sgc__more">Explore<span class="sr-only"> {s.title.toLowerCase()}</span> <Icon name="chevron-right" size={14} /></a>
+                </div>
+              </div>
+            </article>
+          </li>
+        );
+      })}
+    </ul>
+
+    <div class="sg__occ" data-reveal>
+      <p class="sg__occ-label" id="sg-occ">Planning something specific?</p>
+      <ul class="sg__occ-list" role="list" aria-labelledby="sg-occ">
+        {occasionLinks.map((o) => <li><a href={o.href} class="sg__occ-link">{o.label}</a></li>)}
+      </ul>
+    </div>
+  </div>
+</section>
+
+<style>
+  .sg { padding-top: clamp(4rem, 8vw, 7rem); }
+  .sg__head h2 :global(.split-line) { vertical-align: top; }
+  .sg__head .lead { max-width: 52ch; }
+
+  .sg__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(1.2rem, 2.5vw, 2rem); }
+  .sg__cell { display: flex; }
+  .sgc {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-l);
+    background: var(--bg-3);
+    box-shadow: 0 1px 2px rgb(var(--fg-rgb) / 0.04), 0 30px 60px -40px rgb(var(--fg-rgb) / 0.32);
+    transition: transform 0.7s var(--ease-out), box-shadow 0.7s var(--ease-out), border-color 0.4s;
+  }
+  .sgc:hover { transform: translateY(-4px); border-color: var(--line-strong); box-shadow: 0 1px 2px rgb(var(--fg-rgb) / 0.05), 0 40px 70px -40px rgb(var(--fg-rgb) / 0.42); }
+  :global([data-theme='dark']) .sgc { box-shadow: none; }
+  :global([data-theme='dark']) .sgc:hover { box-shadow: 0 30px 60px -30px rgb(0 0 0 / 0.8); }
+
+  .sgc__media { position: relative; display: block; aspect-ratio: 16 / 9; overflow: hidden; background: var(--bg-4); }
+  .sgc__media img { width: 100%; height: 100%; object-fit: cover; transition: transform 1.4s var(--ease-out); }
+  .sgc:hover .sgc__media img { transform: scale(1.045); }
+  .sgc__num {
+    position: absolute; top: 1rem; left: 1rem;
+    display: grid; place-items: center; min-width: 44px; height: 32px; padding: 0 0.7rem;
+    border-radius: 999px;
+    font-size: 0.7rem; font-weight: 700; letter-spacing: 0.16em; font-variant-numeric: tabular-nums;
+    color: var(--text); background: rgb(var(--bg-rgb) / 0.84); border: 1px solid var(--line);
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  }
+
+  .sgc__body { display: flex; flex-direction: column; gap: 0.85rem; flex: 1; padding: clamp(1.4rem, 2.6vw, 2.2rem); }
+  .sgc__top { display: flex; align-items: center; gap: 0.8rem; }
+  .sgc__icon { display: grid; place-items: center; flex: none; width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgb(var(--accent-rgb) / 0.3); background: rgb(var(--accent-rgb) / 0.07); color: var(--accent); }
+  .sgc__icon :global(svg) { width: 18px; height: 18px; }
+  .sgc__kicker { min-width: 0; overflow: hidden; font-size: 0.66rem; font-weight: 600; line-height: 1.45; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); }
+  /* Each phrase carries its dot in a 1.5em lead-in; the row is shifted left by that amount and clipped,
+     so no line ever starts with a dot. */
+  .sgc__kicker-in { display: flex; flex-wrap: wrap; margin-left: -1.5em; }
+  .sgc__kicker-in > span { position: relative; padding-left: 1.5em; white-space: nowrap; }
+  .sgc__kicker-in > span::before { content: '·'; content: '·' / ''; position: absolute; left: 0; width: 1.5em; text-align: center; opacity: 0.7; }
+  .sgc__title { font-size: clamp(1.6rem, 2.3vw, 2.1rem); line-height: 1.08; letter-spacing: -0.03em; }
+  .sgc__title a { display: inline-flex; align-items: center; min-height: 44px; transition: color 0.4s; }
+  .sgc__title a:hover { color: var(--accent); }
+  .sgc__blurb { color: var(--text-2); line-height: 1.65; max-width: 54ch; }
+  .sgc__points { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.55rem 1.2rem; padding: 1rem 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); margin-top: auto; }
+  .sgc__points li { display: flex; align-items: flex-start; gap: 0.5rem; font-size: 0.86rem; line-height: 1.45; color: var(--muted); }
+  .sgc__points :global(svg) { width: 15px; height: 15px; flex: none; margin-top: 0.12rem; color: var(--accent); stroke-width: 2; }
+  .sgc__ctas { display: flex; flex-wrap: wrap; align-items: center; gap: 0.7rem 1.6rem; }
+  .sgc__btn { min-height: 48px; padding: 0 1.4rem; font-size: 0.74rem; }
+  .sgc__more { min-height: 48px; font-size: 0.74rem; letter-spacing: 0.16em; }
+  .sgc__more::after { bottom: calc(50% - 0.95em); }
+  .sgc__more :global(svg) { transition: transform 0.4s var(--ease-out); }
+  .sgc__more:hover :global(svg) { transform: translateX(3px); }
+
+  .sg__occ { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 1rem 2rem; margin-top: clamp(2.5rem, 5vw, 4rem); padding-top: clamp(1.6rem, 3vw, 2.2rem); border-top: 1px solid var(--line); }
+  .sg__occ-label { font-family: var(--font-display); font-size: 1.15rem; font-weight: 500; letter-spacing: -0.02em; color: var(--text); }
+  .sg__occ-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .sg__occ-link {
+    display: inline-flex; align-items: center; min-height: 44px; padding: 0 1rem;
+    border: 1px solid var(--line); border-radius: 999px;
+    font-size: 0.82rem; color: var(--text-2); background: var(--chip-bg); box-shadow: var(--chip-shadow);
+    transition: border-color 0.3s, color 0.3s, background 0.3s;
+  }
+  .sg__occ-link:hover { border-color: var(--accent); color: var(--accent); }
+
+  @media (max-width: 900px) {
+    .sg__grid { grid-template-columns: 1fr; }
+    .sg__occ { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 560px) {
+    .sgc { border-radius: var(--radius); }
+    .sgc__points { grid-template-columns: 1fr; }
+    .sgc__ctas { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.7rem 1.2rem; }
+    .sgc__btn { width: 100%; padding: 0 1rem; }
+    .sg__occ-link { padding: 0 0.85rem; font-size: 0.78rem; }
+  }
+</style>

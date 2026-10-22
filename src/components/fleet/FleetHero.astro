@@ -6,19 +6,26 @@ import { maxPax } from './fleetMeta';
 <section class="fh" data-theme="dark" aria-labelledby="fleet-title">
   <div class="fh__media" aria-hidden="true">
     <div class="fh__par" data-parallax="0.1">
-      <img class="fh__img" src={images.darkCar} alt="" width="2600" height="1574" decoding="async" fetchpriority="high" />
+      <img class="fh__img" src={images.waterfront} alt="" width="2600" height="1371" decoding="async" fetchpriority="high" />
     </div>
     <div class="fh__shade"></div>
   </div>
 
+  <nav class="fh__crumbs container" aria-label="Breadcrumb" data-reveal="fade">
+    <ol role="list">
+      <li><a href="/">Home</a></li>
+      <li aria-current="page">Fleet</li>
+    </ol>
+  </nav>
+
   <div class="fh__content container">
-    <div class="fh__top">
-      <p class="eyebrow" data-reveal="fade">The Fleet</p>
-    </div>
-    <h1 id="fleet-title" class="fh__title" data-split><span>Six</span> <span>ways</span> <br class="fh__br" /><span>to</span> <em>arrive.</em></h1>
+    <h1 id="fleet-title" class="fh__title">
+      <span class="fh__kicker eyebrow" data-reveal="fade">Seattle limousine fleet</span>
+      <span class="fh__head" data-split><span>Six</span> <span>ways</span> <br class="fh__br" /><span>to</span> <em>arrive.</em></span>
+    </h1>
     <div class="fh__row">
       <p class="lead" data-reveal data-delay="0.35">
-        From a discreet executive sedan for one to a party coach for twenty. Every vehicle is immaculately detailed and driven only by a professional chauffeur.
+        From a discreet executive sedan to a party coach, choose the vehicle that suits the occasion, with pickups across Seattle, the Eastside and SeaTac.
       </p>
       <div class="fh__ctas" data-reveal data-delay="0.5">
         <a href="/book/" class="btn btn--gold btn--lg" data-magnetic>Reserve a vehicle <Icon name="arrow" /></a>
@@ -27,7 +34,7 @@ import { maxPax } from './fleetMeta';
     </div>
     <ul class="fh__chips" role="list" data-stagger="0.1">
       <li class="chip"><Icon name="users" /> Up to {maxPax} guests</li>
-      <li class="chip"><Icon name="sparkle" /> Immaculately detailed before every ride</li>
+      <li class="chip"><Icon name="sparkle" /> Detailed before every ride</li>
       <li class="chip"><Icon name="shield" /> Chauffeur-driven only</li>
     </ul>
   </div>
@@ -35,30 +42,55 @@ import { maxPax } from './fleetMeta';
 
 <style>
   .fh {
+    /* Rounded ivory "sheet" the page rises on in light mode (same hand-off as the home hero). */
+    --fh-curtain: clamp(20px, 2.5vw, 36px);
     position: relative;
     isolation: isolate;
-    min-height: clamp(600px, 78vh, 860px);
+    min-height: clamp(640px, 84vh, 940px);
     display: flex;
     align-items: flex-end;
-    padding: calc(var(--header-h) + 3rem) 0 clamp(2.5rem, 5vw, 4rem);
+    padding: calc(var(--header-h) + clamp(4rem, 6vw, 5.5rem)) 0 calc(clamp(3rem, 5vw, 4.5rem) + var(--fh-curtain));
     overflow: hidden;
     background: var(--bg);
   }
+  /* Light page: one crisp, rounded edge instead of a dark-to-ivory gradient (which reads as a grey band).
+     The scene has already settled into flat onyx above it (see .fh__shade). Dark page: seamless, no sheet. */
+  :global(html:not([data-theme='dark'])) .fh::after {
+    content: '';
+    position: absolute;
+    inset: auto 0 0 0;
+    z-index: 0;
+    height: var(--fh-curtain);
+    border-radius: var(--fh-curtain) var(--fh-curtain) 0 0;
+    background: var(--page-bg);
+    box-shadow: 0 -8px 56px -6px rgb(var(--accent-rgb) / 0.16);
+    pointer-events: none;
+  }
+
+  .fh__crumbs { position: absolute; top: calc(var(--header-h) + 0.35rem); left: 0; right: 0; z-index: 1; }
+  .fh__crumbs ol { display: flex; align-items: center; flex-wrap: wrap; }
+  /* Crumbs float over the photograph, so the link uses --text-2 (not --muted) and the current page steps up to --text. */
+  .fh__crumbs li { display: inline-flex; align-items: center; font-size: 0.66rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text); }
+  .fh__crumbs li + li::before { content: ''; width: 1.1rem; height: 1px; margin: 0 0.8rem; background: var(--line-strong); }
+  .fh__crumbs a { display: inline-flex; align-items: center; min-width: 44px; min-height: 44px; color: var(--text-2); transition: color 0.35s var(--ease-out); }
+  .fh__crumbs a:hover { color: var(--accent); }
   .fh__media { position: absolute; inset: 0; z-index: -1; overflow: hidden; }
   .fh__par { position: absolute; inset: -12% 0; }
-  .fh__img { width: 100%; height: 100%; object-fit: cover; object-position: 72% 55%; transform-origin: 70% 50%; animation: fh-in 2.6s var(--ease-out) both; }
+  /* Seattle at dusk, graded down into the onyx palette (a neutral, non-fleet image: real fleet photography is pending). */
+  .fh__img { width: 100%; height: 100%; object-fit: cover; object-position: 78% 45%; transform-origin: 70% 50%; filter: saturate(0.72) brightness(0.74) contrast(1.06); animation: fh-in 2.6s var(--ease-out) both; }
   @keyframes fh-in { from { opacity: 0; transform: scale(1.14); } to { opacity: 1; transform: none; } }
   .fh__shade {
     position: absolute;
     inset: 0;
     background:
       linear-gradient(90deg, rgb(var(--bg-rgb) / 0.92) 0%, rgb(var(--bg-rgb) / 0.55) 38%, rgb(var(--bg-rgb) / 0) 65%),
-      linear-gradient(180deg, rgb(var(--bg-rgb) / 0.7) 0%, rgb(var(--bg-rgb) / 0) 26%, rgb(var(--bg-rgb) / 0) 52%, var(--bg) 100%);
+      linear-gradient(180deg, rgb(var(--bg-rgb) / 0.7) 0%, rgb(var(--bg-rgb) / 0) 26%, rgb(var(--bg-rgb) / 0) 46%, rgb(var(--bg-rgb) / 0.72) 72%, var(--bg) calc(100% - var(--fh-curtain) - 1.5rem));
   }
 
   .fh__content { position: relative; display: grid; gap: 1.6rem; }
-  .fh__top { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
-  .fh__title { font-size: var(--fs-hero); line-height: 0.96; letter-spacing: -0.04em; max-width: 11ch; }
+  .fh__title { display: grid; gap: 1.6rem; font-size: var(--fs-hero); line-height: 0.96; letter-spacing: -0.04em; }
+  .fh__kicker { line-height: 1.2; }
+  .fh__head { display: block; max-width: 11ch; }
   /* split masks are inline-blocks: align them to the top so they keep the tight display leading */
   .fh__title :global(.split-line) { vertical-align: top; }
   .fh__br { display: none; }
@@ -69,15 +101,18 @@ import { maxPax } from './fleetMeta';
   .fh__row .lead { max-width: 52ch; }
   .fh__ctas { display: flex; flex-wrap: wrap; gap: 0.8rem; }
   .fh__chips { display: flex; flex-wrap: wrap; gap: 0.6rem; padding-top: 1.6rem; border-top: 1px solid var(--line); }
-  .fh__chips .chip { background: rgb(var(--bg-rgb) / 0.45); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  .fh__chips .chip { background: rgb(var(--bg-rgb) / 0.45); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
   .fh__chips :global(svg) { width: 15px; height: 15px; color: var(--accent); }
 
   @media (max-width: 640px) {
-    .fh { min-height: auto; padding-top: calc(var(--header-h) + 34vh); padding-bottom: 2.25rem; }
+    .fh { min-height: auto; padding-top: calc(var(--header-h) + 34vh); padding-bottom: calc(2.5rem + var(--fh-curtain)); }
+    .fh__crumbs { top: calc(var(--header-h) - 0.25rem); }
+    .fh__title { gap: 1.25rem; }
     .fh__par { inset: -8% 0 30%; }
     .fh__img { object-position: 76% 50%; }
     .fh__shade {
-      background: linear-gradient(180deg, rgb(var(--bg-rgb) / 0.55) 0%, rgb(var(--bg-rgb) / 0) 18%, rgb(var(--bg-rgb) / 0) 34%, rgb(var(--bg-rgb) / 0.85) 52%, var(--bg) 64%);
+      /* the top band holds the header and breadcrumb (about 9-12% down), so it stays dark enough for small text over the bright sky */
+      background: linear-gradient(180deg, rgb(var(--bg-rgb) / 0.8) 0%, rgb(var(--bg-rgb) / 0.62) 12%, rgb(var(--bg-rgb) / 0.12) 20%, rgb(var(--bg-rgb) / 0) 25%, rgb(var(--bg-rgb) / 0) 34%, rgb(var(--bg-rgb) / 0.85) 52%, var(--bg) 64%);
     }
     .fh__br { display: inline; }
     .fh__row { justify-items: stretch; }

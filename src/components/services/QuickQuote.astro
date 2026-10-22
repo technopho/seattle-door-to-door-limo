@@ -1,0 +1,215 @@
+---
+// Quick-quote card: collects the essentials and hands them to the booking wizard as URL params
+// (/book/?type=&from=&to=&date=&pax=&hours=&direction=). Nothing is submitted from here.
+import Icon from '../Icon.astro';
+import { site, fleet } from '../../data/site';
+import { airportPlaces, cruisePlaces, type QuoteMode, type Heading } from '../../data/service-pages';
+
+interface Props { slug: string; title: string; heading?: Heading; mode: QuoteMode; fromPlaceholder?: string; toPlaceholder?: string; id?: string }
+const {
+  slug,
+  title,
+  heading = { text: 'Start your', em: 'reservation.' },
+  mode,
+  fromPlaceholder = 'Address, hotel or airport',
+  toPlaceholder = 'Venue, office or address',
+  id = 'qq',
+} = Astro.props;
+const maxPax = Math.max(...fleet.map((v) => v.passengers));
+const pax = Array.from({ length: maxPax }, (_, i) => i + 1);
+// Same range as the booking wizard (src/scripts/booking.ts HOURS: 1–12, default 3), so no minimum is implied here.
+const hours = Array.from({ length: 12 }, (_, i) => i + 1);
+---
+<div class="qq" data-qq-card>
+  <span class="qq__glow" aria-hidden="true"></span>
+  <p class="qq__k"><span class="qq__pulse" aria-hidden="true"></span> Reservations · 24/7</p>
+  <h2 class="qq__title" id={`${id}-title`}>{heading.text} <em>{heading.em}</em></h2>
+  <p class="qq__sub">{title}: add the essentials here and finish your request in four quick steps.</p>
+
+  <form class="qq__form" action="/book/" method="get" data-qq data-mode={mode} aria-labelledby={`${id}-title`}>
+    <input type="hidden" name="type" value={slug} />
+
+    {mode === 'airport' && (
+      <>
+        <fieldset class="qq__seg">
+          <legend class="sr-only">Your flight is</legend>
+          <label><input type="radio" name="direction" value="arriving" checked /><span><Icon name="plane" class="qq__land" /> Arriving</span></label>
+          <label><input type="radio" name="direction" value="departing" /><span><Icon name="plane" /> Departing</span></label>
+        </fieldset>
+        <div class="field">
+          <label for={`${id}-airport`}>Airport</label>
+          <select class="input" id={`${id}-airport`} name="airport">
+            {airportPlaces.map((a) => <option value={a.value}>{a.label}</option>)}
+          </select>
+        </div>
+      </>
+    )}
+
+    {mode !== 'airport' && (
+      <div class="field">
+        <label for={`${id}-from`}>Pickup</label>
+        <input class="input" id={`${id}-from`} name="from" type="text" autocomplete="street-address" placeholder={fromPlaceholder} maxlength="200" />
+      </div>
+    )}
+
+    {mode === 'cruise' && (
+      <div class="field">
+        <label for={`${id}-to`}>Cruise terminal</label>
+        <select class="input" id={`${id}-to`} name="to">
+          {cruisePlaces.map((c) => <option value={c.value}>{c.label}</option>)}
+        </select>
+      </div>
+    )}
+
+    {mode === 'route' && (
+      <div class="field">
+        <label for={`${id}-to`}>Destination</label>
+        <input class="input" id={`${id}-to`} name="to" type="text" autocomplete="off" placeholder={toPlaceholder} maxlength="200" />
+      </div>
+    )}
+
+    {mode === 'hourly' && (
+      <div class="field">
+        <label for={`${id}-hours`}>Hours</label>
+        <select class="input" id={`${id}-hours`} name="hours">
+          {hours.map((h) => <option value={h} selected={h === 3}>{h} {h === 1 ? 'hour' : 'hours'}</option>)}
+        </select>
+      </div>
+    )}
+
+    <div class="qq__row">
+      <div class="field">
+        <label for={`${id}-date`}>Date</label>
+        <input class="input" id={`${id}-date`} name="date" type="date" data-qq-date />
+      </div>
+      <div class="field">
+        <label for={`${id}-pax`}>Guests</label>
+        <select class="input" id={`${id}-pax`} name="pax">
+          {pax.map((n) => <option value={n} selected={n === 2}>{n}</option>)}
+        </select>
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn--gold btn--block qq__submit">Continue to booking <Icon name="arrow" /></button>
+  </form>
+
+  <a href={site.phoneHref} class="qq__call" data-cursor="Call">
+    <span class="qq__call-icon" aria-hidden="true"><Icon name="phone" /></span>
+    <span class="qq__call-text"><span>Prefer to talk?</span><strong>{site.phone}</strong></span>
+    <Icon name="arrow" class="qq__call-arrow" />
+  </a>
+  <ul class="qq__trust" role="list">
+    <li><Icon name="check" /> Confirmed by a real person</li>
+    <li><Icon name="check" /> No hidden fees</li>
+  </ul>
+</div>
+
+<style>
+  .qq {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    display: grid;
+    gap: 0.9rem;
+    padding: clamp(1.5rem, 2.4vw, 2rem);
+    border-radius: var(--radius-l);
+    border: 1px solid var(--line);
+    background: var(--bg-3);
+    box-shadow: 0 1px 2px rgb(var(--fg-rgb) / 0.04), 0 30px 70px -40px rgb(var(--fg-rgb) / 0.35);
+  }
+  :global([data-theme='dark']) .qq { background: var(--bg-2); box-shadow: 0 30px 70px -40px rgb(0 0 0 / 0.8); }
+  .qq::before {
+    content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
+    background: linear-gradient(150deg, rgb(var(--accent-2-rgb) / 0.45), rgb(var(--accent-2-rgb) / 0) 38%, rgb(var(--accent-2-rgb) / 0) 72%, rgb(var(--accent-2-rgb) / 0.2));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+  }
+  .qq__glow {
+    position: absolute; z-index: -1; inset: -40% -40% auto auto; width: 80%; aspect-ratio: 1; pointer-events: none;
+    background: radial-gradient(closest-side, rgb(var(--accent-rgb) / 0.14), rgb(var(--accent-rgb) / 0));
+  }
+  .qq__k { display: inline-flex; align-items: center; gap: 0.6rem; font-size: 0.64rem; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--accent); }
+  .qq__pulse { position: relative; width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
+  /* A few pulses on arrival, not forever: an endless loop keeps the page recalculating styles while idle. */
+  .qq__pulse::after { content: ''; position: absolute; inset: -4px; border-radius: 50%; border: 1px solid var(--ok); opacity: 0; animation: qq-pulse 2.4s var(--ease-out) 3; }
+  @keyframes qq-pulse { from { opacity: 0.8; transform: scale(0.6); } to { opacity: 0; transform: scale(1.7); } }
+  .qq__title { font-size: clamp(1.55rem, 2vw, 1.9rem); line-height: 1.1; letter-spacing: -0.03em; }
+  .qq__sub { font-size: 0.88rem; line-height: 1.55; color: var(--muted); margin-top: -0.25rem; }
+
+  .qq__form { display: grid; gap: 0.85rem; margin-top: 0.35rem; }
+  .qq__form .field { gap: 0.35rem; }
+  .qq__form .field label { font-size: 0.62rem; }
+  .qq__form .input { min-height: 48px; padding: 0.7rem 0.9rem; font-size: 0.95rem; }
+  .qq__form select.input { padding-right: 2.3rem; background-position: right 0.9rem center; }
+  .qq__row { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr); gap: 0.7rem; }
+  .qq__submit { margin-top: 0.3rem; min-height: 54px; }
+
+  /* Arriving / departing segmented switch */
+  .qq__seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; margin: 0; border: 1px solid var(--line); border-radius: 999px; background: rgb(var(--fg-rgb) / 0.03); }
+  .qq__seg label { position: relative; display: block; cursor: pointer; }
+  .qq__seg input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+  .qq__seg span {
+    display: flex; align-items: center; justify-content: center; gap: 0.45rem;
+    min-height: 44px; border-radius: 999px;
+    font-size: 0.74rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted);
+    transition: background 0.4s var(--ease-out), color 0.4s, box-shadow 0.4s;
+  }
+  .qq__seg span :global(svg) { width: 15px; height: 15px; }
+  .qq__seg :global(.qq__land) { transform: rotate(35deg); }
+  .qq__seg input:checked + span { background: var(--cta-bg); color: var(--cta-fg); box-shadow: var(--cta-glow); }
+  .qq__seg input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .qq__call {
+    display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 0.85rem;
+    min-height: 64px; padding: 0.6rem 1rem 0.6rem 0.6rem; margin-top: 0.2rem;
+    border: 1px solid var(--line); border-radius: 999px;
+    transition: border-color 0.4s, background 0.4s var(--ease-out);
+  }
+  .qq__call:hover { border-color: var(--line-strong); background: rgb(var(--fg-rgb) / 0.03); }
+  .qq__call-icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: rgb(var(--accent-rgb) / 0.12); color: var(--accent); }
+  .qq__call-icon :global(svg) { width: 18px; height: 18px; }
+  .qq__call-text { display: grid; line-height: 1.25; }
+  .qq__call-text span { font-size: 0.74rem; color: var(--muted); }
+  .qq__call-text strong { font-family: var(--font-display); font-size: 1.12rem; font-weight: 500; letter-spacing: -0.01em; color: var(--text); }
+  .qq__call :global(.qq__call-arrow) { width: 16px; height: 16px; color: var(--accent); transition: transform 0.4s var(--ease-out); }
+  .qq__call:hover :global(.qq__call-arrow) { transform: translateX(3px); }
+
+  .qq__trust { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.4rem 1.2rem; font-size: 0.76rem; color: var(--muted); }
+  .qq__trust li { display: inline-flex; align-items: center; gap: 0.4rem; }
+  .qq__trust :global(svg) { width: 14px; height: 14px; color: var(--ok); stroke-width: 2; }
+
+  @media (max-width: 350px) {
+    .qq__row { grid-template-columns: 1fr; }
+  }
+</style>
+
+<script>
+  // Turn the quick quote into a clean deep link for the booking wizard (empty fields are dropped).
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const d = new Date();
+  const today = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+  document.querySelectorAll<HTMLFormElement>('[data-qq]').forEach((form) => {
+    form.querySelectorAll<HTMLInputElement>('[data-qq-date]').forEach((el) => (el.min = today));
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const fd = new FormData(form);
+      const q = new URLSearchParams();
+      const get = (k: string) => String(fd.get(k) ?? '').trim();
+      q.set('type', get('type'));
+      if (form.dataset.mode === 'airport') {
+        const dir = get('direction') === 'departing' ? 'departing' : 'arriving';
+        q.set('direction', dir);
+        q.set(dir === 'arriving' ? 'from' : 'to', get('airport'));
+      }
+      for (const k of ['from', 'to', 'hours', 'date', 'pax']) {
+        const val = get(k);
+        if (val && !q.has(k)) q.set(k, val);
+      }
+      const date = q.get('date');
+      if (date && date < today) q.delete('date');
+      window.location.assign(`${form.action}?${q.toString()}`);
+    });
+  });
+</script>

@@ -1,0 +1,140 @@
+---
+// Service FAQ accordion (the FAQPage JSON-LD is built by the page from the same items).
+import Icon from '../Icon.astro';
+import { site } from '../../data/site';
+import type { Heading } from '../../data/service-pages';
+
+interface Props { items: { q: string; a: string }[]; serviceTitle: string; title: Heading; lead: string }
+const { items, serviceTitle, title, lead } = Astro.props;
+const pad = (n: number) => String(n).padStart(2, '0');
+---
+<section class="sf section surface-2" id="faq" aria-labelledby="sf-title">
+  <div class="container sf__grid">
+    <aside class="sf__aside">
+      <div class="sf__sticky">
+        <p class="eyebrow" data-reveal="fade">{serviceTitle} FAQ</p>
+        <h2 id="sf-title" data-split>{title.text} <em>{title.em}</em></h2>
+        <p class="lead sf__lead" data-reveal data-delay="0.1">{lead}</p>
+        <div class="sf__contact" data-reveal data-delay="0.2">
+          <a href={site.phoneHref} class="btn btn--gold" data-cursor="Call"><Icon name="phone" /> {site.phone}</a>
+          <a href={site.smsHref} class="btn btn--ghost"><Icon name="chat" /> Text us</a>
+        </div>
+        <a href="/faq/" class="link-underline sf__all" data-reveal="fade" data-delay="0.3">All questions <Icon name="arrow" size={14} /></a>
+      </div>
+    </aside>
+
+    <div class="sf__list" data-sf data-stagger="0.06">
+      {items.map((f, i) => {
+        const open = i === 0;
+        return (
+          <div class:list={['sf__item', open && 'is-open']} data-sf-item>
+            {/* The index sits outside the heading so the h3 text is the question alone. */}
+            <span class="sf__idx" aria-hidden="true">{pad(i + 1)}</span>
+            <h3 class="sf__q">
+              <button type="button" class="sf__btn" id={`sf-btn-${i}`} aria-expanded={open ? 'true' : 'false'} aria-controls={`sf-panel-${i}`} data-sf-btn>
+                <span class="sf__qtext">{f.q}</span>
+                <span class="sf__icon" aria-hidden="true"><span></span><span></span></span>
+              </button>
+            </h3>
+            <div class="sf__panel" id={`sf-panel-${i}`} role="region" aria-labelledby={`sf-btn-${i}`}>
+              <div class="sf__panel-inner"><p>{f.a}</p></div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+</section>
+
+<style>
+  .sf__grid { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: clamp(3rem, 7vw, 7rem); align-items: start; }
+  .sf__aside { align-self: stretch; }
+  .sf__sticky { position: sticky; top: calc(var(--header-h) + 1.5rem); display: grid; gap: 1.3rem; justify-items: start; }
+  .sf__sticky h2 :global(.split-line) { vertical-align: top; }
+  .sf__lead { max-width: 40ch; }
+  .sf__contact { display: flex; flex-wrap: wrap; gap: 0.7rem; margin-top: 0.4rem; }
+  .sf__all { min-height: 44px; }
+  .sf__all::after { bottom: calc(50% - 0.95em); }
+
+  .sf__list { border-top: 1px solid var(--line); }
+  .sf__item { position: relative; isolation: isolate; border-bottom: 1px solid var(--line); }
+  .sf__item::after {
+    content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+    background: linear-gradient(90deg, rgb(var(--accent-rgb) / 0.07), rgb(var(--accent-rgb) / 0) 72%);
+    opacity: 0; transition: opacity 0.6s var(--ease-out);
+  }
+  .sf__item:hover::after { opacity: 0.5; }
+  .sf__item.is-open::after { opacity: 1; }
+  .sf__item::before {
+    content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px;
+    background: var(--accent-grad); transform: scaleX(0); transform-origin: left; transition: transform 0.9s var(--ease-out);
+  }
+  .sf__item.is-open::before { transform: scaleX(1); }
+  .sf__q { font: inherit; margin: 0; }
+  .sf__item { --row: 40px; }
+  .sf__btn {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 1rem;
+    width: 100%;
+    min-height: 80px;
+    padding: 1.25rem 0 1.25rem 3.4rem;
+    text-align: left;
+    color: var(--text-2);
+  }
+  .sf__idx { position: absolute; left: 0; top: 1.25rem; pointer-events: none; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.14em; line-height: var(--row); color: var(--muted); font-variant-numeric: tabular-nums; transition: color 0.4s; }
+  .sf__qtext { font-family: var(--font-display); font-size: clamp(1.1rem, 1.4vw, 1.3rem); font-weight: 450; line-height: 1.3; letter-spacing: -0.02em; padding-top: calc((var(--row) - 1.3em) / 2); transition: color 0.4s, transform 0.6s var(--ease-out); }
+  .sf__btn:hover .sf__qtext { color: var(--text); transform: translateX(4px); }
+  .sf__icon { position: relative; width: var(--row); height: var(--row); flex: none; border-radius: 50%; border: 1px solid var(--line-strong); transition: transform 0.7s var(--ease-out), background 0.5s, border-color 0.5s; }
+  .sf__icon span { position: absolute; left: 50%; top: 50%; width: 14px; height: 1.5px; margin: -0.75px 0 0 -7px; background: var(--text); border-radius: 2px; transition: transform 0.7s var(--ease-out), background 0.5s; }
+  .sf__icon span:last-child { transform: rotate(90deg); }
+  .sf__item:not(.is-open) .sf__btn:hover .sf__icon { border-color: rgb(var(--fg-rgb) / 0.45); background: var(--bg-3); }
+  .sf__item.is-open .sf__idx { color: var(--accent); }
+  .sf__item.is-open .sf__qtext { color: var(--text); }
+  .sf__item.is-open .sf__icon { transform: rotate(180deg); background: var(--cta-bg); border-color: transparent; }
+  .sf__item.is-open .sf__icon span { background: var(--cta-fg); }
+  .sf__item.is-open .sf__icon span:last-child { transform: rotate(0deg); }
+  .sf__btn:focus-visible { outline-offset: 4px; }
+
+  .sf__panel { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 0.7s var(--ease-out); }
+  .sf__panel-inner { overflow: hidden; min-height: 0; }
+  .sf__panel p { padding: 0 calc(40px + 1rem) 1.7rem 3.4rem; color: var(--text-2); line-height: 1.7; max-width: 64ch; transition: opacity 0.6s var(--ease-out), transform 0.7s var(--ease-out); }
+  :global(.js) .sf__item:not(.is-open) .sf__panel { grid-template-rows: 0fr; }
+  :global(.js) .sf__item:not(.is-open) .sf__panel-inner { visibility: hidden; transition: visibility 0s linear 0.7s; }
+  :global(.js) .sf__item:not(.is-open) .sf__panel p { opacity: 0; transform: translateY(-8px); }
+
+  @media (max-width: 900px) {
+    .sf__grid { grid-template-columns: 1fr; gap: 2.5rem; }
+    .sf__sticky { position: static; }
+  }
+  @media (max-width: 560px) {
+    .sf__btn { min-height: 72px; padding: 1.05rem 0; gap: 0.9rem; }
+    .sf__idx { display: none; }
+    .sf__item::after { display: none; }
+    .sf__panel p { padding: 0 0 1.4rem; font-size: 0.96rem; }
+    .sf__contact { display: grid; width: 100%; }
+    .sf__contact .btn { width: 100%; }
+  }
+</style>
+
+<script>
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+  document.querySelectorAll<HTMLElement>('[data-sf]').forEach((list) => {
+    let t = 0;
+    const refresh = () => {
+      window.clearTimeout(t);
+      t = window.setTimeout(() => { ScrollTrigger.refresh(); window.lenis?.resize?.(); }, 750);
+    };
+    list.querySelectorAll<HTMLElement>('[data-sf-item]').forEach((item) => {
+      const btn = item.querySelector<HTMLButtonElement>('[data-sf-btn]');
+      btn?.addEventListener('click', () => {
+        const open = btn.getAttribute('aria-expanded') !== 'true';
+        btn.setAttribute('aria-expanded', String(open));
+        item.classList.toggle('is-open', open);
+        refresh();
+      });
+    });
+  });
+</script>

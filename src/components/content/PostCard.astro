@@ -1,0 +1,99 @@
+---
+// Editorial Journal card. The title link stretches over the whole card, so the card is one tap target.
+import Icon from '../Icon.astro';
+import { type Post, postHref, readingTime, formatDate, showDraftBadge } from '../../data/posts';
+
+interface Props {
+  post: Post;
+  variant?: 'feature' | 'default';
+  headingLevel?: 'h2' | 'h3';
+  /** Above-the-fold cards load eagerly. */
+  eager?: boolean;
+}
+const { post, variant = 'default', headingLevel = 'h3', eager = false } = Astro.props;
+const H = headingLevel;
+const href = postHref(post);
+---
+<article class:list={['pc', `pc--${variant}`]}>
+  <div class="pc__media">
+    <img
+      src={post.image}
+      alt={post.imageAlt}
+      width={post.imageWidth}
+      height={post.imageHeight}
+      loading={eager ? 'eager' : 'lazy'}
+      decoding="async"
+    />
+    {showDraftBadge(post) && <span class="pc__draft">Draft · dev only</span>}
+  </div>
+  <div class="pc__body">
+    <p class="pc__meta">
+      <span class="pc__cat">{post.category}</span>
+      <span class="pc__dot" aria-hidden="true"></span>
+      <time datetime={post.date}>{formatDate(post.date)}</time>
+      <span class="pc__dot" aria-hidden="true"></span>
+      <span>{readingTime(post)} min read</span>
+    </p>
+    <H class="pc__title"><a href={href} class="pc__link">{post.title}</a></H>
+    <p class="pc__excerpt">{post.excerpt}</p>
+    <span class="pc__more" aria-hidden="true">Read the article <Icon name="arrow" size={14} /></span>
+  </div>
+</article>
+
+<style>
+  .pc {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    align-content: start;
+    gap: 1.4rem;
+    min-width: 0;
+  }
+  .pc__media {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 3 / 2;
+    border-radius: var(--radius);
+    background: var(--bg-3);
+    box-shadow: 0 1px 2px rgb(var(--fg-rgb) / 0.04), 0 24px 50px -34px rgb(var(--fg-rgb) / 0.35);
+  }
+  :global([data-theme='dark']) .pc__media { box-shadow: none; border: 1px solid var(--line); }
+  .pc__media img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.001); transition: transform 1.2s var(--ease-out), filter 0.8s; }
+  .pc:hover .pc__media img { transform: scale(1.045); }
+  /* Dev-server only: drafts awaiting client review. */
+  .pc__draft { position: absolute; top: 0.9rem; left: 0.9rem; padding: 0.35rem 0.75rem; border-radius: 999px; background: rgb(var(--bg-rgb) / 0.88); border: 1px dashed rgb(var(--accent-rgb) / 0.6); font-size: 0.68rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text); }
+  .pc__body { display: grid; gap: 0.85rem; justify-items: start; min-width: 0; }
+  .pc__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.7rem; font-size: 0.74rem; font-weight: 500; color: var(--muted); }
+  .pc__cat { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); }
+  .pc__dot { width: 3px; height: 3px; border-radius: 50%; background: var(--muted-2); }
+  .pc__title { font-size: clamp(1.35rem, 1.9vw, 1.7rem); line-height: 1.18; letter-spacing: -0.028em; text-wrap: balance; }
+  .pc__link { background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat; transition: background-size 0.6s var(--ease-out), color 0.4s; }
+  .pc:hover .pc__link { background-size: 100% 1px; }
+  /* Stretched link: the whole card is clickable. */
+  .pc__link::after { content: ''; position: absolute; inset: 0; z-index: 1; border-radius: var(--radius); }
+  .pc__link:focus-visible { outline: none; }
+  .pc__link:focus-visible::after { outline: 2px solid var(--accent); outline-offset: 6px; }
+  .pc__excerpt { color: var(--muted); font-size: 0.97rem; line-height: 1.65; max-width: 56ch; display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .pc__more { display: inline-flex; align-items: center; gap: 0.5rem; margin-top: 0.3rem; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text); }
+  .pc__more :global(svg) { color: var(--accent); transition: transform 0.5s var(--ease-out); }
+  .pc:hover .pc__more :global(svg) { transform: translateX(4px); }
+
+  /* ---------- Feature ---------- */
+  .pc--feature { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); align-items: center; gap: clamp(2rem, 5vw, 5rem); }
+  .pc--feature .pc__media { aspect-ratio: 16 / 11; border-radius: var(--radius-l); }
+  .pc--feature .pc__link::after { border-radius: var(--radius-l); }
+  .pc--feature .pc__title { font-size: clamp(1.9rem, 3.2vw, 3rem); line-height: 1.06; letter-spacing: -0.035em; }
+  .pc--feature .pc__excerpt { font-size: 1.05rem; -webkit-line-clamp: 5; line-clamp: 5; color: var(--text-2); }
+  .pc--feature .pc__body { gap: 1.1rem; }
+
+  @media (max-width: 900px) {
+    .pc--feature { grid-template-columns: 1fr; gap: 1.5rem; }
+    .pc--feature .pc__media { aspect-ratio: 3 / 2; border-radius: var(--radius); }
+    .pc--feature .pc__link::after { border-radius: var(--radius); }
+  }
+  @media (max-width: 560px) {
+    .pc { gap: 1.1rem; }
+    .pc--feature .pc__title { font-size: 1.85rem; }
+    .pc__excerpt { font-size: 0.95rem; }
+  }
+</style>

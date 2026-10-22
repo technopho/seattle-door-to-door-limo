@@ -1,0 +1,26 @@
+---
+import Base from '../../layouts/Base.astro';
+import IndexHero from '../../components/services/IndexHero.astro';
+import ServiceGrid from '../../components/services/ServiceGrid.astro';
+import ServiceCta from '../../components/services/ServiceCta.astro';
+import WhyUs from '../../components/services/WhyUs.astro';
+import { breadcrumbs } from '../../lib/seo';
+import { images } from '../../data/site';
+
+const title = 'Seattle Limo Services: Airport to Weddings | Door to Door';
+const description =
+  'Airport transfers, corporate travel, weddings, cruise transfers, events and wine tours with a private chauffeur across Seattle and the Eastside. Reserve 24/7.';
+---
+<Base title={title} description={description} jsonLd={[breadcrumbs([['Services', '/services/']])]} ogImage={images.waterfront}>
+  <IndexHero />
+  <ServiceGrid />
+  {/* Concierge prompt sits between the grid and "why us", so it never stacks against the footer CTA. */}
+  <ServiceCta
+    heading={{ text: 'Not sure which service?', em: 'Ask the concierge.' }}
+    text="Tell us the occasion, the headcount and the luggage. We will recommend the right service and vehicle, and a real person confirms every detail."
+    reserveLabel="Start a reservation"
+    eyebrow="Concierge"
+    image={false}
+  />
+  <WhyUs />
+</Base>

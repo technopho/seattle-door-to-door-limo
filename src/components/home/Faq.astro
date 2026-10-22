@@ -10,18 +10,13 @@ const pad = (n: number) => String(n).padStart(2, '0');
       <div class="faq__sticky">
         <p class="eyebrow" data-reveal="fade">FAQ</p>
         <h2 id="faq-title" data-split>Questions, <em>answered.</em></h2>
-        <p class="lead faq__lead" data-reveal data-delay="0.1">Everything worth knowing before you ride, from booking to flight delays. Anything else, our team is a call away.</p>
-
-        <div class="faq__card glass" data-reveal data-delay="0.2">
-          <span class="faq__card-glow" aria-hidden="true"></span>
-          <p class="faq__card-kicker"><span class="faq__pulse" aria-hidden="true"></span> Reservations desk</p>
-          <h3 class="faq__card-title">Still deciding?<br /> Talk to a <em>real person</em>, 24/7.</h3>
-          <p class="faq__card-text">Quotes, availability, multi-vehicle events or a last-minute airport run. Ask us anything.</p>
-          <div class="faq__card-actions">
-            <a href={site.phoneHref} class="btn btn--gold" data-magnetic="0.2" data-cursor="Call"><Icon name="phone" /> Call {site.phone}</a>
-            <a href={site.smsHref} class="btn btn--ghost"><Icon name="chat" /> Text us</a>
-          </div>
+        <p class="lead faq__lead" data-reveal data-delay="0.1">Everything worth knowing before you ride, from booking to flight delays. Anything else, a real person is a call or text away, 24/7.</p>
+        <!-- Same aside as the service-page FAQs (ServiceFaq.astro): unboxed Call/Text pills and an underlined link -->
+        <div class="faq__contact" data-reveal data-delay="0.2">
+          <a href={site.phoneHref} class="btn btn--gold" data-cursor="Call"><Icon name="phone" /> {site.phone}</a>
+          <a href={site.smsHref} class="btn btn--ghost"><Icon name="chat" /> Text us</a>
         </div>
+        <a href="/faq/" class="link-underline faq__all" data-reveal="fade" data-delay="0.3">All questions <Icon name="arrow" size={14} /></a>
       </div>
     </aside>
 
@@ -52,9 +47,6 @@ const pad = (n: number) => String(n).padStart(2, '0');
           </div>
         );
       })}
-      <p class="faq__more">
-        Ready when you are. <a href="/book/" class="link-underline">Reserve a ride <Icon name="arrow" size={14} /></a>
-      </p>
     </div>
   </div>
 </section>
@@ -76,54 +68,25 @@ const pad = (n: number) => String(n).padStart(2, '0');
   }
   .faq__lead { max-width: 40ch; }
 
-  /* ---------- Contact card ---------- */
-  .faq__card {
-    position: relative;
-    overflow: hidden;
-    display: grid;
-    gap: 1rem;
-    margin-top: 1.2rem;
-    padding: clamp(1.6rem, 2.6vw, 2.2rem);
-    border-radius: var(--radius-l);
-    width: 100%;
-    max-width: 480px;
-    background: var(--bg-3);
-    box-shadow: 0 24px 60px -34px rgb(var(--fg-rgb) / 0.3);
-  }
-  :global([data-theme='dark']) .faq__card { background: var(--glass); box-shadow: 0 30px 70px -40px rgb(0 0 0 / 0.7); }
-  /* Warm corner light: barely there on ivory, a champagne glow on onyx. */
-  .faq__card-glow {
-    position: absolute; inset: auto -30% -60% auto; width: 80%; aspect-ratio: 1; pointer-events: none;
-    background: radial-gradient(closest-side, rgb(var(--accent-rgb) / 0.22), rgb(var(--accent-rgb) / 0));
-    opacity: 0.4;
-  }
-  :global([data-theme='dark']) .faq__card-glow { opacity: 1; }
-  .faq__card::before {
-    content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
-    background: linear-gradient(140deg, rgb(var(--accent-2-rgb) / 0.4), rgb(var(--accent-2-rgb) / 0) 40%, rgb(var(--accent-2-rgb) / 0) 70%, rgb(var(--accent-2-rgb) / 0.22));
-    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-  }
-  .faq__card-kicker {
-    display: inline-flex; align-items: center; gap: 0.6rem;
-    font-size: 0.68rem; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--accent);
-  }
-  .faq__pulse { position: relative; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
-  .faq__pulse::after {
-    content: ''; position: absolute; inset: -4px; border-radius: 50%; border: 1px solid var(--ok);
-    animation: faq-pulse 2.2s var(--ease-out) infinite;
-  }
-  @keyframes faq-pulse { 0% { transform: scale(0.6); opacity: 1; } 100% { transform: scale(2); opacity: 0; } }
-  .faq__card-title { font-size: clamp(1.5rem, 2vw, 1.85rem); line-height: 1.15; letter-spacing: -0.03em; text-wrap: initial; }
-  .faq__card-text { font-size: 0.92rem; color: var(--muted); max-width: 38ch; }
-  /* Side by side when there is room; when they wrap, each grows to the full row so they never read as two odd pills. */
-  .faq__card-actions { position: relative; display: flex; flex-wrap: wrap; gap: 0.7rem; margin-top: 0.4rem; }
-  .faq__card-actions .btn { flex: 1 1 auto; padding-inline: 1.3rem; }
+  /* ---------- Contact (matches ServiceFaq) ---------- */
+  .faq__contact { display: flex; flex-wrap: wrap; gap: 0.7rem; margin-top: 0.4rem; }
+  .faq__all { min-height: 44px; }
+  .faq__all::after { bottom: calc(50% - 0.95em); }
 
   /* ---------- Accordion ---------- */
   .faq__list { border-top: 1px solid var(--line); }
-  .faq__item { position: relative; border-bottom: 1px solid var(--line); }
+  .faq__item { position: relative; isolation: isolate; border-bottom: 1px solid var(--line); }
+  /* Open/hover wash: a faint warm light that fades in past the index and out before the icon
+     (bronze on ivory, champagne on onyx). It overhangs the list slightly with soft corners, so it
+     reads as light on the page rather than a highlighted table row. */
+  .faq__item::after {
+    content: ''; position: absolute; inset: 0 -1rem; z-index: -1; pointer-events: none;
+    border-radius: var(--radius-s);
+    background: linear-gradient(90deg, rgb(var(--accent-rgb) / 0), rgb(var(--accent-rgb) / 0.06) 12%, rgb(var(--accent-rgb) / 0) 75%);
+    opacity: 0; transition: opacity 0.6s var(--ease-out);
+  }
+  .faq__item:hover::after { opacity: 0.5; }
+  .faq__item.is-open::after { opacity: 1; }
   .faq__item::before {
     content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px;
     background: var(--accent-grad);
@@ -145,7 +108,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
     text-align: left;
     color: var(--text-2);
   }
-  .faq__idx { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.14em; line-height: var(--row); color: var(--muted-2); font-variant-numeric: tabular-nums; transition: color 0.4s; }
+  .faq__idx { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.14em; line-height: var(--row); color: var(--muted); font-variant-numeric: tabular-nums; transition: color 0.4s; }
   .faq__qtext {
     font-family: var(--font-display);
     font-size: clamp(1.15rem, 1.5vw, 1.4rem);
@@ -161,7 +124,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
     width: var(--row); height: var(--row); flex: none;
     border-radius: 50%;
     border: 1px solid var(--line-strong);
-    transition: transform 0.7s var(--ease-out), background 0.5s var(--ease-out), border-color 0.5s var(--ease-out);
+    transition: transform 0.7s var(--ease-out), background 0.5s var(--ease-out), border-color 0.5s var(--ease-out), box-shadow 0.5s var(--ease-out);
   }
   .faq__icon span {
     position: absolute; left: 50%; top: 50%;
@@ -171,7 +134,10 @@ const pad = (n: number) => String(n).padStart(2, '0');
     transition: transform 0.7s var(--ease-out), background 0.5s;
   }
   .faq__icon span:last-child { transform: rotate(90deg); }
-  .faq__btn:hover .faq__icon { border-color: rgb(var(--fg-rgb) / 0.45); }
+  /* Closed + hover: the disc lifts off the page (raised paper on ivory, a faint sheen on onyx). */
+  .faq__item:not(.is-open) .faq__btn:hover .faq__icon { border-color: rgb(var(--fg-rgb) / 0.45); background: var(--bg-3); box-shadow: 0 8px 20px -12px rgb(var(--fg-rgb) / 0.35); }
+  :global([data-theme='dark']) .faq__item:not(.is-open) .faq__btn:hover .faq__icon { background: rgb(var(--fg-rgb) / 0.05); box-shadow: none; }
+  .faq__btn:focus-visible { outline-offset: 4px; }
 
   /* Open: onyx disc on ivory (champagne on onyx), bronze index and rule. */
   .faq__item.is-open .faq__idx { color: var(--accent); }
@@ -195,26 +161,18 @@ const pad = (n: number) => String(n).padStart(2, '0');
   :global(.js) .faq__item:not(.is-open) .faq__panel p { opacity: 0; transform: translateY(-8px); }
   .faq__item.is-open .faq__panel p { color: var(--text-2); }
 
-  .faq__more { margin-top: 2.2rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 1.2rem; color: var(--muted); font-size: 0.95rem; }
-  .faq__more .link-underline { min-height: 44px; }
-
   @media (max-width: 900px) {
-    .faq__grid { grid-template-columns: 1fr; gap: 0; }
-    .faq__aside, .faq__sticky { display: contents; }
-    .faq__sticky > .eyebrow { margin-bottom: 1.2rem; justify-self: start; }
-    .faq__sticky > h2 { margin-bottom: 1.2rem; }
-    .faq__lead { margin-bottom: 2.4rem; }
-    .faq__list { order: 4; }
-    .faq__card { order: 5; margin-top: 3rem; max-width: none; }
-    .faq__more { display: none; }
+    .faq__grid { grid-template-columns: 1fr; gap: 2.5rem; }
+    .faq__sticky { position: static; }
   }
   @media (max-width: 560px) {
     .faq__btn { --row: 40px; grid-template-columns: 1fr auto; min-height: 74px; padding: 1.1rem 0; gap: 0.9rem; }
     .faq__idx { display: none; }
+    .faq__item::after { display: none; } /* text runs edge to edge here, so the wash would read as a box */
     .faq__qtext { font-size: 1.12rem; }
     .faq__panel p { padding: 0 0 1.5rem 0; font-size: 0.96rem; }
-    .faq__card-actions { display: grid; grid-template-columns: 1fr; }
-    .faq__card-actions .btn { width: 100%; }
+    .faq__contact { display: grid; width: 100%; }
+    .faq__contact .btn { width: 100%; }
   }
 </style>
 

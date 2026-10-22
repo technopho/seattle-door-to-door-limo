@@ -1,0 +1,9 @@
+# Old site URLs → new pages (Cloudflare Workers/Pages static assets).
+# Trailing slashes (/fleet → /fleet/) are handled by Cloudflare automatically.
+# Old-site routes without a page of their own also get an explicit trailing-slash variant.
+/booking         /book/      301
+/reservations    /book/      301
+/privacy-policy  /privacy/   301
+# The old /reviews page → the home page's reviews section (the old nav linked /#reviews too).
+/reviews         /#reviews   301
+/reviews/        /#reviews   301

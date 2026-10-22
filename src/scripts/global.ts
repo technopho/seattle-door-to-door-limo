@@ -34,8 +34,14 @@ document.addEventListener('click', (e) => {
   if (!target) return;
   e.preventDefault();
   closeMenu();
-  if (window.lenis) window.lenis.scrollTo(target as HTMLElement, { offset: -70, duration: 1.4 });
-  else target.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth' });
+  // Move keyboard focus with the scroll (e.g. "Skip to content" → #main).
+  const el = target as HTMLElement;
+  if (el.hasAttribute('tabindex') || el.matches('a[href], button, input, select, textarea, summary')) el.focus({ preventScroll: true });
+  if (el.id === 'main') {
+    if (window.lenis) window.lenis.scrollTo(0, { immediate: true });
+    else window.scrollTo(0, 0);
+  } else if (window.lenis) window.lenis.scrollTo(el, { duration: 1.4 }); // Lenis honours html scroll-padding-top
+  else el.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth' });
   history.replaceState(null, '', url.hash);
 });
 
@@ -144,6 +150,7 @@ function initCounters() {
 const header = document.querySelector<HTMLElement>('[data-header]');
 // Pages with an always-dark hero keep the header in dark mode while it sits over the hero.
 const darkHero = document.body.hasAttribute('data-dark-hero') ? (document.querySelector('main')?.firstElementChild as HTMLElement | null) : null;
+const themeMeta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
 let lastY = 0;
 function onScroll() {
   const y = window.scrollY;
@@ -153,6 +160,9 @@ function onScroll() {
     const overHero = !!darkHero && y < darkHero.offsetHeight - header.offsetHeight && !document.body.classList.contains('menu-open');
     if (overHero) header.dataset.theme = 'dark';
     else header.removeAttribute('data-theme');
+    // Browser UI color follows what sits under the status bar (dark hero vs page canvas).
+    const tc = overHero || document.documentElement.dataset.theme === 'dark' ? '#0a0a0c' : '#f4efe7';
+    if (themeMeta && themeMeta.content !== tc) themeMeta.content = tc;
   }
   document.body.classList.toggle('past-hero', y > window.innerHeight * 0.7);
   lastY = y;
@@ -165,7 +175,7 @@ const root = document.documentElement;
 function applyTheme(next: 'light' | 'dark') {
   root.dataset.theme = next;
   try { localStorage.setItem('sdd-theme', next); } catch {}
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', next === 'dark' ? '#0a0a0c' : '#f4efe7');
+  themeMeta?.setAttribute('content', next === 'dark' ? '#0a0a0c' : '#f4efe7');
   document.querySelectorAll<HTMLButtonElement>('[data-theme-toggle]').forEach((b) => {
     // Labeled switches (role="switch") report state; icon buttons describe the action.
     if (b.getAttribute('role') === 'switch') b.setAttribute('aria-checked', String(next === 'dark'));
@@ -174,11 +184,12 @@ function applyTheme(next: 'light' | 'dark') {
   document.dispatchEvent(new CustomEvent('sdd:theme', { detail: next }));
 }
 applyTheme(root.dataset.theme === 'dark' ? 'dark' : 'light');
+onScroll(); // re-sync theme-color for pages that open on a dark hero
 document.querySelectorAll<HTMLButtonElement>('[data-theme-toggle]').forEach((btn) => {
   btn.addEventListener('click', () => {
     const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
     const vt = (document as Document & { startViewTransition?: (cb: () => void) => { ready: Promise<void> } }).startViewTransition;
-    if (!vt || reduceMotion) { applyTheme(next); return; }
+    if (!vt || reduceMotion) { applyTheme(next); onScroll(); return; }
     // Circular reveal from the toggle button.
     const r = btn.getBoundingClientRect();
     const x = r.left + r.width / 2;
@@ -190,35 +201,60 @@ document.querySelectorAll<HTMLButtonElement>('[data-theme-toggle]').forEach((btn
         { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${end}px at ${x}px ${y}px)`] },
         { duration: 750, easing: 'cubic-bezier(0.65, 0, 0.35, 1)', pseudoElement: '::view-transition-new(root)' },
       );
-    });
+    }).catch(() => {});
   });
+});
+// Keep every page on the saved theme: a page restored from the back/forward cache skips the inline
+// head script, and other open tabs only learn about a switch through the storage event.
+const savedTheme = (): 'light' | 'dark' => { try { return localStorage.getItem('sdd-theme') === 'dark' ? 'dark' : 'light'; } catch { return root.dataset.theme === 'dark' ? 'dark' : 'light'; } };
+window.addEventListener('pageshow', (e) => {
+  if (!e.persisted) return;
+  const t = savedTheme();
+  if (t !== root.dataset.theme) applyTheme(t);
+  onScroll();
+});
+window.addEventListener('storage', (e) => {
+  if (e.key !== 'sdd-theme') return;
+  const t = e.newValue === 'dark' ? 'dark' : 'light';
+  if (t !== root.dataset.theme) { applyTheme(t); onScroll(); }
 });
 
 /* ---------- Mobile menu ---------- */
 const menuBtn = document.querySelector<HTMLButtonElement>('[data-menu-toggle]');
 const menu = document.querySelector<HTMLElement>('[data-menu]');
+// Everything behind the overlay is made inert while it is open, so focus stays in header + menu.
+const behindMenu = () => Array.from(document.querySelectorAll<HTMLElement>('body > main, body > footer, body > .mobile-bar'));
 function openMenu() {
   if (!menu || !menuBtn) return;
   document.body.classList.add('menu-open');
   menuBtn.setAttribute('aria-expanded', 'true');
+  menuBtn.setAttribute('aria-label', 'Close menu');
   menu.removeAttribute('inert');
+  behindMenu().forEach((el) => el.setAttribute('inert', ''));
+  const scroller = menu.querySelector<HTMLElement>('[data-menu-scroll]');
+  if (scroller) scroller.scrollTop = 0;
   window.lenis?.stop();
   onScroll(); // drop the dark-hero header theme while the (page-themed) menu is open
   if (!reduceMotion) {
-    gsap.fromTo(menu.querySelectorAll('[data-menu-item]'), { yPercent: 110, opacity: 0 }, { yPercent: 0, opacity: 1, duration: 0.9, ease: 'expo.out', stagger: 0.06, delay: 0.15 });
+    gsap.fromTo(menu.querySelectorAll('[data-menu-item]'), { yPercent: 110, opacity: 0 }, { yPercent: 0, opacity: 1, duration: 0.9, ease: 'expo.out', stagger: 0.05, delay: 0.15, clearProps: 'transform' });
   }
 }
-function closeMenu() {
+function closeMenu(restoreFocus = false) {
   if (!menu || !menuBtn || !document.body.classList.contains('menu-open')) return;
   document.body.classList.remove('menu-open');
   menuBtn.setAttribute('aria-expanded', 'false');
+  menuBtn.setAttribute('aria-label', 'Open menu');
   menu.setAttribute('inert', '');
+  behindMenu().forEach((el) => el.removeAttribute('inert'));
   window.lenis?.start();
   onScroll();
+  if (restoreFocus) menuBtn.focus({ preventScroll: true });
 }
 menuBtn?.addEventListener('click', () => (document.body.classList.contains('menu-open') ? closeMenu() : openMenu()));
-menu?.querySelectorAll('a').forEach((a) => a.addEventListener('click', closeMenu));
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMenu(); });
+menu?.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => closeMenu()));
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && document.body.classList.contains('menu-open')) closeMenu(true); });
+// The overlay only exists below the desktop breakpoint; close it if the viewport grows past it.
+window.matchMedia('(min-width: 1101px)').addEventListener('change', (e) => { if (e.matches) closeMenu(); });
 
 /* ---------- Magnetic buttons ---------- */
 if (finePointer && !reduceMotion) {
@@ -242,25 +278,46 @@ if (finePointer && !reduceMotion) {
   const label = document.createElement('div');
   label.className = 'cursor-label';
   document.body.append(dot, label);
+  // GSAP owns the centering: percentages stay relative to the label's live width, so any
+  // label ("Call", "Reserve") is centered on the disc whatever was hovered first.
+  gsap.set(label, { xPercent: -50, yPercent: -50 });
+  gsap.set(dot, { xPercent: 0, yPercent: 0 }); // the ring centers itself with negative margins
   const xTo = gsap.quickTo([dot, label], 'x', { duration: 0.45, ease: 'power3.out' });
   const yTo = gsap.quickTo([dot, label], 'y', { duration: 0.45, ease: 'power3.out' });
-  window.addEventListener('mousemove', (e) => { dot.classList.add('is-visible'); xTo(e.clientX); yTo(e.clientY); }, { passive: true });
-  document.addEventListener('mouseleave', () => dot.classList.remove('is-visible'));
+  let px = -1, py = -1;
+  const setVisible = (on: boolean) => { dot.classList.toggle('is-visible', on); label.classList.toggle('is-visible', on); };
+  window.addEventListener('mousemove', (e) => { px = e.clientX; py = e.clientY; setVisible(true); xTo(px); yTo(py); }, { passive: true });
+  document.addEventListener('mouseleave', () => setVisible(false));
+  // Match the theme of the surface under the pointer (dark islands inside an ivory page and vice versa).
+  let hovered: Element | null = null;
+  const syncCursorTheme = () => {
+    const t = hovered?.closest('[data-theme]')?.getAttribute('data-theme') || root.dataset.theme || 'light';
+    if (dot.dataset.theme !== t) { dot.dataset.theme = t; label.dataset.theme = t; }
+  };
+  let scrollRaf = 0;
+  const onCursorScroll = () => {
+    if (scrollRaf || px < 0) return;
+    scrollRaf = requestAnimationFrame(() => { scrollRaf = 0; hovered = document.elementFromPoint(px, py) || hovered; syncCursorTheme(); });
+  };
   document.addEventListener('mouseover', (e) => {
+    hovered = e.target as Element;
     const t = (e.target as HTMLElement).closest('a, button, [data-cursor], input, select, textarea, label') as HTMLElement | null;
     dot.classList.toggle('is-hover', !!t);
     dot.classList.toggle('has-label', !!t?.dataset.cursor);
     label.textContent = t?.dataset.cursor || '';
+    syncCursorTheme();
   });
+  document.addEventListener('sdd:theme', syncCursorTheme);
+  window.addEventListener('scroll', onCursorScroll, { passive: true });
 }
 
 /* ---------- Preloader ---------- */
 function runPreloader(): Promise<void> {
   const pre = document.querySelector<HTMLElement>('[data-preloader]');
   if (!pre) return Promise.resolve();
-  const seen = sessionStorage.getItem('sdd-pre');
+  let seen: string | null = null;
+  try { seen = sessionStorage.getItem('sdd-pre'); sessionStorage.setItem('sdd-pre', '1'); } catch {}
   if (reduceMotion || seen) { pre.remove(); return Promise.resolve(); }
-  sessionStorage.setItem('sdd-pre', '1');
   return new Promise((resolve) => {
     const tl = gsap.timeline({ onComplete: () => { pre.remove(); resolve(); } });
     tl.fromTo(pre.querySelector('[data-pre-line]'), { scaleX: 0 }, { scaleX: 1, duration: 1.0, ease: 'expo.inOut' })

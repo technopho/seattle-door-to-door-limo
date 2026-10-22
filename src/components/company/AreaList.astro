@@ -1,0 +1,64 @@
+---
+// Linked service-area cards (city, neighborhoods, travel time from SeaTac). Used on /about/ and /contact/.
+import Icon from '../Icon.astro';
+import { areas, areaHref } from '../../data/site';
+
+interface Props { cols?: 2 | 3; class?: string }
+const { cols = 2, class: cls } = Astro.props;
+---
+<ul class:list={['al', `al--${cols}`, cls]} role="list" data-stagger="0.06">
+  {areas.map((a) => (
+    <li>
+      <a href={areaHref(a)} class="al__card">
+        <span class="al__city">{a.city}<span class="al__wa">, WA</span></span>
+        <span class="al__detail">{a.detail}</span>
+        <span class="al__eta"><Icon name="plane" /> {a.eta}</span>
+        <span class="al__go" aria-hidden="true"><Icon name="arrow-up-right" /></span>
+      </a>
+    </li>
+  ))}
+</ul>
+
+<style>
+  .al { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
+  .al--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .al > li { display: flex; }
+  .al__card {
+    position: relative;
+    display: grid;
+    align-content: start;
+    gap: 0.3rem;
+    width: 100%;
+    padding: 1.15rem 3.4rem 1.15rem 1.2rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--card-bg);
+    box-shadow: var(--card-highlight), var(--card-shadow);
+    transition: transform 0.6s var(--ease-out), border-color 0.4s, box-shadow 0.6s var(--ease-out);
+  }
+  .al__card:hover { transform: translateY(-3px); border-color: var(--line-strong); box-shadow: var(--card-highlight), var(--card-shadow-hover); }
+  .al__city { font-family: var(--font-display); font-size: 1.3rem; font-weight: 500; letter-spacing: -0.025em; line-height: 1.15; color: var(--text); }
+  .al__wa { color: var(--muted); }
+  .al__detail { font-size: 0.8rem; color: var(--muted); line-height: 1.45; }
+  .al__eta { display: inline-flex; align-items: center; gap: 0.4rem; margin-top: 0.35rem; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
+  .al__eta :global(svg) { width: 14px; height: 14px; flex: none; }
+  .al__go {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid var(--line-strong);
+    transition: background 0.4s var(--ease-out), color 0.4s, border-color 0.4s;
+  }
+  .al__go :global(svg) { width: 14px; height: 14px; }
+  .al__card:hover .al__go { background: var(--cta-bg); color: var(--cta-fg); border-color: transparent; }
+
+  @media (max-width: 1100px) { .al--3 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 560px) {
+    .al, .al--3 { grid-template-columns: 1fr; gap: 0.6rem; }
+  }
+</style>

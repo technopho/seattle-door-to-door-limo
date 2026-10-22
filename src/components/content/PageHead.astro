@@ -1,0 +1,83 @@
+---
+// Page-themed header for content pages (FAQ, Journal, legal). Holds the page's single <h1>.
+// Slots: "title" = h1 contents (use <em> for the accent word), "meta" = line under the lead,
+// default = optional right-hand column.
+import Crumbs from './Crumbs.astro';
+
+interface Props {
+  trail: [name: string, href: string][];
+  eyebrow: string;
+  lead?: string;
+  titleId?: string;
+  /** Narrow, single-column variant (legal documents). */
+  compact?: boolean;
+}
+const { trail, eyebrow, lead, titleId = 'page-title', compact = false } = Astro.props;
+const hasAside = Astro.slots.has('default');
+---
+<header class:list={['ph', compact && 'ph--compact']} aria-labelledby={titleId}>
+  <div class="ph__bg" aria-hidden="true">
+    <span class="ph__glow"></span>
+    <span class="ph__grid"></span>
+  </div>
+  <div class="container">
+    <Crumbs trail={trail} class="ph__crumbs" />
+    <div class:list={['ph__row', hasAside && 'ph__row--aside']}>
+      <div class="ph__main">
+        <p class="eyebrow" data-reveal="fade">{eyebrow}</p>
+        <h1 id={titleId} class="ph__title" data-split><slot name="title" /></h1>
+        {lead && <p class="lead ph__lead" data-reveal data-delay="0.2">{lead}</p>}
+        {Astro.slots.has('meta') && <div class="ph__meta" data-reveal="fade" data-delay="0.3"><slot name="meta" /></div>}
+      </div>
+      {hasAside && <div class="ph__aside" data-reveal data-delay="0.3"><slot /></div>}
+    </div>
+  </div>
+</header>
+
+<style>
+  .ph {
+    position: relative;
+    isolation: isolate;
+    padding: calc(var(--header-h) + 0.75rem) 0 clamp(2.5rem, 5vw, 4.5rem);
+  }
+  .ph__bg { position: absolute; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+  .ph__glow {
+    position: absolute;
+    top: -40vmax;
+    right: -24vmax;
+    width: 72vmax;
+    height: 72vmax;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgb(var(--accent-rgb) / 0.14), rgb(var(--accent-rgb) / 0.04) 55%, transparent 72%);
+  }
+  .ph__grid {
+    position: absolute;
+    inset: 0;
+    background-image: linear-gradient(rgb(var(--fg-rgb) / 0.035) 1px, transparent 1px), linear-gradient(90deg, rgb(var(--fg-rgb) / 0.035) 1px, transparent 1px);
+    background-size: 88px 88px;
+    mask-image: radial-gradient(70% 90% at 85% 0%, #000 0%, transparent 70%);
+    -webkit-mask-image: radial-gradient(70% 90% at 85% 0%, #000 0%, transparent 70%);
+  }
+
+  .ph :global(.ph__crumbs) { margin-bottom: clamp(0.75rem, 2vw, 1.75rem); }
+  .ph__row { display: grid; gap: 2rem clamp(3rem, 6vw, 6rem); align-items: end; }
+  .ph__row--aside { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); }
+  .ph__main { display: grid; gap: 1.3rem; justify-items: start; }
+  /* Page-hero H1 tier from global.css (legal pages included); the token's clamp handles phones, so no breakpoint overrides. */
+  .ph__title { font-size: var(--fs-page-h1); line-height: 1; letter-spacing: -0.04em; max-width: 14ch; }
+  .ph__title :global(.split-line) { vertical-align: top; }
+  .ph__lead { max-width: 52ch; }
+  .ph__meta { min-width: 0; padding-top: 0.2rem; }
+  .ph__aside { min-width: 0; padding-bottom: 0.3rem; }
+
+  .ph--compact .ph__title { max-width: 16ch; }
+
+  @media (max-width: 900px) {
+    .ph__row--aside { grid-template-columns: 1fr; }
+    .ph__title { max-width: none; }
+  }
+  @media (max-width: 560px) {
+    .ph :global(.ph__crumbs) { margin-bottom: 0.75rem; }
+    .ph__glow { top: -30vmax; right: -50vmax; }
+  }
+</style>

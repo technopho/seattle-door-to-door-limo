@@ -1,0 +1,100 @@
+---
+// Related service cards: each card is a single link to the service landing page.
+import Icon from '../Icon.astro';
+import { services, serviceHref } from '../../data/site';
+import { servicePages, serviceIcon, type Heading } from '../../data/service-pages';
+
+interface Props { slugs: string[]; title?: Heading }
+const { slugs, title = { text: 'More ways to', em: 'ride with us.' } } = Astro.props;
+const items = slugs.flatMap((slug) => {
+  const s = services.find((x) => x.slug === slug);
+  const p = servicePages[slug];
+  return s && p ? [{ s, p }] : [];
+});
+// Kicker phrases render as unbreakable units so lines only wrap between phrases.
+const phrases = (k: string) => k.split(' · ');
+---
+<section class="rs section" aria-labelledby="rs-title">
+  <div class="container">
+    <header class="rs__head">
+      <div>
+        <p class="eyebrow" data-reveal="fade">Related services</p>
+        <h2 id="rs-title" data-split>{title.text} <em>{title.em}</em></h2>
+      </div>
+      <a href="/services/" class="link-underline" data-reveal="fade" data-delay="0.15">All services <Icon name="arrow" size={14} /></a>
+    </header>
+
+    <ul class="rs__grid" role="list" data-stagger="0.08">
+      {items.map(({ s, p }) => (
+        <li>
+          <a href={serviceHref(s)} class="rs__card">
+            <span class="rs__media">
+              <img src={p.hero.image} alt="" width={p.hero.width} height={p.hero.height} loading="lazy" decoding="async" style={p.hero.position ? `object-position:${p.hero.position}` : undefined} />
+            </span>
+            <span class="rs__body">
+              <span class="rs__icon" aria-hidden="true"><Icon name={serviceIcon[s.slug] ?? 'car'} /></span>
+              <span class="rs__text">
+                <span class="rs__kicker"><span class="rs__kicker-in">{phrases(s.kicker).map((k) => <span>{k}</span>)}</span></span>
+                <span class="rs__title">{s.title}</span>
+              </span>
+              <span class="rs__arrow" aria-hidden="true"><Icon name="arrow-up-right" /></span>
+            </span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>
+
+<style>
+  .rs { padding-top: clamp(1.5rem, 4vw, 3rem); padding-bottom: clamp(4rem, 8vw, 6.5rem); }
+  .rs__head { display: flex; align-items: end; justify-content: space-between; flex-wrap: wrap; gap: 1.5rem 3rem; margin-bottom: clamp(2rem, 4vw, 3rem); }
+  .rs__head > div { display: grid; gap: 1.2rem; }
+  .rs__head h2 :global(.split-line) { vertical-align: top; }
+  .rs__head .link-underline { min-height: 44px; }
+  .rs__head .link-underline::after { bottom: calc(50% - 0.95em); }
+
+  .rs__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(1rem, 2vw, 1.6rem); }
+  .rs__card {
+    display: grid;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-l);
+    background: var(--bg-3);
+    box-shadow: 0 1px 2px rgb(var(--fg-rgb) / 0.04), 0 24px 50px -36px rgb(var(--fg-rgb) / 0.3);
+    transition: transform 0.6s var(--ease-out), box-shadow 0.6s var(--ease-out), border-color 0.4s;
+  }
+  :global([data-theme='dark']) .rs__card { box-shadow: none; }
+  .rs__card:hover { transform: translateY(-4px); border-color: var(--line-strong); box-shadow: 0 1px 2px rgb(var(--fg-rgb) / 0.05), 0 34px 60px -36px rgb(var(--fg-rgb) / 0.4); }
+  .rs__media { display: block; aspect-ratio: 16 / 10; overflow: hidden; background: var(--bg-4); }
+  .rs__media img { width: 100%; height: 100%; object-fit: cover; transition: transform 1.2s var(--ease-out); }
+  .rs__card:hover .rs__media img { transform: scale(1.05); }
+  .rs__body { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 1rem; padding: 1.2rem 1.3rem 1.3rem; }
+  .rs__icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgb(var(--accent-rgb) / 0.3); background: rgb(var(--accent-rgb) / 0.07); color: var(--accent); }
+  .rs__icon :global(svg) { width: 19px; height: 19px; }
+  .rs__text { display: grid; gap: 0.2rem; min-width: 0; }
+  .rs__kicker { display: block; min-width: 0; overflow: hidden; font-size: 0.62rem; font-weight: 600; line-height: 1.5; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+  /* Each phrase carries its dot in a 1.4em lead-in; the row is shifted left by that amount and clipped,
+     so no line ever starts with a dot. */
+  .rs__kicker-in { display: flex; flex-wrap: wrap; margin-left: -1.4em; }
+  .rs__kicker-in > span { position: relative; padding-left: 1.4em; white-space: nowrap; }
+  .rs__kicker-in > span::before { content: '·'; content: '·' / ''; position: absolute; left: 0; width: 1.4em; text-align: center; opacity: 0.7; }
+  .rs__title { font-family: var(--font-display); font-size: 1.3rem; font-weight: 500; letter-spacing: -0.025em; line-height: 1.15; color: var(--text); transition: color 0.4s; }
+  .rs__card:hover .rs__title { color: var(--accent); }
+  .rs__arrow { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--line-strong); transition: background 0.4s var(--ease-out), color 0.4s, border-color 0.4s; }
+  .rs__arrow :global(svg) { width: 15px; height: 15px; }
+  .rs__card:hover .rs__arrow { background: var(--cta-bg); color: var(--cta-fg); border-color: transparent; }
+
+  @media (max-width: 960px) {
+    .rs__grid { grid-template-columns: 1fr; }
+    .rs__card { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); }
+    .rs__media { aspect-ratio: auto; height: 100%; min-height: 120px; }
+  }
+  @media (max-width: 560px) {
+    .rs__card { grid-template-columns: 108px minmax(0, 1fr); border-radius: var(--radius); }
+    .rs__media { min-height: 112px; }
+    .rs__icon { display: none; }
+    .rs__body { grid-template-columns: minmax(0, 1fr) auto; gap: 0.75rem; padding: 0.9rem 1rem; }
+    .rs__title { font-size: 1.15rem; }
+  }
+</style>

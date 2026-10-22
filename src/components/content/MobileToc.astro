@@ -1,0 +1,73 @@
+---
+// Collapsible "Contents" card for long documents on phones and tablets (legal pages, Journal articles).
+// Hidden above the `below` breakpoint, where the page shows its sticky sidebar contents instead.
+import Icon from '../Icon.astro';
+
+interface Props {
+  items: { id: string; label: string }[];
+  /** Summary label. */
+  label?: string;
+  /** Widest viewport (px) that shows the card. */
+  below?: 900 | 1000;
+  class?: string;
+}
+const { items, label = 'Contents', below = 900, class: cls } = Astro.props;
+const pad = (n: number) => String(n).padStart(2, '0');
+---
+<details class:list={['mtoc', `mtoc--${below}`, cls]} data-mtoc>
+  <summary>
+    <span>{label}</span>
+    <span class="mtoc__count">{items.length} sections</span>
+    <Icon name="chevron" class="mtoc__chev" />
+  </summary>
+  <ol role="list">
+    {items.map((s, i) => <li><a href={`#${s.id}`}><span class="mtoc__num" aria-hidden="true">{pad(i + 1)}</span>{s.label}</a></li>)}
+  </ol>
+</details>
+
+<style>
+  .mtoc { display: none; }
+  @media (max-width: 900px) { .mtoc--900 { display: block; } }
+  @media (max-width: 1000px) { .mtoc--1000 { display: block; } }
+
+  .mtoc {
+    margin-bottom: 2.25rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--bg-3);
+    box-shadow: 0 1px 2px rgb(var(--fg-rgb) / 0.04), 0 20px 50px -34px rgb(var(--fg-rgb) / 0.3);
+  }
+  :global([data-theme='dark']) .mtoc { background: var(--bg-2); box-shadow: none; }
+  .mtoc summary {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    min-height: 56px;
+    padding: 0 1.1rem;
+    border-radius: inherit;
+    cursor: pointer;
+    list-style: none;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+  .mtoc summary::-webkit-details-marker { display: none; }
+  .mtoc__count { font-weight: 500; letter-spacing: 0.08em; text-transform: none; font-size: 0.82rem; color: var(--muted); }
+  .mtoc summary :global(.mtoc__chev) { flex: none; width: 18px; height: 18px; margin-left: auto; color: var(--accent); transition: transform 0.4s var(--ease-out); }
+  .mtoc[open] summary :global(.mtoc__chev) { transform: rotate(180deg); }
+  .mtoc ol { display: grid; padding: 0 0.5rem 0.6rem; border-top: 1px solid var(--line); }
+  .mtoc a { display: grid; grid-template-columns: 2rem 1fr; align-items: baseline; min-height: 44px; padding: 0.6rem; font-size: 0.94rem; line-height: 1.45; color: var(--text-2); border-radius: 10px; }
+  .mtoc a:hover { color: var(--text); }
+  .mtoc a:active { background: rgb(var(--fg-rgb) / 0.05); }
+  .mtoc li + li a { border-top: 1px solid var(--line); border-radius: 0; }
+  .mtoc__num { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.08em; color: var(--muted-2); font-variant-numeric: tabular-nums; }
+</style>
+
+<script>
+  // Close the card after a jump (before the scroll target is measured).
+  document.querySelectorAll<HTMLDetailsElement>('[data-mtoc]').forEach((d) => {
+    d.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => { d.open = false; }));
+  });
+</script>

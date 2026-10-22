@@ -1,0 +1,89 @@
+---
+// Areas served: links to each city page (site.ts areas) plus the well-known stops this service runs to.
+import Icon from '../Icon.astro';
+import { areas, areaHref } from '../../data/site';
+import type { Heading } from '../../data/service-pages';
+
+interface Props { places: string[]; title: Heading; lead: string }
+const { places, title, lead } = Astro.props;
+---
+<section class="sa section section--tight" aria-labelledby="sa-title">
+  <div class="container sa__grid">
+    <div class="sa__copy">
+      <p class="eyebrow" data-reveal="fade">Areas served</p>
+      <h2 id="sa-title" data-split>{title.text} <em>{title.em}</em></h2>
+      <p class="lead" data-reveal data-delay="0.1">{lead}</p>
+      <div class="sa__places" data-reveal data-delay="0.2">
+        <p class="sa__label" id="sa-places">Frequent stops</p>
+        <ul class="sa__chips" role="list" aria-labelledby="sa-places">
+          {places.map((p) => <li class="chip"><Icon name="pin" /> {p}</li>)}
+        </ul>
+      </div>
+    </div>
+
+    <ul class="sa__list" role="list" data-stagger="0.06">
+      {areas.map((a) => (
+        <li>
+          <a href={areaHref(a)} class="sa__area">
+            <span class="sa__city">{a.city}</span>
+            <span class="sa__eta"><Icon name="clock" /> {a.eta}</span>
+            <span class="sa__detail"><span class="sa__detail-in">{a.detail.split(' · ').map((t, i, all) => <span>{t}{i < all.length - 1 && <span class="sr-only">,</span>}</span>)}</span></span>
+            <span class="sa__arrow" aria-hidden="true"><Icon name="arrow-up-right" /></span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>
+
+<style>
+  .sa__grid { display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: clamp(2.5rem, 6vw, 6rem); align-items: start; }
+  .sa__copy { display: grid; gap: 1.3rem; justify-items: start; }
+  .sa__copy h2 { max-width: 18ch; text-wrap: balance; }
+  .sa__copy h2 :global(.split-line) { vertical-align: top; }
+  .sa__copy .lead { max-width: 46ch; }
+  .sa__places { display: grid; gap: 0.8rem; margin-top: 0.6rem; }
+  .sa__label { font-size: 0.64rem; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); }
+  .sa__chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
+  .sa__list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
+  .sa__area {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: 'city arrow' 'eta arrow' 'detail detail';
+    grid-template-rows: auto auto 1fr;
+    align-items: start;
+    row-gap: 0.25rem;
+    min-height: 100%;
+    padding: 1.2rem 1.3rem 1.25rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--bg-3);
+    box-shadow: 0 1px 2px rgb(var(--fg-rgb) / 0.03);
+    transition: border-color 0.4s, transform 0.6s var(--ease-out), box-shadow 0.6s var(--ease-out);
+  }
+  :global([data-theme='dark']) .sa__area { background: var(--card-bg); box-shadow: none; }
+  .sa__area:hover { border-color: var(--line-strong); transform: translateY(-3px); box-shadow: 0 24px 50px -34px rgb(var(--fg-rgb) / 0.35); }
+  .sa__city { grid-area: city; font-family: var(--font-display); font-size: 1.35rem; font-weight: 500; letter-spacing: -0.025em; line-height: 1.15; color: var(--text); transition: color 0.4s; }
+  .sa__area:hover .sa__city { color: var(--accent); }
+  .sa__eta { grid-area: eta; display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; font-weight: 600; color: var(--text-2); }
+  .sa__eta :global(svg) { width: 14px; height: 14px; color: var(--accent); }
+  .sa__detail { grid-area: detail; align-self: end; min-width: 0; overflow: hidden; margin-top: 0.55rem; padding-top: 0.6rem; border-top: 1px solid var(--line); font-size: 0.8rem; line-height: 1.5; color: var(--muted); }
+  /* Neighbourhoods are unbreakable units (same pattern as the service kickers), so "Pier 91" never splits
+     across lines; each one's dot sits in a lead-in that is clipped at the start of a line. */
+  .sa__detail-in { display: flex; flex-wrap: wrap; margin-left: -1em; }
+  .sa__detail-in > span { position: relative; padding-left: 1em; white-space: nowrap; }
+  .sa__detail-in > span::before { content: '·'; content: '·' / ''; position: absolute; left: 0; width: 1em; text-align: center; }
+  .sa__arrow { grid-area: arrow; align-self: center; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--line-strong); color: var(--text); transition: background 0.4s var(--ease-out), color 0.4s, border-color 0.4s; }
+  .sa__arrow :global(svg) { width: 15px; height: 15px; }
+  .sa__area:hover .sa__arrow { background: var(--cta-bg); color: var(--cta-fg); border-color: transparent; }
+
+  @media (max-width: 960px) {
+    .sa__grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 520px) {
+    .sa__list { grid-template-columns: 1fr; gap: 0.6rem; }
+    .sa__area { padding: 1rem 1.1rem; }
+  }
+</style>

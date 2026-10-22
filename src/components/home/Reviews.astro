@@ -4,6 +4,18 @@ import { site, ratings, testimonials } from '../../data/site';
 
 const pad = (n: number) => String(n).padStart(2, '0');
 const total = testimonials.length;
+
+// Star rows are drawn to the actual score: whole stars, then the last one clipped to the decimal.
+// The star glyph spans x 2.5→21.5 of its 24-unit box, so the partial width maps onto the glyph
+// itself (a 4.8 shows 80% of the fifth star, not 80% of its padded box).
+const starFill = (score: string) => {
+  const v = Math.max(0, Math.min(5, Number(score) || 0));
+  const full = Math.floor(v);
+  const frac = v - full;
+  const part = frac > 0.001 ? (2.5 + frac * 19) / 24 : 0;
+  return `--full:${full};--part:${part.toFixed(3)}`;
+};
+const star5 = Array.from({ length: 5 });
 ---
 <section id="reviews" class="section rv" aria-labelledby="reviews-title">
   <div class="rv__glow" aria-hidden="true"></div>
@@ -11,7 +23,7 @@ const total = testimonials.length;
     <!-- Score column -->
     <div class="rv__score">
       <p class="eyebrow" data-reveal="fade">Client Reviews</p>
-      <h2 id="reviews-title" class="sr-only">Rated {site.rating.score} out of 5 from {site.rating.count} five-star reviews</h2>
+      <h2 id="reviews-title" class="sr-only">Rated {site.rating.score} out of 5 across {site.rating.count} client reviews</h2>
 
       <div class="rv__big" data-reveal aria-hidden="true">
         <span class="rv__num" data-rv-score data-value={site.rating.score}>{site.rating.score}</span>
@@ -19,10 +31,11 @@ const total = testimonials.length;
       </div>
 
       <div class="rv__meta" data-reveal data-delay="0.1">
-        <span class="rv__stars" aria-hidden="true">
-          {Array.from({ length: 5 }).map(() => <Icon name="star" />)}
+        <span class="rv__rate rv__stars" aria-hidden="true" style={starFill(site.rating.score)}>
+          <span class="rv__rate-row rv__rate-base">{star5.map(() => <Icon name="star" />)}</span>
+          <span class="rv__rate-row rv__rate-fill">{star5.map(() => <Icon name="star" />)}</span>
         </span>
-        <p class="rv__count"><strong>{site.rating.count}</strong> five-star reviews</p>
+        <p class="rv__count">Average across <strong>{site.rating.count}</strong> reviews</p>
       </div>
 
       <ul class="rv__platforms" role="list" data-stagger="0.08">
@@ -30,8 +43,9 @@ const total = testimonials.length;
           <li class="rv__plat">
             <span class="rv__plat-name">{r.platform}</span>
             <span class="rv__plat-score">{r.score}</span>
-            <span class="rv__plat-stars" aria-hidden="true">
-              {Array.from({ length: 5 }).map(() => <Icon name="star" />)}
+            <span class="rv__rate rv__plat-stars" aria-hidden="true" style={starFill(r.score)}>
+              <span class="rv__rate-row rv__rate-base">{star5.map(() => <Icon name="star" />)}</span>
+              <span class="rv__rate-row rv__rate-fill">{star5.map(() => <Icon name="star" />)}</span>
             </span>
             <span class="rv__plat-count">{r.count}<span class="sr-only"> on {r.platform}, rated {r.score} out of 5</span></span>
           </li>
@@ -57,7 +71,7 @@ const total = testimonials.length;
 
       <div class="rv__slides" aria-live="polite" aria-atomic="false" data-cursor="Drag" data-rv-track>
         {testimonials.map((t, i) => (
-          <figure
+          <div
             class:list={['rv__slide', i === 0 && 'is-active']}
             role="group"
             aria-roledescription="slide"
@@ -65,17 +79,19 @@ const total = testimonials.length;
             aria-hidden={i === 0 ? undefined : 'true'}
             data-rv-slide={i}
           >
-            <blockquote class="rv__quote">
-              <p data-rv-text>{t.quote}</p>
-            </blockquote>
-            <figcaption class="rv__by" data-rv-by>
-              <span class="rv__line" aria-hidden="true"></span>
-              <span class="rv__who">
-                <span class="rv__name">{t.name}</span>
-                <span class="rv__ctx">{t.context}</span>
-              </span>
-            </figcaption>
-          </figure>
+            <figure class="rv__fig">
+              <blockquote class="rv__quote">
+                <p data-rv-text>{t.quote}</p>
+              </blockquote>
+              <figcaption class="rv__by" data-rv-by>
+                <span class="rv__line" aria-hidden="true"></span>
+                <span class="rv__who">
+                  <span class="rv__name">{t.name}</span>
+                  <span class="rv__ctx">{t.context}</span>
+                </span>
+              </figcaption>
+            </figure>
+          </div>
         ))}
       </div>
 
@@ -136,8 +152,16 @@ const total = testimonials.length;
     margin-top: 0.35em;
   }
   .rv__meta { display: grid; gap: 0.6rem; }
-  .rv__stars { display: inline-flex; gap: 4px; color: var(--accent); }
-  .rv__stars :global(svg) { width: 20px; height: 20px; }
+  /* Rating stars: faint base row, accent row clipped to the score on top. */
+  .rv__rate { position: relative; display: inline-flex; width: max-content; }
+  .rv__rate-row { display: inline-flex; gap: var(--g); }
+  .rv__rate-row :global(svg) { flex: none; width: var(--w); height: var(--w); }
+  .rv__rate-base { color: rgb(var(--accent-rgb) / 0.22); }
+  .rv__rate-fill {
+    position: absolute; inset: 0 auto 0 0; overflow: hidden; color: var(--accent);
+    width: calc(var(--full) * (var(--w) + var(--g)) + var(--part) * var(--w));
+  }
+  .rv__stars { --w: 20px; --g: 4px; }
   .rv__count { font-size: 0.95rem; color: var(--text-2); letter-spacing: 0.02em; }
   .rv__count strong { color: var(--text); font-weight: 700; }
 
@@ -153,8 +177,7 @@ const total = testimonials.length;
   }
   .rv__plat-name { grid-area: name; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: var(--text-2); }
   .rv__plat-score { grid-area: score; font-family: var(--font-display); font-size: 1.7rem; font-weight: 400; line-height: 1; letter-spacing: -0.03em; color: var(--text); font-variant-numeric: lining-nums; }
-  .rv__plat-stars { grid-area: stars; display: inline-flex; gap: 2px; color: var(--accent); }
-  .rv__plat-stars :global(svg) { width: 12px; height: 12px; }
+  .rv__plat-stars { --w: 12px; --g: 2px; grid-area: stars; }
   .rv__plat-count { grid-area: count; justify-self: end; font-size: 0.75rem; color: var(--muted); letter-spacing: 0.04em; }
 
   /* ---------- Slider ---------- */
@@ -171,7 +194,9 @@ const total = testimonials.length;
 
   .rv__slides { display: grid; touch-action: pan-y; user-select: none; -webkit-user-select: none; cursor: grab; }
   .rv__slides:active { cursor: grabbing; }
-  .rv__slide { grid-area: 1 / 1; margin: 0; display: grid; gap: clamp(1.6rem, 3vw, 2.4rem); align-content: start; visibility: hidden; opacity: 0; will-change: transform; }
+  /* The slide is a div (role=group is not allowed on <figure>); the figure inside carries the quote + caption */
+  .rv__slide { grid-area: 1 / 1; margin: 0; display: grid; align-content: start; visibility: hidden; opacity: 0; will-change: transform; }
+  .rv__fig { margin: 0; display: grid; gap: clamp(1.6rem, 3vw, 2.4rem); align-content: start; }
   .rv__slide.is-active { visibility: visible; opacity: 1; }
   .rv__quote p {
     font-family: var(--font-display);
@@ -194,7 +219,7 @@ const total = testimonials.length;
   .rv__controls { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; }
   .rv__progress-wrap { display: flex; align-items: center; gap: 1.1rem; flex: 1; min-width: 0; }
   .rv__counter { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.14em; color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .rv__counter-of { color: var(--muted-2); }
+  .rv__counter-of { color: var(--muted); }
   .rv__progress { position: relative; flex: 1; height: 1px; background: var(--line-strong); overflow: hidden; }
   .rv__bar { position: absolute; inset: 0; background: var(--accent-grad); transform: scaleX(0); transform-origin: left; }
   .rv__btns { display: flex; gap: 0.6rem; }
@@ -223,6 +248,7 @@ const total = testimonials.length;
       grid-template-columns: 1fr; grid-template-areas: 'name' 'score' 'stars' 'count';
       row-gap: 0.4rem; padding: 1rem 0.9rem; border: 1px solid var(--line); border-radius: var(--radius-s);
       background: var(--bg-3);
+      box-shadow: var(--card-shadow);
     }
     .rv__plat-count { justify-self: start; }
     .rv__plat-name { font-size: 0.64rem; letter-spacing: 0.2em; }

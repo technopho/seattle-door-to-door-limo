@@ -1,0 +1,107 @@
+---
+import Base from '../../layouts/Base.astro';
+import PageHead from '../../components/content/PageHead.astro';
+import PostCard from '../../components/content/PostCard.astro';
+import Icon from '../../components/Icon.astro';
+import { posts, sortedPosts, postHref } from '../../data/posts';
+import { site, services, serviceHref } from '../../data/site';
+import { breadcrumbs, businessId } from '../../lib/seo';
+
+const title = 'Seattle Chauffeur Journal: Travel Guides | Door to Door';
+// Only name articles that are part of this build: drafts are left out of production (see posts.ts).
+const allLive = sortedPosts.length === posts.length;
+const description = allLive
+  ? 'Guides from Seattle Door to Door Limo: what to expect at SeaTac pickups, Pier 66 vs. Pier 91 cruise transfers and why black car service matters. Plan your ride.'
+  : 'The Seattle Door to Door Limo Journal: perspectives on black car service, airport travel and getting around Seattle in comfort. Browse, then plan your ride.';
+
+const [feature, ...rest] = sortedPosts;
+const blog = {
+  '@context': 'https://schema.org',
+  '@type': 'Blog',
+  name: `${site.name} Journal`,
+  url: new URL('/blog/', site.url).href,
+  publisher: { '@id': businessId },
+  blogPost: sortedPosts.map((p) => ({
+    '@type': 'BlogPosting',
+    headline: p.title,
+    url: new URL(postHref(p), site.url).href,
+    datePublished: p.date,
+  })),
+};
+const topics = services.map((s) => ({ label: s.title, href: serviceHref(s) }));
+---
+<Base title={title} description={description} jsonLd={[breadcrumbs([['Journal', '/blog/']]), blog]}>
+  <PageHead
+    trail={[['Journal', '/blog/']]}
+    eyebrow="Guides & perspectives"
+    lead="Perspectives and practical guides on chauffeured travel across Seattle and the Puget Sound."
+  >
+    <Fragment slot="title">The <em>Journal</em></Fragment>
+  </PageHead>
+
+  <section class="jr" aria-label="Articles">
+    <div class="container">
+      <div class="jr__feature" data-reveal>
+        <PostCard post={feature} variant="feature" headingLevel="h2" eager />
+      </div>
+
+      {rest.length > 0 && (
+        <>
+          <div class="jr__rule" aria-hidden="true"><span>More articles</span></div>
+          <div class="jr__grid" data-stagger="0.12">
+            {rest.map((p) => <PostCard post={p} headingLevel="h2" />)}
+          </div>
+        </>
+      )}
+    </div>
+  </section>
+
+  <section class="jr-topics section--tight surface-2" aria-labelledby="jr-topics-title">
+    <div class="container jr-topics__inner">
+      <div class="jr-topics__copy">
+        <p class="eyebrow" data-reveal="fade">Plan your ride</p>
+        <h2 id="jr-topics-title" class="jr-topics__title" data-split>Looking for <em>something specific?</em></h2>
+        <p class="muted" data-reveal data-delay="0.15">Explore our services, or find quick answers in the <a href="/faq/" class="jr-topics__inline">FAQ</a>.</p>
+      </div>
+      <ul class="jr-topics__list" role="list" data-stagger="0.06">
+        {topics.map((t) => (
+          <li><a href={t.href} class="jr-topics__link"><span>{t.label}</span><Icon name="arrow-up-right" /></a></li>
+        ))}
+      </ul>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .jr { padding-bottom: var(--section-y); }
+  .jr__feature { padding-top: clamp(1.5rem, 3vw, 2.5rem); border-top: 1px solid var(--line); }
+  .jr__rule { display: flex; align-items: center; gap: 1.2rem; margin: clamp(4rem, 8vw, 6.5rem) 0 clamp(2rem, 4vw, 3rem); }
+  .jr__rule span { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+  .jr__rule::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+  .jr__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(3rem, 5vw, 4.5rem) clamp(1.5rem, 4vw, 3.5rem); }
+
+  .jr-topics__inner { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 2.5rem clamp(3rem, 7vw, 7rem); align-items: center; }
+  .jr-topics__copy { display: grid; gap: 1.1rem; justify-items: start; }
+  .jr-topics__title { font-size: var(--fs-h2); max-width: 14ch; }
+  .jr-topics__title :global(.split-line) { vertical-align: top; }
+  .jr-topics__inline { color: var(--text); text-decoration: underline; text-decoration-color: rgb(var(--accent-rgb) / 0.55); text-underline-offset: 0.22em; }
+  .jr-topics__list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid var(--line-strong); }
+  .jr-topics__list li { border-bottom: 1px solid var(--line); }
+  .jr-topics__list li:nth-child(odd) { border-right: 1px solid var(--line); }
+  .jr-topics__link { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 68px; padding: 0.9rem 1.2rem; font-family: var(--font-display); font-size: 1.08rem; letter-spacing: -0.015em; color: var(--text-2); transition: background 0.4s var(--ease-out), color 0.3s; }
+  .jr-topics__link :global(svg) { width: 16px; height: 16px; flex: none; color: var(--accent); transition: transform 0.5s var(--ease-out); }
+  .jr-topics__link:hover { background: rgb(var(--fg-rgb) / 0.04); color: var(--text); }
+  .jr-topics__link:hover :global(svg) { transform: translate(3px, -3px); }
+
+  @media (max-width: 900px) {
+    .jr-topics__inner { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 700px) {
+    .jr__grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 560px) {
+    .jr-topics__list { grid-template-columns: 1fr; }
+    .jr-topics__list li:nth-child(odd) { border-right: 0; }
+    .jr-topics__link { padding-inline: 0.2rem; min-height: 60px; }
+  }
+</style>

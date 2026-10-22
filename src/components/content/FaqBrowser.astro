@@ -1,0 +1,557 @@
+---
+// Grouped FAQ accordion with topic filters, live search (with highlighting) and deep links (#q-<id>).
+// The search input lives in the page head (FaqSearch.astro); everything is wired through data attributes.
+// Search matches at word starts across the group title, question, answer and hidden `keywords`.
+// The concierge card renders twice so focus order always follows visual order: in the sticky sidebar on
+// desktop, and after the questions on tablet/phone (or on very short desktop windows). Only one is displayed.
+import Icon from '../Icon.astro';
+import ConciergeCard from './ConciergeCard.astro';
+import { faqGroups, allFaqs } from './faqData';
+import { site } from '../../data/site';
+
+const pad = (n: number) => String(n).padStart(2, '0');
+const norm = (s: string) => s.toLowerCase().replace(/[’‘]/g, "'").replace(/[“”]/g, '"');
+const total = allFaqs.length;
+---
+<section class="fb" aria-label="Questions by topic">
+  <div class="container fb__grid">
+    <aside class="fb__aside">
+      <div class="fb__sticky">
+        <nav class="fb__topics" aria-label="Filter by topic" data-reveal="fade">
+          <p class="fb__topics-label" id="fb-topics-label">Topics</p>
+          <ul role="list" class="fb__topic-list" data-lenis-prevent>
+            <li>
+              <button type="button" class="fb__topic" aria-pressed="true" data-faq-filter="all">
+                <span class="fb__topic-icon" aria-hidden="true"><Icon name="sparkle" /></span>
+                <span class="fb__topic-name">All questions</span>
+                <span class="fb__topic-count" data-faq-count="all">{total}</span>
+              </button>
+            </li>
+            {faqGroups.map((g) => (
+              <li>
+                <button type="button" class="fb__topic" aria-pressed="false" data-faq-filter={g.id}>
+                  <span class="fb__topic-icon" aria-hidden="true"><Icon name={g.icon} /></span>
+                  <span class="fb__topic-name">{g.title}</span>
+                  <span class="fb__topic-count" data-faq-count={g.id}>{g.items.length}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </nav>
+        <ConciergeCard class="fb__card fb__card--aside" fit />
+      </div>
+    </aside>
+
+    <div class="fb__main" id="faq-results">
+      <div class="fb__bar">
+        <p class="fb__status" id="faq-status" role="status" aria-live="polite" data-faq-status>{total} questions across {faqGroups.length} topics</p>
+        <button type="button" class="fb__expand" data-faq-expand data-state="closed" aria-controls="faq-results">Expand all</button>
+      </div>
+
+      {faqGroups.map((g) => (
+        <section class="fb__group" id={`topic-${g.id}`} data-faq-group={g.id} aria-labelledby={`topic-${g.id}-title`}>
+          <header class="fb__ghead" data-reveal="fade">
+            <span class="fb__gicon" aria-hidden="true"><Icon name={g.icon} /></span>
+            <h2 class="fb__gtitle" id={`topic-${g.id}-title`}>{g.title}</h2>
+            <span class="fb__gcount" aria-hidden="true" data-faq-gcount>{pad(g.items.length)}</span>
+          </header>
+          <div class="fb__list">
+            {g.items.map((f) => (
+              <div class="fq" id={`q-${f.id}`} data-faq-item data-text={norm(`${g.title} ${f.q} ${f.a} ${f.keywords ?? ''}`)}>
+                <h3 class="fq__h">
+                  <button type="button" class="fq__btn" id={`fq-b-${f.id}`} aria-expanded="false" aria-controls={`fq-p-${f.id}`} data-faq-btn>
+                    <span class="fq__q" data-faq-q>{f.q}</span>
+                    <span class="fq__icon" aria-hidden="true"><span></span><span></span></span>
+                  </button>
+                </h3>
+                <div class="fq__panel" id={`fq-p-${f.id}`}>
+                  <div class="fq__inner">
+                    <p class="fq__a" data-faq-a>{f.a}</p>
+                    {f.link && (
+                      <a href={f.link.href} class="link-underline fq__link">{f.link.label} <Icon name="arrow" size={14} /></a>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      ))}
+
+      <div class="fb__empty" data-faq-empty hidden>
+        <p class="fb__empty-title">No questions match <span data-faq-term></span>.</p>
+        <p class="fb__empty-text">Try a different word, or ask the concierge directly. A real person answers, 24/7.</p>
+        <div class="fb__empty-actions">
+          <button type="button" class="btn btn--ghost btn--sm" data-faq-reset>Clear search</button>
+          <a href={site.phoneHref} class="btn btn--gold btn--sm"><Icon name="phone" /> Call {site.phone}</a>
+          <a href={site.smsHref} class="btn btn--ghost btn--sm"><Icon name="chat" /> Text us</a>
+        </div>
+      </div>
+    </div>
+
+    <ConciergeCard class="fb__card fb__card--after" />
+  </div>
+</section>
+
+<style>
+  .fb { padding: clamp(1rem, 2.5vw, 2rem) 0 var(--section-y); }
+  .fb__grid { display: grid; grid-template-columns: minmax(250px, 320px) minmax(0, 1fr); column-gap: clamp(2.5rem, 6vw, 6.5rem); row-gap: 0; align-items: start; }
+  .fb__aside { grid-column: 1; grid-row: 1; align-self: stretch; }
+  .fb__main { grid-column: 2; grid-row: 1; min-width: 0; }
+  .fb__sticky { display: grid; gap: 2rem; }
+  .fb__grid > :global(.fb__card--after) { display: none; }
+  /* The topics stay in reach on every desktop height. The card under them compacts on laptop-height
+     windows (ConciergeCard `fit`) and moves below the questions when even that would not fit. */
+  @media (min-width: 901px) {
+    .fb__sticky { position: sticky; top: calc(var(--header-h) + 1.25rem); }
+  }
+  @media (min-width: 901px) and (max-height: 819px) {
+    .fb__sticky { gap: 1.25rem; top: calc(var(--header-h) + 0.75rem); }
+  }
+  @media (min-width: 901px) and (max-height: 639px) {
+    .fb__sticky > :global(.fb__card--aside) { display: none; }
+    .fb__grid > :global(.fb__card--after) { display: grid; grid-column: 2; grid-row: 2; max-width: 520px; margin-top: clamp(3rem, 6vw, 4.5rem); }
+  }
+
+  /* ---------- Topic filters ---------- */
+  .fb__topics-label { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); padding: 0 0.85rem 0.6rem; }
+  .fb__topic-list { display: grid; gap: 2px; }
+  .fb__topic {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 0.8rem;
+    width: 100%;
+    min-height: 48px;
+    padding: 0.4rem 0.85rem;
+    border-radius: 12px;
+    text-align: left;
+    color: var(--text-2);
+    transition: background 0.35s var(--ease-out), color 0.35s;
+  }
+  .fb__topic:hover { background: rgb(var(--fg-rgb) / 0.045); color: var(--text); }
+  .fb__topic-icon { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--line); color: var(--accent); transition: background 0.35s, border-color 0.35s, color 0.35s; }
+  .fb__topic-icon :global(svg) { width: 15px; height: 15px; }
+  .fb__topic-name { font-size: 0.95rem; font-weight: 500; letter-spacing: -0.005em; }
+  .fb__topic-count { min-width: 2ch; font-size: 0.74rem; font-weight: 600; color: var(--muted-2); text-align: right; font-variant-numeric: tabular-nums; }
+  .fb__topic[aria-pressed='true'] { background: var(--bg-3); color: var(--text); box-shadow: 0 1px 2px rgb(var(--fg-rgb) / 0.05), 0 12px 30px -20px rgb(var(--fg-rgb) / 0.35); }
+  :global([data-theme='dark']) .fb__topic[aria-pressed='true'] { background: rgb(var(--fg-rgb) / 0.06); box-shadow: inset 0 0 0 1px var(--line); }
+  .fb__topic[aria-pressed='true'] .fb__topic-icon { background: var(--cta-bg); border-color: transparent; color: var(--cta-fg); }
+  .fb__topic[aria-pressed='true'] .fb__topic-count { color: var(--accent); }
+  .fb__topic.is-empty .fb__topic-count { opacity: 0.45; }
+  .fb__topic:focus-visible { outline-offset: 2px; }
+
+  /* ---------- Toolbar ---------- */
+  .fb__bar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--line); }
+  .fb__status { font-size: 0.86rem; color: var(--muted); }
+  .fb__status :global(strong) { color: var(--text); font-weight: 600; }
+  .fb__expand {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 1rem;
+    border-radius: 999px;
+    border: 1px solid var(--line-strong);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-2);
+    transition: background 0.3s, color 0.3s, border-color 0.3s;
+  }
+  .fb__expand:hover { border-color: var(--text); color: var(--text); }
+  .fb__expand[hidden] { display: none; }
+
+  /* ---------- Groups ---------- */
+  .fb__group { padding-top: clamp(2.5rem, 4.5vw, 3.75rem); scroll-margin-top: calc(var(--header-h) + 1rem); }
+  .fb__group[hidden] { display: none; }
+  .fb__ghead { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 0.95rem; padding-bottom: 0.9rem; }
+  .fb__gicon { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--line-strong); color: var(--accent); background: var(--bg-3); box-shadow: 0 10px 24px -16px rgb(var(--fg-rgb) / 0.4); }
+  :global([data-theme='dark']) .fb__gicon { background: rgb(var(--fg-rgb) / 0.03); box-shadow: none; }
+  .fb__gicon :global(svg) { width: 18px; height: 18px; }
+  .fb__gtitle { font-size: clamp(1.45rem, 2.2vw, 2rem); letter-spacing: -0.03em; }
+  .fb__gcount { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.14em; color: var(--muted-2); font-variant-numeric: tabular-nums; }
+  .fb__list { border-top: 1px solid var(--line-strong); }
+
+  /* ---------- Accordion item ---------- */
+  .fq { position: relative; isolation: isolate; border-bottom: 1px solid var(--line); scroll-margin-top: calc(var(--header-h) + 1rem); }
+  .fq[hidden] { display: none; }
+  .fq::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: linear-gradient(90deg, rgb(var(--accent-rgb) / 0.06), rgb(var(--accent-rgb) / 0) 70%);
+    opacity: 0;
+    transition: opacity 0.6s var(--ease-out);
+  }
+  .fq.is-open::after { opacity: 1; }
+  .fq::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 1px;
+    background: var(--accent-grad);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.9s var(--ease-out);
+  }
+  .fq.is-open::before { transform: scaleX(1); }
+  .fq__h { font: inherit; margin: 0; letter-spacing: normal; }
+  .fq__btn {
+    --row: 40px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: start;
+    gap: 1.2rem;
+    width: 100%;
+    min-height: 76px;
+    padding: 1.15rem 0.2rem 1.15rem 0;
+    text-align: left;
+    color: var(--text-2);
+  }
+  .fq__q {
+    font-family: var(--font-display);
+    font-size: clamp(1.08rem, 1.35vw, 1.24rem);
+    font-weight: 450;
+    line-height: 1.35;
+    letter-spacing: -0.015em;
+    padding-top: calc((var(--row) - 1.35em) / 2);
+    transition: color 0.4s, transform 0.6s var(--ease-out);
+  }
+  .fq__btn:hover .fq__q { color: var(--text); transform: translateX(4px); }
+  .fq__icon { position: relative; flex: none; width: var(--row); height: var(--row); border-radius: 50%; border: 1px solid var(--line-strong); transition: transform 0.7s var(--ease-out), background 0.5s var(--ease-out), border-color 0.5s; }
+  .fq__icon span { position: absolute; left: 50%; top: 50%; width: 13px; height: 1.5px; margin: -0.75px 0 0 -6.5px; border-radius: 2px; background: var(--text); transition: transform 0.7s var(--ease-out), background 0.5s; }
+  .fq__icon span:last-child { transform: rotate(90deg); }
+  .fq:not(.is-open) .fq__btn:hover .fq__icon { border-color: rgb(var(--fg-rgb) / 0.45); background: var(--bg-3); }
+  :global([data-theme='dark']) .fq:not(.is-open) .fq__btn:hover .fq__icon { background: rgb(var(--fg-rgb) / 0.05); }
+  .fq.is-open .fq__q { color: var(--text); }
+  .fq.is-open .fq__icon { transform: rotate(180deg); background: var(--cta-bg); border-color: transparent; }
+  .fq.is-open .fq__icon span { background: var(--cta-fg); }
+  .fq.is-open .fq__icon span:last-child { transform: rotate(0deg); }
+
+  .fq__panel { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 0.6s var(--ease-out); }
+  .fq__inner { overflow: hidden; min-height: 0; }
+  .fq__a, .fq__link { transition: opacity 0.5s var(--ease-out), transform 0.6s var(--ease-out); }
+  .fq__a { max-width: 64ch; padding-right: calc(40px + 1.2rem); font-size: 1rem; line-height: 1.7; color: var(--text-2); }
+  .fq__link { margin: 0.9rem 0 0.2rem; min-height: 44px; }
+  .fq__link::after { bottom: 9px; }
+  .fq__inner > :last-child { margin-bottom: 1.6rem; }
+  .fq__inner > .fq__link:last-child { margin-bottom: 1.1rem; }
+  :global(.js) .fq:not(.is-open) .fq__panel { grid-template-rows: 0fr; }
+  :global(.js) .fq:not(.is-open) .fq__inner { visibility: hidden; transition: visibility 0s linear 0.6s; }
+  :global(.js) .fq:not(.is-open) .fq__a, :global(.js) .fq:not(.is-open) .fq__link { opacity: 0; transform: translateY(-6px); }
+
+  .fb :global(mark) { background: rgb(var(--accent-rgb) / 0.2); color: inherit; border-radius: 2px; box-shadow: 0 1px 0 rgb(var(--accent-rgb) / 0.6); }
+
+  /* ---------- Empty state ---------- */
+  .fb__empty { display: grid; gap: 0.7rem; justify-items: start; padding: clamp(2.5rem, 5vw, 4rem) 0; }
+  .fb__empty[hidden] { display: none; }
+  .fb__empty-title { font-family: var(--font-display); font-size: clamp(1.4rem, 2.2vw, 1.9rem); letter-spacing: -0.025em; color: var(--text); line-height: 1.2; }
+  .fb__empty-title span { color: var(--accent); }
+  .fb__empty-text { color: var(--muted); max-width: 46ch; }
+  .fb__empty-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.6rem; }
+  .fb__empty-actions .btn { min-height: 46px; }
+
+  /* ---------- Tablet / mobile ---------- */
+  @media (max-width: 900px) {
+    .fb__grid { grid-template-columns: minmax(0, 1fr); }
+    .fb__aside, .fb__main { grid-column: 1; grid-row: auto; min-width: 0; }
+    .fb__sticky > :global(.fb__card--aside) { display: none; }
+    .fb__grid > :global(.fb__card--after) { display: grid; margin-top: clamp(3rem, 8vw, 4rem); }
+    .fb__topics { min-width: 0; }
+    .fb__topics-label { padding-inline: 0; }
+    /* Topics become a swipeable chip row that bleeds to the screen edges. */
+    .fb__topic-list {
+      display: flex;
+      gap: 0.5rem;
+      margin-inline: calc(var(--gutter) * -1);
+      padding: 0.15rem var(--gutter) 1.1rem;
+      overflow-x: auto;
+      scroll-snap-type: x proximity;
+      scroll-padding-inline: var(--gutter);
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    .fb__topic-list::-webkit-scrollbar { display: none; }
+    .fb__topic-list li { flex: none; scroll-snap-align: start; }
+    .fb__topic { grid-template-columns: auto auto auto; gap: 0.55rem; padding: 0.3rem 0.95rem 0.3rem 0.35rem; border: 1px solid var(--line); border-radius: 999px; background: var(--chip-bg); }
+    .fb__topic-name { font-size: 0.88rem; white-space: nowrap; }
+    .fb__topic-icon { width: 34px; height: 34px; border: 0; }
+    .fb__topic[aria-pressed='true'] { border-color: transparent; }
+  }
+  @media (max-width: 560px) {
+    .fb__bar { align-items: center; }
+    .fb__status { font-size: 0.8rem; }
+    .fb__ghead { gap: 0.75rem; }
+    .fb__gicon { width: 38px; height: 38px; }
+    .fb__gtitle { font-size: 1.4rem; }
+    .fq__btn { min-height: 72px; gap: 0.9rem; padding: 1rem 0; }
+    .fq__q { font-size: 1.06rem; }
+    .fq__a { padding-right: 0; font-size: 0.97rem; }
+    .fq::after { display: none; }
+  }
+</style>
+
+<script>
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+  const root = document.querySelector<HTMLElement>('.fb');
+  const input = document.querySelector<HTMLInputElement>('[data-faq-search]');
+  if (root) {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const items = Array.from(root.querySelectorAll<HTMLElement>('[data-faq-item]'));
+    const groups = Array.from(root.querySelectorAll<HTMLElement>('[data-faq-group]'));
+    const filters = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-faq-filter]'));
+    const status = root.querySelector<HTMLElement>('[data-faq-status]')!;
+    const empty = root.querySelector<HTMLElement>('[data-faq-empty]')!;
+    const term = root.querySelector<HTMLElement>('[data-faq-term]')!;
+    const expandBtn = root.querySelector<HTMLButtonElement>('[data-faq-expand]')!;
+    const clearBtn = document.querySelector<HTMLButtonElement>('[data-faq-clear]');
+    const kbd = document.querySelector<HTMLElement>('[data-faq-kbd]');
+    const total = items.length;
+    const titles = new Map(groups.map((g) => [g.dataset.faqGroup!, g.querySelector('h2')?.textContent?.trim() ?? '']));
+
+    // Original copy, so highlights can be re-applied from clean text on every keystroke.
+    const source = new Map(items.map((it) => [it, { q: it.querySelector<HTMLElement>('[data-faq-q]')!, a: it.querySelector<HTMLElement>('[data-faq-a]')!, qt: '', at: '' }]));
+    source.forEach((s) => { s.qt = s.q.textContent ?? ''; s.at = s.a.textContent ?? ''; });
+
+    let topic = 'all';
+    let query = '';
+    let snapshot: Set<HTMLElement> | null = null;
+
+    // ---- helpers ----
+    const norm = (s: string) => s.toLowerCase().replace(/[’‘]/g, "'").replace(/[“”]/g, '"');
+    const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    // Filler words are ignored ("how much does it cost" searches for "cost"), unless that leaves nothing.
+    const STOP = new Set('a an the is are am be do does did i im me my we us our you your it its to of for in on at by and or can could will would should how what when where which who why much many there any with if this that have has get'.split(' '));
+    const tokens = (q: string) => {
+      const all = norm(q).split(/[\s,;!?]+/).map((t) => t.replace(/^[.'"(]+|[.'")]+$/g, '')).filter(Boolean);
+      const useful = all.filter((t) => !STOP.has(t.replace(/'/g, '')));
+      return useful.length ? useful : all;
+    };
+    // Each token matches at the start of a word ("tip" finds "tipping", not "multiple"); a trailing
+    // plural "s" is optional ("kids" also finds "kid").
+    const escRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\/-]/g, '\\$&');
+    const matchers = (toks: string[]) =>
+      toks.map((t) => {
+        const forms = t.length > 3 && t.endsWith('s') ? [t, t.slice(0, -1)] : [t];
+        return forms.map((f) => new RegExp((/^\w/.test(f) ? '\\b' : '') + escRe(f), 'g'));
+      });
+    const hit = (text: string, alts: RegExp[]) => alts.some((re) => { re.lastIndex = 0; return re.test(text); });
+    function highlight(text: string, res: RegExp[][]) {
+      if (!res.length) return esc(text);
+      const low = norm(text); // same length as text: only 1:1 character substitutions
+      const ranges: [number, number][] = [];
+      res.flat().forEach((re) => {
+        re.lastIndex = 0;
+        let m: RegExpExecArray | null;
+        while ((m = re.exec(low))) { if (!m[0]) { re.lastIndex++; continue; } ranges.push([m.index, m.index + m[0].length]); }
+      });
+      if (!ranges.length) return esc(text);
+      ranges.sort((a, b) => a[0] - b[0]);
+      const merged: [number, number][] = [];
+      ranges.forEach((r) => { const last = merged[merged.length - 1]; if (last && r[0] <= last[1]) last[1] = Math.max(last[1], r[1]); else merged.push([r[0], r[1]]); });
+      let out = '', at = 0;
+      merged.forEach(([s, e]) => { out += esc(text.slice(at, s)) + '<mark>' + esc(text.slice(s, e)) + '</mark>'; at = e; });
+      return out + esc(text.slice(at));
+    }
+
+    let refreshTimer = 0;
+    const refresh = (delay = 650) => {
+      window.clearTimeout(refreshTimer);
+      refreshTimer = window.setTimeout(() => { ScrollTrigger.refresh(); window.lenis?.resize?.(); }, delay);
+    };
+
+    function setOpen(it: HTMLElement, open: boolean) {
+      it.classList.toggle('is-open', open);
+      it.querySelector('[data-faq-btn]')?.setAttribute('aria-expanded', String(open));
+    }
+    const visibleItems = () => items.filter((it) => !it.hidden && !(it.closest('[data-faq-group]') as HTMLElement).hidden);
+    function syncExpand() {
+      const vis = visibleItems();
+      const allOpen = vis.length > 0 && vis.every((it) => it.classList.contains('is-open'));
+      // The label says what the button will do; no pressed state, which would contradict it.
+      expandBtn.textContent = allOpen ? 'Collapse all' : 'Expand all';
+      expandBtn.dataset.state = allOpen ? 'open' : 'closed';
+      expandBtn.hidden = vis.length === 0;
+    }
+
+    // Reveal-on-scroll is pointless once the reader starts filtering; show everything in the browser at once.
+    let revealed = false;
+    function revealAll() {
+      if (revealed) return;
+      revealed = true;
+      root!.querySelectorAll<HTMLElement>('[data-reveal]').forEach((el) => { el.classList.add('is-in'); el.style.opacity = '1'; el.style.transform = 'none'; });
+    }
+
+    // ---- apply filter + search ----
+    function apply() {
+      const toks = query.trim() ? tokens(query) : [];
+      const res = matchers(toks);
+      const counts: Record<string, number> = { all: 0 };
+      let shown = 0;
+      items.forEach((it) => {
+        const gid = (it.closest('[data-faq-group]') as HTMLElement).dataset.faqGroup!;
+        const text = it.dataset.text!;
+        const match = res.every((alts) => hit(text, alts));
+        counts[gid] = (counts[gid] ?? 0) + (match ? 1 : 0);
+        if (match) counts.all++;
+        it.hidden = !match;
+        const s = source.get(it)!;
+        s.q.innerHTML = highlight(s.qt, res);
+        s.a.innerHTML = highlight(s.at, res);
+      });
+      groups.forEach((g) => {
+        const gid = g.dataset.faqGroup!;
+        const visible = (topic === 'all' || topic === gid) && (counts[gid] ?? 0) > 0;
+        g.hidden = !visible;
+        if (visible) shown += counts[gid];
+        const gc = g.querySelector<HTMLElement>('[data-faq-gcount]');
+        if (gc) gc.textContent = String(counts[gid] ?? 0).padStart(2, '0');
+      });
+      filters.forEach((f) => {
+        const id = f.dataset.faqFilter!;
+        const c = root!.querySelector<HTMLElement>(`[data-faq-count="${id}"]`);
+        if (c) c.textContent = String(counts[id] ?? 0);
+        f.classList.toggle('is-empty', (counts[id] ?? 0) === 0);
+      });
+
+      // Auto-open answers for focused searches; restore the reader's own state when the search is cleared.
+      if (toks.length) {
+        if (!snapshot) snapshot = new Set(items.filter((it) => it.classList.contains('is-open')));
+        const focused = query.trim().length >= 3 && counts.all <= 8;
+        items.forEach((it) => setOpen(it, focused && !it.hidden));
+      } else if (snapshot) {
+        items.forEach((it) => setOpen(it, snapshot!.has(it)));
+        snapshot = null;
+      }
+
+      empty.hidden = shown > 0;
+      term.textContent = `“${query.trim()}”`;
+      const topicName = topic === 'all' ? '' : titles.get(topic) ?? '';
+      if (toks.length) {
+        status.innerHTML = shown
+          ? `<strong>${shown}</strong> ${shown === 1 ? 'result' : 'results'} for “${esc(query.trim())}”${topicName ? ` in ${esc(topicName)}` : ''}`
+          : `No results for “${esc(query.trim())}”`;
+      } else {
+        status.textContent = topic === 'all' ? `${total} questions across ${groups.length} topics` : `${shown} questions in ${topicName}`;
+      }
+      if (clearBtn) clearBtn.hidden = !query;
+      if (kbd) kbd.hidden = !!query;
+      syncExpand();
+      refresh(80);
+    }
+
+    // ---- events ----
+    items.forEach((it) => {
+      it.querySelector('[data-faq-btn]')?.addEventListener('click', () => {
+        setOpen(it, !it.classList.contains('is-open'));
+        syncExpand();
+        refresh();
+      });
+    });
+
+    expandBtn.addEventListener('click', () => {
+      const open = expandBtn.dataset.state !== 'open';
+      visibleItems().forEach((it) => setOpen(it, open));
+      revealAll();
+      syncExpand();
+      refresh();
+    });
+
+    filters.forEach((f) => {
+      f.addEventListener('click', () => {
+        topic = f.dataset.faqFilter!;
+        filters.forEach((o) => o.setAttribute('aria-pressed', String(o === f)));
+        revealAll();
+        apply();
+        // Bring the list into view if the reader has scrolled past its top (desktop sidebar).
+        const main = root!.querySelector<HTMLElement>('.fb__main')!;
+        const top = main.getBoundingClientRect().top;
+        if (top < 0 && window.matchMedia('(min-width: 901px)').matches) {
+          if (window.lenis) window.lenis.scrollTo(main, { offset: -110, duration: 1 });
+          else main.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' });
+        }
+      });
+    });
+
+    let typing = 0;
+    input?.addEventListener('input', () => {
+      window.clearTimeout(typing);
+      typing = window.setTimeout(() => { query = input.value; revealAll(); apply(); }, 90);
+    });
+    input?.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && input.value) { e.preventDefault(); input.value = ''; query = ''; apply(); }
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const first = visibleItems()[0];
+        if (first) {
+          if (window.lenis) window.lenis.scrollTo(first, { offset: -110, duration: 1 });
+          else first.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+        }
+      }
+    });
+    const reset = () => { if (!input) return; input.value = ''; query = ''; apply(); input.focus(); };
+    clearBtn?.addEventListener('click', reset);
+    root.querySelector('[data-faq-reset]')?.addEventListener('click', reset);
+    document.querySelectorAll<HTMLButtonElement>('[data-faq-suggest]').forEach((b) => {
+      b.addEventListener('click', () => {
+        if (!input) return;
+        input.value = b.dataset.faqSuggest!;
+        query = input.value;
+        revealAll();
+        apply();
+        const first = visibleItems()[0];
+        if (first) {
+          if (window.lenis) window.lenis.scrollTo(first, { offset: -110, duration: 1.1 });
+          else first.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+        }
+      });
+    });
+
+    // "/" focuses the search, unless the reader is already typing somewhere.
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== '/' || e.metaKey || e.ctrlKey || e.altKey) return;
+      const t = e.target as HTMLElement;
+      if (t.closest('input, textarea, select, [contenteditable="true"]')) return;
+      e.preventDefault();
+      input?.focus();
+    });
+
+    // Deep links: /faq/#q-flight-delays opens that answer.
+    function openFromHash(moveFocus = false) {
+      const id = decodeURIComponent(location.hash.slice(1));
+      if (!id) return;
+      const target = document.getElementById(id);
+      if (!target || !root!.contains(target)) return;
+      revealAll();
+      // A filter or search could be hiding the target: reset both so the link always lands.
+      if (target.hidden || (target.closest('[data-faq-group]') as HTMLElement | null)?.hidden) {
+        topic = 'all';
+        query = '';
+        if (input) input.value = '';
+        filters.forEach((o) => o.setAttribute('aria-pressed', String(o.dataset.faqFilter === 'all')));
+        apply();
+      }
+      if (target.matches('[data-faq-item]')) setOpen(target, true);
+      syncExpand();
+      ScrollTrigger.refresh();
+      window.lenis?.resize?.();
+      requestAnimationFrame(() => {
+        if (window.lenis) window.lenis.scrollTo(target, { offset: -100, immediate: true });
+        else target.scrollIntoView({ block: 'start' });
+        if (moveFocus) target.querySelector<HTMLElement>('[data-faq-btn]')?.focus({ preventScroll: true });
+      });
+    }
+    window.addEventListener('hashchange', () => openFromHash(true));
+    if (location.hash) window.addEventListener('load', () => setTimeout(() => openFromHash(), 60), { once: true });
+
+    syncExpand();
+  }
+</script>

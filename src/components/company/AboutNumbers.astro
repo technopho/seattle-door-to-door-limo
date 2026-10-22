@@ -1,0 +1,105 @@
+---
+import AreaList from './AreaList.astro';
+import { site, stats } from '../../data/site';
+
+// Same figure as the home page (Intro.astro): years since founding, computed from site.since, never the
+// unconfirmed hard-coded "20+" in site.ts (the client is confirming the right figure).
+const years = new Date().getFullYear() - site.since;
+const figures = stats.map((s) => (/years/i.test(s.label) ? { value: years, suffix: '', label: 'Years serving Seattle' } : s));
+---
+<section class="section nb" aria-labelledby="nb-title">
+  <div class="container">
+    <div class="nb__top">
+      <div class="nb__head">
+        <p class="eyebrow" data-reveal="fade">By the numbers</p>
+        <h2 id="nb-title" data-split>A record built <em>ride by ride.</em></h2>
+        <p class="lead" data-reveal data-delay="0.15">Experience you can feel in the details: the chauffeur already at the curb, the cabin at the right temperature, the route that avoids the backup on I-5.</p>
+      </div>
+
+      <dl class="nb__stats" data-stagger="0.08">
+        {figures.map((s) => (
+          <div class="nb__stat">
+            <dt class="nb__label">{s.label}</dt>
+            <dd class="nb__value">
+              <span data-count={s.value}>{s.value.toLocaleString('en-US')}</span><span class="nb__suffix">{s.suffix}</span>
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+
+    <div class="nb__areas">
+      <div class="nb__areas-head" data-reveal>
+        <p class="eyebrow">Where we drive</p>
+        <h3 class="nb__areas-title">Based in Seattle. At home across the Puget Sound.</h3>
+        <p class="nb__areas-note">Plus SeaTac, Paine Field and Boeing Field airports, and both cruise terminals at Pier 66 and Pier 91. Custom routes on request.</p>
+      </div>
+      <AreaList cols={2} />
+    </div>
+  </div>
+</section>
+
+<style>
+  .nb__top {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.25fr);
+    gap: clamp(2.5rem, 6vw, 6rem);
+    align-items: start;
+  }
+  .nb__head { display: grid; gap: 1.4rem; align-content: start; }
+  @media (min-width: 981px) { .nb__head { position: sticky; top: calc(var(--header-h) + 2rem); } }
+  .nb__head h2 { max-width: 12ch; }
+  .nb__head h2 :global(.split-line) { vertical-align: top; }
+  .nb__head h2 em { white-space: nowrap; }
+  .nb__head .lead { max-width: 44ch; }
+
+  .nb__stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    border-top: 1px solid var(--line-strong);
+  }
+  .nb__stat {
+    display: flex;
+    flex-direction: column-reverse;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    padding: clamp(1.4rem, 2.6vw, 2rem) clamp(1rem, 2.4vw, 2rem) clamp(1.4rem, 2.6vw, 2rem) 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .nb__stat:nth-child(even) { padding-left: clamp(1rem, 2.4vw, 2rem); border-left: 1px solid var(--line); }
+  .nb__value {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0 0.04em;
+    font-family: var(--font-display);
+    font-size: clamp(2.6rem, 4.6vw, 4.1rem);
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: -0.045em;
+    color: var(--text);
+    font-variant-numeric: lining-nums tabular-nums;
+    white-space: nowrap;
+  }
+  .nb__suffix { font-weight: 300; color: var(--accent); }
+  .nb__label { font-size: var(--fs-micro); font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); }
+
+  /* ---------- Areas ---------- */
+  .nb__areas {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.25fr);
+    gap: 2.5rem clamp(2.5rem, 6vw, 6rem);
+    margin-top: clamp(4.5rem, 9vw, 7.5rem);
+    padding-top: clamp(2.5rem, 5vw, 3.5rem);
+    border-top: 1px solid var(--line);
+  }
+  .nb__areas-head { display: grid; gap: 1rem; align-content: start; }
+  .nb__areas-title { max-width: 18ch; }
+  .nb__areas-note { color: var(--muted); max-width: 42ch; font-size: 0.95rem; }
+  @media (max-width: 980px) {
+    .nb__top, .nb__areas { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 560px) {
+    .nb__value { font-size: 2.5rem; }
+  }
+</style>

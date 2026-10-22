@@ -1,0 +1,112 @@
+---
+import Base from '../layouts/Base.astro';
+import Crumbs from '../components/company/Crumbs.astro';
+import ContactMethods from '../components/company/ContactMethods.astro';
+import ContactForm from '../components/company/ContactForm.astro';
+import ContactBook from '../components/company/ContactBook.astro';
+import ContactAreas from '../components/company/ContactAreas.astro';
+import { breadcrumbs, businessId } from '../lib/seo';
+import { site } from '../data/site';
+
+const title = 'Contact Our Seattle Limo Service 24/7 | Door to Door';
+const description =
+  'Call, text or email Seattle Door to Door Limo 24/7 for reservations, corporate accounts, weddings and events. Send us a message or reserve your ride online.';
+
+const contactPage = {
+  '@context': 'https://schema.org',
+  '@type': 'ContactPage',
+  name: title,
+  description,
+  url: new URL('/contact/', site.url).href,
+  about: { '@id': businessId },
+  mainEntity: {
+    '@id': businessId,
+    contactPoint: {
+      '@type': 'ContactPoint',
+      contactType: 'reservations',
+      telephone: site.phoneHref.replace(/^tel:/, ''),
+      email: site.email,
+      areaServed: 'US-WA',
+      availableLanguage: 'English',
+      hoursAvailable: {
+        '@type': 'OpeningHoursSpecification',
+        dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+        opens: '00:00',
+        closes: '23:59',
+      },
+    },
+  },
+};
+---
+<Base title={title} description={description} jsonLd={[breadcrumbs([['Contact', '/contact/']]), contactPage]}>
+  <section class="ct" aria-labelledby="contact-title">
+    <div class="ct__wash" aria-hidden="true"></div>
+    <div class="container">
+      <Crumbs items={[{ label: 'Home', href: '/' }, { label: 'Contact' }]} />
+
+      <header class="ct__head">
+        <div class="ct__head-main">
+          <p class="eyebrow" data-reveal="fade">Contact · Available 24/7</p>
+          <h1 id="contact-title" class="ct__title" data-split>Talk to our Seattle team, <em>any hour.</em></h1>
+        </div>
+        <p class="lead ct__lead" data-reveal data-delay="0.2">Call or text for anything same-day. Use the form or email for quotes, corporate accounts and event planning. Real people answer, 24 hours a day.</p>
+      </header>
+
+      <div class="ct__grid">
+        <div class="ct__methods"><ContactMethods /></div>
+        <div class="ct__form" data-reveal data-delay="0.2"><ContactForm /></div>
+        <div class="ct__book" data-reveal data-delay="0.15"><ContactBook /></div>
+      </div>
+    </div>
+  </section>
+
+  <ContactAreas />
+</Base>
+
+<style>
+  .ct { position: relative; isolation: isolate; padding: calc(var(--header-h) + 0.6rem) 0 clamp(4rem, 8vw, 7rem); overflow: clip; }
+  .ct__wash {
+    position: absolute;
+    z-index: -1;
+    inset: -25% -10% auto 35%;
+    height: 75%;
+    pointer-events: none;
+    background: radial-gradient(closest-side, var(--bg-3), transparent 75%);
+  }
+  :global([data-theme='dark']) .ct__wash { background: radial-gradient(closest-side, rgb(var(--accent-rgb) / 0.08), transparent 75%); }
+
+  .ct__head {
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+    align-items: end;
+    gap: 1.6rem clamp(2.5rem, 6vw, 6rem);
+    padding-top: clamp(1.5rem, 3.5vw, 3rem);
+    margin-bottom: clamp(2.5rem, 5vw, 4rem);
+  }
+  .ct__head-main { display: grid; gap: 1.3rem; }
+  .ct__title { font-size: var(--fs-page-h1); line-height: 1; letter-spacing: -0.04em; max-width: 12ch; }
+  .ct__title :global(.split-line) { vertical-align: top; }
+  .ct__lead { max-width: 46ch; padding-bottom: 0.4rem; }
+
+  /* Desktop: reach-us column + booking card on the left, the form spanning both rows on the right.
+     Phones: methods → form → booking card. */
+  .ct__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    grid-template-rows: auto 1fr;
+    grid-template-areas: 'methods form' 'book form';
+    gap: 1.5rem clamp(1.5rem, 3.5vw, 3rem);
+    align-items: start;
+  }
+  .ct__methods { grid-area: methods; }
+  .ct__form { grid-area: form; }
+  .ct__book { grid-area: book; }
+
+  @media (max-width: 980px) {
+    .ct__head { grid-template-columns: 1fr; }
+    .ct__grid { grid-template-columns: 1fr; grid-template-rows: none; grid-template-areas: 'methods' 'form' 'book'; }
+  }
+  @media (max-width: 640px) {
+    .ct__head { padding-top: 0.75rem; }
+  }
+</style>

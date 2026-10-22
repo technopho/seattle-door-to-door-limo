@@ -25,10 +25,10 @@ const picks = [
       <div class="help__copy">
         <p class="eyebrow" data-reveal="fade">Concierge</p>
         <h2 id="help-title" data-split><span>Not</span> <span>sure</span> <span>which</span> <em><span>to</span> <span>choose?</span></em></h2>
-        <p class="lead" data-reveal data-delay="0.15">Tell us the occasion, the headcount and the luggage. Our team will recommend the right vehicle, and every booking is confirmed by a real person within minutes.</p>
+        <p class="lead" data-reveal data-delay="0.15">Tell us the occasion, the headcount and the luggage. Our team will recommend the right vehicle, and every booking is confirmed by a real person.</p>
         <div class="help__ctas" data-reveal data-delay="0.25">
           <a href="/book/" class="btn btn--gold btn--lg" data-magnetic>Help me choose <Icon name="arrow" /></a>
-          <a href={site.phoneHref} class="btn btn--ghost btn--lg" data-cursor="Call"><Icon name="phone" /> Call {site.phone}</a>
+          <a href={site.phoneHref} class="btn btn--ghost btn--lg" data-cursor="Call"><Icon name="phone" /> {site.phone}</a>
         </div>
         <p class="help__live" data-reveal="fade" data-delay="0.35"><span class="help__dot" aria-hidden="true"></span> Concierge available 24/7</p>
       </div>
@@ -42,7 +42,7 @@ const picks = [
                 <span class="help__occ">{p.occasion}</span>
                 <span class="help__veh">{p.name}</span>
                 <span class="help__pax"><Icon name="users" /> {p.pax}</span>
-                <span class="help__arrow" aria-hidden="true"><Icon name="arrow-up-right" /></span>
+                <span class="help__arrow" aria-hidden="true"><Icon name="arrow" /></span>
               </a>
             </li>
           ))}
@@ -113,8 +113,9 @@ const picks = [
     border: 1px solid var(--line);
     background: var(--help-panel);
     box-shadow: var(--help-panel-shadow);
-    backdrop-filter: blur(18px) saturate(120%);
+    /* prefixed first: the build's CSS minifier (lightningcss) drops the standard property when it comes first */
     -webkit-backdrop-filter: blur(18px) saturate(120%);
+    backdrop-filter: blur(18px) saturate(120%);
   }
   .help__label { font-size: 0.64rem; font-weight: 600; letter-spacing: 0.24em; text-transform: uppercase; color: var(--accent); padding: 0 0.6rem 0.8rem; }
   .help__list { display: grid; }
@@ -138,7 +139,9 @@ const picks = [
   .help__pax { grid-area: pax; display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.78rem; font-weight: 600; color: var(--text-2); font-variant-numeric: tabular-nums; }
   .help__pax :global(svg) { width: 15px; height: 15px; color: var(--accent); }
   .help__arrow { grid-area: arrow; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line-strong); transition: background 0.4s var(--ease-out), border-color 0.4s, color 0.4s; }
-  .help__arrow :global(svg) { width: 14px; height: 14px; }
+  /* same-page jump: the arrow points down the page, not out of it */
+  .help__arrow :global(svg) { width: 14px; height: 14px; transform: rotate(90deg); transition: transform 0.4s var(--ease-out); }
+  .help__item:hover .help__arrow :global(svg) { transform: rotate(90deg) translateX(2px); }
   .help__item:hover .help__arrow { background: var(--cta-bg); border-color: transparent; color: var(--cta-fg); }
 
   @media (max-width: 980px) {

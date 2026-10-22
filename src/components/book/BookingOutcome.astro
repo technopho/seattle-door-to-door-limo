@@ -1,0 +1,250 @@
+---
+// End states of the booking wizard (/book/), driven by src/scripts/booking.ts:
+//   [data-success]  the request reached the reservations endpoint
+//   [data-handoff]  no endpoint is configured: nothing was sent, so the guest sends the
+//                   prefilled request by text, email or phone ("One last step")
+import Icon from '../Icon.astro';
+import { site } from '../../data/site';
+
+// The address is shown in full so a guest on webmail (where mailto: may do nothing) can still use it.
+const [emailUser, emailDomain] = site.email.split('@');
+---
+<section class="bk-done card bk-success" data-success data-outcome hidden tabindex="-1" aria-labelledby="bk-success-title">
+  <div class="bk-done__mark" aria-hidden="true">
+    <span class="bk-done__ring"></span>
+    <svg viewBox="0 0 96 96" class="bk-done__svg">
+      <defs>
+        <linearGradient id="bk-grad-ok" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" class="bk-stop-a" /><stop offset=".55" class="bk-stop-b" /><stop offset="1" class="bk-stop-c" />
+        </linearGradient>
+      </defs>
+      <circle cx="48" cy="48" r="44" class="bk-done__circle" stroke="url(#bk-grad-ok)" data-draw />
+      <path d="M30 49.5 L42.5 62 L67 36" class="bk-done__path" stroke="url(#bk-grad-ok)" data-draw />
+    </svg>
+  </div>
+  <p class="eyebrow bk-done__ref" data-s-anim>Reference <span data-ref>SDD-000000</span></p>
+  <h2 class="bk-done__title" id="bk-success-title" data-s-anim>Request <em>received</em></h2>
+  <p class="lead bk-done__lead" data-s-anim>A concierge will confirm <span data-confirm-by>by text</span> shortly.</p>
+  <ol role="list" class="bk-next" data-s-anim aria-label="What happens next">
+    <li class="bk-next__item">
+      <span class="bk-next__n" aria-hidden="true">01</span>
+      <span class="bk-next__t">Concierge review</span>
+      <span class="bk-next__d">We check availability and prepare your full rate.</span>
+    </li>
+    <li class="bk-next__item">
+      <span class="bk-next__n" aria-hidden="true">02</span>
+      <span class="bk-next__t">Confirmation <span data-confirm-by-2>by text</span></span>
+      <span class="bk-next__d">Your rate and reservation, sent shortly. Nothing is charged now.</span>
+    </li>
+    <li class="bk-next__item">
+      <span class="bk-next__n" aria-hidden="true">03</span>
+      <span class="bk-next__t">Chauffeur details</span>
+      <span class="bk-next__d">Your chauffeur’s name and vehicle, sent before pickup.</span>
+    </li>
+  </ol>
+  <div class="bk-done__summary" data-outcome-summary data-s-anim></div>
+  <div class="bk-done__actions" data-s-anim>
+    <a href={site.phoneHref} class="btn btn--gold" data-magnetic="0.2"><Icon name="phone" /> Call us</a>
+    <a href="/" class="btn btn--ghost">Back to home <Icon name="arrow" /></a>
+  </div>
+</section>
+
+<section class="bk-done card bk-handoff" data-handoff data-outcome hidden tabindex="-1" aria-labelledby="bk-handoff-title" aria-describedby="bk-handoff-lead">
+  <div class="bk-done__mark" aria-hidden="true">
+    <span class="bk-done__ring"></span>
+    <svg viewBox="0 0 96 96" class="bk-done__svg">
+      <defs>
+        <linearGradient id="bk-grad-send" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" class="bk-stop-a" /><stop offset=".55" class="bk-stop-b" /><stop offset="1" class="bk-stop-c" />
+        </linearGradient>
+      </defs>
+      <circle cx="48" cy="48" r="44" class="bk-done__circle" stroke="url(#bk-grad-send)" data-draw />
+      <path d="M27.5 46.5 L68.5 29.5 L57 67 L46 54 Z" class="bk-done__path bk-done__path--thin" stroke="url(#bk-grad-send)" data-draw />
+      <path d="M46 54 L68.5 29.5" class="bk-done__path bk-done__path--thin" stroke="url(#bk-grad-send)" data-draw />
+    </svg>
+  </div>
+  <p class="eyebrow bk-done__ref" data-s-anim>Reference <span data-ref>SDD-000000</span></p>
+  <h2 class="bk-done__title" id="bk-handoff-title" data-s-anim>One last <em>step</em></h2>
+  <p class="lead bk-done__lead" id="bk-handoff-lead" data-s-anim>
+    Your request is ready, but <strong>it hasn’t been sent yet</strong>. Choose how to send it and every detail comes
+    with it, already filled in.
+  </p>
+
+  <ul role="list" class="bk-send" data-send-list data-s-anim aria-label="Send your request">
+    <li>
+      <a class="bk-send__opt" data-send="sms" href={site.smsHref}>
+        <span class="bk-send__icon"><Icon name="chat" /></span>
+        <span class="bk-send__text">
+          <span class="bk-send__t">Text it to us</span>
+          <!-- Rewritten by booking.ts on devices without a phone app: "Send from your phone to …" -->
+          <span class="bk-send__d" data-sms-note>Opens Messages, ready to send</span>
+        </span>
+        <Icon name="arrow" class="bk-send__go" />
+      </a>
+    </li>
+    <li>
+      <a class="bk-send__opt" data-send="email" href={`mailto:${site.email}`}>
+        <span class="bk-send__icon"><Icon name="mail" /></span>
+        <span class="bk-send__text">
+          <span class="bk-send__t">Email it</span>
+          <span class="bk-send__d"><span class="bk-send__addr">{emailUser}@<wbr />{emailDomain}</span></span>
+        </span>
+        <Icon name="arrow" class="bk-send__go" />
+      </a>
+    </li>
+    <li>
+      <a class="bk-send__opt" data-send="call" href={site.phoneHref}>
+        <span class="bk-send__icon"><Icon name="phone" /></span>
+        <span class="bk-send__text">
+          <span class="bk-send__t">Call {site.phone}</span>
+          <span class="bk-send__d">Quote reference <span data-ref>SDD-000000</span></span>
+        </span>
+        <Icon name="arrow" class="bk-send__go" />
+      </a>
+    </li>
+  </ul>
+
+  <!-- Works everywhere, including webmail and computers without a phone or mail app. -->
+  <div class="bk-copy" data-s-anim>
+    <p class="bk-copy__text">Using webmail or another app? Copy your request and send it to <span class="bk-copy__addr">{emailUser}@<wbr />{emailDomain}</span>.</p>
+    <button type="button" class="btn btn--sm btn--ghost bk-copy__btn" data-copy><span data-copy-label>Copy details</span></button>
+  </div>
+
+  <p class="bk-done__note" data-s-anim>
+    <Icon name="shield" />
+    <span>Nothing has been sent or charged. Once your request reaches us, a concierge confirms availability and your full rate.</span>
+  </p>
+
+  <div class="bk-done__summary" data-outcome-summary data-s-anim></div>
+  <div class="bk-done__actions" data-s-anim>
+    <button type="button" class="btn btn--ghost" data-handoff-edit><Icon name="arrow-left" /> Edit request</button>
+  </div>
+  <p class="sr-only" aria-live="polite" data-copy-status></p>
+</section>
+
+<style is:global>
+  /* =====================================================================
+     Booking end states. Uses the page tokens (--bk-*) defined on .bk in
+     src/pages/book/index.astro, so both themes stay in step with the wizard.
+     ===================================================================== */
+  .bk-done {
+    display: grid;
+    justify-items: center;
+    gap: 1rem;
+    max-width: 860px;
+    margin-inline: auto;
+    padding: clamp(2rem, 5vw, 3.6rem) clamp(1.25rem, 4vw, 3.2rem);
+    border-radius: var(--radius-l);
+    text-align: center;
+    background: var(--bk-surface);
+    -webkit-backdrop-filter: var(--bk-surface-blur);
+    backdrop-filter: var(--bk-surface-blur);
+    box-shadow: var(--card-highlight), var(--bk-surface-shadow);
+    outline: none;
+  }
+  .bk-done[hidden] { display: none; }
+
+  /* Animated mark */
+  .bk-done__mark { position: relative; width: 104px; height: 104px; margin-bottom: 0.4rem; }
+  .bk-done__ring { position: absolute; inset: -14px; border-radius: 50%; background: radial-gradient(closest-side, rgb(var(--accent-rgb) / 0.2), transparent); animation: bk-breathe 3.2s ease-in-out infinite; }
+  @keyframes bk-breathe { 50% { transform: scale(1.12); opacity: 0.6; } }
+  .bk-done__svg { position: relative; width: 100%; height: 100%; overflow: visible; }
+  .bk-stop-a { stop-color: var(--accent-2); }
+  .bk-stop-b { stop-color: var(--accent); }
+  .bk-stop-c { stop-color: var(--accent-3); }
+  .bk-done__circle { fill: none; stroke-width: 1.6; }
+  .bk-done__path { fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+  .bk-done__path--thin { stroke-width: 2.2; }
+
+  .bk-done__ref span { color: var(--text); letter-spacing: 0.18em; }
+  .bk-done__ref::after { content: ''; width: 2.4rem; height: 1px; background: linear-gradient(90deg, var(--accent), transparent); }
+  .bk-done__title { font-size: clamp(2.6rem, 5vw, 4.2rem); }
+  .bk-done__lead { margin-inline: auto; max-width: 52ch; text-wrap: pretty; }
+  .bk-done__lead strong { color: var(--text); font-weight: 600; }
+  .bk-done__summary { width: 100%; margin-top: 0.8rem; text-align: left; }
+  .bk-done__summary .bk-review__head { margin-bottom: 0.9rem; }
+  .bk-done__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.8rem; margin-top: 1rem; }
+  .bk-done__actions [hidden] { display: none; }
+  .bk-done__note { display: flex; align-items: flex-start; gap: 0.6rem; max-width: 56ch; margin-top: 0.4rem; font-size: 0.84rem; line-height: 1.55; color: var(--muted); text-align: left; }
+  .bk-done__note svg { width: 17px; height: 17px; flex: none; margin-top: 0.12rem; color: var(--accent); }
+
+  /* What happens next (sent) */
+  .bk-next { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.8rem; width: 100%; margin-top: 0.8rem; text-align: left; }
+  .bk-next__item { position: relative; display: grid; align-content: start; gap: 0.35rem; padding: 1.1rem 1.2rem 1.2rem; border: 1px solid var(--line); border-radius: 16px; background: linear-gradient(180deg, rgb(var(--accent-rgb) / 0.05), transparent 60%), var(--bk-tile); box-shadow: var(--bk-tile-shadow); }
+  .bk-next__n { font-family: var(--font-display); font-weight: 500; font-size: 1.5rem; line-height: 1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: var(--accent); margin-bottom: 0.25rem; }
+  .bk-next__t { font-weight: 600; font-size: 0.95rem; color: var(--text); }
+  .bk-next__d { font-size: 0.82rem; line-height: 1.5; color: var(--muted); text-wrap: pretty; }
+
+  /* Send options (not sent yet) */
+  .bk-send { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; width: 100%; margin-top: 0.8rem; text-align: left; }
+  /* booking.ts puts the options in DOM order for the device (primary first; on computers text goes last),
+     so the Tab order always matches the visual order. Don't reorder them with CSS `order`. */
+  .bk-send > li { display: grid; min-width: 0; }
+  .bk-send__opt {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: 'icon go' 'text text';
+    align-content: start;
+    gap: 1.1rem 0.8rem;
+    min-height: 150px;
+    padding: 1.1rem 1.1rem 1.2rem;
+    border: 1px solid var(--line-strong);
+    border-radius: 18px;
+    background: var(--bk-tile);
+    box-shadow: var(--bk-tile-shadow);
+    color: var(--text);
+    isolation: isolate;
+    overflow: hidden;
+    transition: border-color 0.4s var(--ease-out), box-shadow 0.5s var(--ease-out), transform 0.5s var(--ease-out);
+  }
+  .bk-send__opt:hover { border-color: rgb(var(--accent-rgb) / 0.7); box-shadow: var(--bk-tile-shadow-hover); transform: translateY(-2px); }
+  .bk-send__icon { grid-area: icon; display: grid; place-items: center; flex: none; width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgb(var(--accent-rgb) / 0.4); color: var(--accent); transition: background 0.4s, color 0.4s, border-color 0.4s; }
+  .bk-send__icon svg { width: 19px; height: 19px; }
+  .bk-send__text { grid-area: text; display: grid; gap: 0.2rem; min-width: 0; }
+  .bk-send__t { font-family: var(--font-display); font-weight: 500; font-size: 1.12rem; line-height: 1.25; letter-spacing: -0.015em; }
+  .bk-send__d { font-size: 0.78rem; line-height: 1.4; color: var(--muted); text-wrap: pretty; }
+  .bk-send__d [data-ref] { font-variant-numeric: tabular-nums; letter-spacing: 0.04em; color: var(--text-2); }
+  .bk-send__addr { color: var(--text-2); }
+  .bk-send__go { grid-area: go; align-self: start; margin-top: 13px; width: 18px; height: 18px; color: var(--accent); transition: transform 0.4s var(--ease-out); }
+  .bk-send__opt:hover .bk-send__go { transform: translateX(4px); }
+  /* The likeliest channel for this device (text on phones, email on desktop) takes the primary CTA style. */
+  .bk-send__opt.is-primary { border-color: transparent; background: var(--cta-bg); background-size: 200% 100%; color: var(--cta-fg); box-shadow: var(--cta-glow); }
+  .bk-send__opt.is-primary::before { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(120deg, transparent 20%, var(--sheen) 50%, transparent 80%); transform: translateX(-120%); transition: transform 0.9s var(--ease-out); }
+  .bk-send__opt.is-primary:hover::before { transform: translateX(120%); }
+  .bk-send__opt.is-primary .bk-send__icon { border-color: color-mix(in srgb, currentColor 32%, transparent); color: currentColor; }
+  .bk-send__opt.is-primary .bk-send__d, .bk-send__opt.is-primary .bk-send__d span { color: color-mix(in srgb, currentColor 78%, transparent); }
+  .bk-send__opt.is-primary .bk-send__go { color: currentColor; }
+  .bk-send__opt:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+  /* Copy fallback, right under the send options */
+  .bk-copy { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem 1.2rem; width: 100%; padding: 0.7rem 0.7rem 0.7rem 1.1rem; border: 1px dashed var(--line-strong); border-radius: 16px; text-align: left; }
+  .bk-copy__text { flex: 1 1 22rem; min-width: 0; font-size: 0.84rem; line-height: 1.5; color: var(--muted); text-wrap: pretty; }
+  .bk-copy__addr { color: var(--text-2); font-weight: 600; }
+  .bk-copy__btn { flex: none; min-height: 44px; }
+
+  @media (max-width: 860px) {
+    /* Phones: one row per channel, icon / text / arrow. */
+    .bk-send { grid-template-columns: minmax(0, 1fr); gap: 0.6rem; }
+    .bk-send__opt { grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: 'icon text go'; align-items: center; gap: 0.85rem; min-height: 76px; padding: 0.9rem 1rem 0.9rem 0.9rem; }
+    .bk-send__go { align-self: center; margin-top: 0; }
+    .bk-send__t { font-size: 1.04rem; }
+    .bk-copy { flex-wrap: wrap; padding: 0.85rem 0.9rem; }
+    .bk-copy__btn { flex: 1 1 100%; }
+  }
+  @media (max-width: 760px) {
+    .bk-done { -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--bk-surface-solid); }
+    .bk-next { grid-template-columns: 1fr; gap: 0.6rem; }
+    .bk-next__item { grid-template-columns: auto 1fr; column-gap: 0.9rem; row-gap: 0.15rem; padding: 0.95rem 1rem; }
+    .bk-next__n { grid-row: span 2; margin: 0; font-size: 1.35rem; }
+  }
+  @media (max-width: 640px) {
+    .bk-done { padding: 2rem 1rem 1.5rem; border-radius: 22px; }
+    .bk-done__title { font-size: clamp(2.3rem, 11vw, 2.8rem); }
+    .bk-done__actions .btn { flex: 1 1 100%; }
+    .bk-send__opt:hover { transform: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .bk-done__ring { animation: none !important; }
+  }
+</style>

@@ -1,0 +1,127 @@
+---
+// TEMPLATE pending review by the client's legal counsel (see LegalDoc `pendingReview`).
+import Base from '../layouts/Base.astro';
+import LegalDoc, { type LegalSection } from '../components/content/LegalDoc.astro';
+import { site } from '../data/site';
+import { breadcrumbs } from '../lib/seo';
+
+const title = 'Privacy Policy | Seattle Door to Door Limo';
+const description =
+  'How Seattle Door to Door Limo collects, uses and protects your information when you browse our site, request a quote or book a ride. Questions? Contact us.';
+const domain = site.url.replace(/^https?:\/\//, '');
+const contact = `<p><strong>${site.name}</strong><br />Seattle, Washington<br />Email: <a href="mailto:${site.email}">${site.email}</a><br />Phone: <a href="${site.phoneHref}">${site.phone}</a></p>`;
+
+const sections: LegalSection[] = [
+  {
+    id: 'who-we-are',
+    title: 'Who we are',
+    html: `<p>${site.name} (“we”, “us” or “our”) provides chauffeured transportation in Seattle and the Puget Sound region. This Privacy Policy explains how we collect, use, share and protect personal information when you visit ${domain} (the “Site”), contact us, or request or book transportation (together, the “Services”).</p>
+<p>By using the Services, you acknowledge the practices described here. If you do not agree with them, please do not use the Site.</p>`,
+  },
+  {
+    id: 'information-we-collect',
+    title: 'Information we collect',
+    html: `<h3>Information you give us</h3>
+<p>When you request a quote, submit a reservation request, use our contact form, or call, text or email us, we may collect:</p>
+<ul>
+  <li>Contact details, such as your name, phone number and email address</li>
+  <li>Trip details, such as pickup and drop-off addresses, dates and times, stops, flight or cruise information, the number of passengers and bags, your vehicle preference and any special requests</li>
+  <li>Details about other passengers that you choose to share, such as a name for a meet &amp; greet sign</li>
+  <li>Company and billing details for corporate accounts and invoicing</li>
+  <li>The content of your messages to us</li>
+</ul>
+<p>Please share only what is needed for your trip, and do not include sensitive information, such as health details or government identification numbers, in forms or messages.</p>
+<h3>Information collected automatically</h3>
+<p>When you visit the Site, we and our service providers may automatically collect technical information, such as your IP address, browser and device type, the pages you view, the page that referred you, and the date and time of your visit. Your approximate location may be inferred from your IP address.</p>`,
+  },
+  {
+    id: 'how-we-use-information',
+    title: 'How we use information',
+    html: `<p>We use personal information to:</p>
+<ul>
+  <li>Respond to inquiries and prepare quotes</li>
+  <li>Review, confirm, schedule and provide transportation, including monitoring flights for airport pickups</li>
+  <li>Send booking confirmations, chauffeur details, trip updates and receipts</li>
+  <li>Provide customer support and manage corporate accounts</li>
+  <li>Operate, secure and improve the Site and the Services, and understand how visitors use them</li>
+  <li>Prevent fraud and misuse, enforce our <a href="/terms/">Terms of Service</a> and comply with legal obligations</li>
+  <li>Send occasional news or offers where permitted by law, which you can opt out of at any time</li>
+</ul>`,
+  },
+  {
+    id: 'calls-and-text-messages',
+    title: 'Calls and text messages',
+    html: `<p>If you give us a phone number, we may call or text you about your inquiry or booking, for example to confirm details or to share your chauffeur’s meeting point. Message and data rates may apply. We will not send marketing text messages without your consent, and you can ask us to stop at any time by replying STOP or by contacting us.</p>`,
+  },
+  {
+    id: 'cookies-and-analytics',
+    title: 'Cookies and analytics',
+    html: `<p>The Site uses your browser’s storage to remember preferences, such as your light or dark display setting, and to keep reservation details you have started entering so they are not lost if you leave the page. This information stays in your browser until you clear it.</p>
+<p>We may also use cookies and similar technologies from analytics and advertising providers, such as Google Analytics, to understand how visitors find and use the Site and to measure our advertising. These providers may collect information about your use of the Site over time and across other websites.</p>
+<p>You can block or delete cookies in your browser settings, and you can opt out of Google Analytics with <a href="https://tools.google.com/dlpage/gaoptout" rel="noopener" target="_blank">Google’s opt-out browser add-on</a>. Blocking some storage may affect how the Site works. Where the law requires it, we will ask for your consent before using non-essential cookies.</p>`,
+  },
+  {
+    id: 'how-we-share-information',
+    title: 'How we share information',
+    html: `<p>We do not sell your personal information. We share it only as needed to provide the Services:</p>
+<ul>
+  <li><strong>Service providers</strong> that help us operate, such as website hosting, form and customer-relationship tools, communications, analytics and payment processing. They may use the information only to provide their services to us.</li>
+  <li><strong>Your chauffeur and our operations team</strong>, who receive the trip details needed to complete your ride.</li>
+  <li><strong>Legal and safety reasons</strong>, when required by law, legal process or a government request, or to protect the rights, property or safety of our customers, chauffeurs, the public or us.</li>
+  <li><strong>Business transfers</strong>, in connection with a merger, acquisition or sale of all or part of our business, subject to this Privacy Policy.</li>
+  <li><strong>With your consent</strong> or at your direction, for example when you ask us to send a confirmation to an assistant or event planner.</li>
+</ul>`,
+  },
+  {
+    id: 'data-retention',
+    title: 'Data retention',
+    html: `<p>We keep personal information for as long as we need it to provide the Services, keep business and tax records, resolve disputes and meet legal obligations. When it is no longer needed, we delete it or de-identify it.</p>`,
+  },
+  {
+    id: 'security',
+    title: 'Security',
+    html: `<p>We use reasonable administrative, technical and physical safeguards to protect personal information. No method of transmission or storage is completely secure, so we cannot guarantee absolute security. Please contact us promptly if you believe your information has been compromised.</p>`,
+  },
+  {
+    id: 'your-choices-and-rights',
+    title: 'Your choices and rights',
+    html: `<ul>
+  <li>You can ask to access, correct or delete the personal information we hold about you.</li>
+  <li>You can opt out of marketing emails with the unsubscribe link in any message, and out of marketing texts by replying STOP.</li>
+  <li>You can manage cookies through your browser settings.</li>
+</ul>
+<p>Depending on where you live, you may have additional rights under applicable law. To make a request, contact us using the details below. We may need to verify your identity before responding, and we will not discriminate against you for exercising your rights.</p>`,
+  },
+  {
+    id: 'childrens-privacy',
+    title: 'Children’s privacy',
+    html: `<p>The Site is not directed to children under 13, and we do not knowingly collect personal information from them online. If you are booking transportation for a minor, please share only the information needed for the trip. If you believe a child has provided us with personal information, contact us and we will delete it.</p>`,
+  },
+  {
+    id: 'links-to-other-websites',
+    title: 'Links to other websites',
+    html: `<p>The Site may link to websites we do not control, such as airline, cruise line or venue sites. Their privacy practices are governed by their own policies, which we encourage you to read.</p>`,
+  },
+  {
+    id: 'changes-to-this-policy',
+    title: 'Changes to this policy',
+    html: `<p>We may update this Privacy Policy from time to time. The “Last updated” date at the top of this page shows when it was last revised, and we will highlight material changes here.</p>`,
+  },
+  {
+    id: 'contact-us',
+    title: 'Contact us',
+    html: `<p>For questions or requests about this Privacy Policy, contact:</p>\n${contact}`,
+  },
+];
+---
+<Base title={title} description={description} jsonLd={[breadcrumbs([['Privacy Policy', '/privacy/']])]}>
+  <LegalDoc
+    path="/privacy/"
+    name="Privacy Policy"
+    eyebrow="Legal"
+    lead="How we collect, use and protect personal information when you browse our website, request a quote or book a ride."
+    updated="2026-10-22"
+    sections={sections}
+    related={{ label: 'Terms of Service', href: '/terms/' }}
+  />
+</Base>

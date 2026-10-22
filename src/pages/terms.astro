@@ -1,0 +1,120 @@
+---
+// TEMPLATE pending review by the client's legal counsel (see LegalDoc `pendingReview`).
+// Keep the "changes-and-cancellations" id: the FAQ links to it.
+import Base from '../layouts/Base.astro';
+import LegalDoc, { type LegalSection } from '../components/content/LegalDoc.astro';
+import { site } from '../data/site';
+import { breadcrumbs } from '../lib/seo';
+
+const title = 'Terms of Service | Seattle Door to Door Limo';
+const description =
+  'The terms for using our website and booking chauffeured transportation with Seattle Door to Door Limo: confirmations, rates, changes and conduct. Read more.';
+const domain = site.url.replace(/^https?:\/\//, '');
+const contact = `<p><strong>${site.name}</strong><br />Seattle, Washington<br />Email: <a href="mailto:${site.email}">${site.email}</a><br />Phone: <a href="${site.phoneHref}">${site.phone}</a></p>`;
+
+const sections: LegalSection[] = [
+  {
+    id: 'about-these-terms',
+    title: 'About these terms',
+    html: `<p>These Terms of Service (“Terms”) apply to your use of ${domain} (the “Site”) and to transportation you request or book with ${site.name} (“we”, “us” or “our”). By using the Site or booking a ride, you agree to these Terms.</p>
+<p>If you book on behalf of others, such as guests, colleagues or a wedding party, you confirm that you are authorized to do so and that you will make them aware of the parts of these Terms that apply to them.</p>
+<p>Your quote and booking confirmation may include additional terms for your trip. If they conflict with these Terms, the quote and confirmation apply to that trip.</p>`,
+  },
+  {
+    id: 'reservation-requests',
+    title: 'Reservation requests and confirmation',
+    html: `<ul>
+  <li>Submitting a reservation through the Site, or by phone, text or email, is a <strong>request</strong>, not a confirmed booking.</li>
+  <li>A booking is confirmed only when our concierge team confirms it to you in writing, for example by text or email. Until then, no vehicle or chauffeur has been reserved for you.</li>
+  <li>All requests are subject to availability, and we may decline a request.</li>
+  <li>You are responsible for giving accurate and complete trip information, including pickup times and addresses, flight or sailing details, and the number of passengers and bags. Inaccurate information can affect availability, timing and price.</li>
+</ul>`,
+  },
+  {
+    id: 'quotes-rates-and-payment',
+    title: 'Quotes, rates and payment',
+    html: `<p>Rates are set out in your quote and depend on the vehicle, date, time, duration and itinerary. Your quote states what is included and how payment is handled.</p>
+<p>Charges may change if your trip changes after confirmation, for example with added stops, extra time, a different vehicle, route changes you request, or waiting beyond the time included in your quote. Tolls, parking, airport fees and gratuity are handled as described in your quote. Where reasonably possible, we will tell you about a change to your rate before it applies.</p>
+<p>By providing payment details, you authorize us or our payment processor to charge the amounts due under your quote and these Terms.</p>`,
+  },
+  {
+    id: 'changes-and-cancellations',
+    title: 'Changes and cancellations',
+    html: `<p>Cancellation and change terms vary by vehicle, date and type of service, and are stated in your quote and confirmation. Please contact us as early as possible if your plans change. Changes are subject to availability and may affect your rate.</p>
+<p>If a passenger does not arrive at the pickup location within the waiting time stated in your quote and cannot be reached, the trip may be treated as a no-show and charged as described in your quote.</p>`,
+  },
+  {
+    id: 'airport-and-cruise-pickups',
+    title: 'Airport and cruise pickups',
+    html: `<p>For airport pickups, we monitor the flight details you provide and adjust the pickup to the actual arrival where possible, and your chauffeur will contact you with the meeting point. Any complimentary waiting time is stated in your quote; waiting beyond it may be charged.</p>
+<p>Please tell us promptly about cancelled or rebooked flights and changed sailing times. We are not responsible for delays caused by inaccurate or outdated flight or sailing information.</p>`,
+  },
+  {
+    id: 'passenger-conduct-and-safety',
+    title: 'Passenger conduct and safety',
+    html: `<ul>
+  <li>Passengers must follow the law and the chauffeur’s reasonable safety instructions, and wear seat belts where provided.</li>
+  <li>The number of passengers may not exceed the vehicle’s capacity.</li>
+  <li>Alcohol may be consumed only by passengers of legal drinking age and only where permitted by law. Illegal substances are not permitted.</li>
+  <li>Smoking and vaping are not permitted in our vehicles.</li>
+  <li>Passengers may not stand through a sunroof, lean out of windows, or behave in a way that endangers anyone or distracts the chauffeur.</li>
+  <li>The chauffeur may refuse or end service if a passenger’s conduct is unsafe, unlawful or abusive. Charges for the trip may still apply.</li>
+</ul>`,
+  },
+  {
+    id: 'damage-cleaning-and-lost-items',
+    title: 'Damage, cleaning and lost items',
+    html: `<p>The person who books is responsible for damage to the vehicle caused by any passenger in their party, beyond normal wear, and for extra cleaning needed as a result of a passenger’s actions. We will explain any such charge and support it with reasonable documentation.</p>
+<p>Please check the vehicle for your belongings before you leave. We will make reasonable efforts to return items left behind, but we are not responsible for lost or damaged personal property.</p>`,
+  },
+  {
+    id: 'delays-beyond-our-control',
+    title: 'Delays and events beyond our control',
+    html: `<p>We plan routes and timing carefully, but travel times are estimates. We are not responsible for delays or failures caused by events outside our reasonable control, such as traffic, road closures, weather, accidents, mechanical failure, actions of authorities or other emergencies. If a reserved vehicle becomes unavailable, we may provide a comparable vehicle or, if we cannot, refund amounts paid for the affected service.</p>`,
+  },
+  {
+    id: 'limitation-of-liability',
+    title: 'Limitation of liability',
+    html: `<p>To the fullest extent permitted by law, we are not liable for indirect, incidental, special, consequential or punitive damages, or for lost profits or missed flights, connections, sailings, appointments or events, arising from the Services or the Site, even if we were told such losses were possible.</p>
+<p>To the fullest extent permitted by law, our total liability for any claim relating to a trip is limited to the amount you paid for that trip. Nothing in these Terms excludes or limits liability that cannot be excluded or limited under applicable law.</p>`,
+  },
+  {
+    id: 'use-of-the-website',
+    title: 'Use of the website',
+    html: `<p>The Site and its content, including text, images, logos and design, are owned by us or our licensors and are protected by intellectual property laws. You may use the Site for personal, non-commercial purposes related to our Services. You may not copy, scrape, modify or misuse the Site, or interfere with its operation.</p>
+<p>We aim to keep the Site accurate, but vehicle photos, features and descriptions are illustrative and may vary. To the extent permitted by law, the Site is provided “as is”, without warranties of any kind.</p>`,
+  },
+  {
+    id: 'communications',
+    title: 'Communications',
+    html: `<p>By giving us your contact details, you agree that we may contact you by phone, text or email about your inquiries and bookings. Our <a href="/privacy/">Privacy Policy</a> explains how we handle your information.</p>`,
+  },
+  {
+    id: 'governing-law',
+    title: 'Governing law and disputes',
+    html: `<p>These Terms are governed by the laws of the State of Washington, without regard to its conflict-of-law rules. Any dispute that cannot be resolved informally will be brought in the state or federal courts located in King County, Washington, and you and we consent to their jurisdiction.</p>
+<p>Before bringing a claim, please contact us so we can try to resolve the issue together.</p>`,
+  },
+  {
+    id: 'changes-to-these-terms',
+    title: 'Changes to these terms',
+    html: `<p>We may update these Terms from time to time. The version in effect when you book applies to that booking. The “Last updated” date at the top of this page shows when the Terms were last revised.</p>`,
+  },
+  {
+    id: 'contact-us',
+    title: 'Contact us',
+    html: `<p>For questions about these Terms, contact:</p>\n${contact}`,
+  },
+];
+---
+<Base title={title} description={description} jsonLd={[breadcrumbs([['Terms of Service', '/terms/']])]}>
+  <LegalDoc
+    path="/terms/"
+    name="Terms of Service"
+    eyebrow="Legal"
+    lead="The terms that apply when you use our website and when you request or book chauffeured transportation with us."
+    updated="2026-10-22"
+    sections={sections}
+    related={{ label: 'Privacy Policy', href: '/privacy/' }}
+  />
+</Base>

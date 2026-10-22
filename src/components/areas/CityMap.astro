@@ -1,0 +1,299 @@
+---
+// Hero visual for cities without local photography: an always-dark navigation screen with the
+// SeaTac hub, the chauffeured route to this city, the other service areas in frame and the
+// Puget Sound shorelines. Drawn at build time from site.ts lat/lng (same style as the home map).
+// Decorative (aria-hidden): the hero copy and the ETA ticket carry every fact it shows.
+import { areas, hub } from '../../data/site';
+import { WATER, WATER_LABELS, toKm, KM_PER_DEG, type LatLng } from './geo';
+
+interface Props { slug: string }
+const { slug } = Astro.props;
+const target = areas.find((a) => a.slug === slug)!;
+
+const r2 = (n: number) => Math.round(n * 100) / 100;
+const H = toKm(hub.lat, hub.lng);
+const T = toKm(target.lat, target.lng);
+const span = Math.max(Math.abs(T.x - H.x), Math.abs(T.y - H.y));
+/**
+ * Square safe frame (km). The SVG uses "meet", so this whole square is always visible, and the map
+ * simply keeps drawing past it when the box is wider or taller. The route sits between 20% and 76%
+ * of the frame height: clear of the HUD at the top and the ETA ticket at the bottom.
+ */
+const S = Math.max(span / 0.56, 28);
+const x0 = (H.x + T.x) / 2 - S / 2;
+const y0 = (H.y + T.y) / 2 - S * 0.48;
+const P = (lat: number, lng: number) => {
+  const p = toKm(lat, lng);
+  return { x: r2(p.x - x0), y: r2(p.y - y0) };
+};
+const ring = (poly: LatLng[]) => 'M' + poly.map(([la, ln]) => { const p = P(la, ln); return `${p.x} ${p.y}`; }).join('L') + 'Z';
+const water = WATER.map(ring).join(' ');
+
+type Pt = { x: number; y: number };
+const h = P(hub.lat, hub.lng);
+const t = P(target.lat, target.lng);
+const ctrl = (a: Pt, b: Pt, k = 0.2) => {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const len = Math.hypot(dx, dy) || 1;
+  return { x: (a.x + b.x) / 2 - (dy / len) * len * k, y: (a.y + b.y) / 2 + (dx / len) * len * k };
+};
+const arc = (a: Pt, b: Pt) => {
+  const c = ctrl(a, b);
+  return `M${a.x} ${a.y} Q${r2(c.x)} ${r2(c.y)} ${b.x} ${b.y}`;
+};
+const route = arc(h, t);
+
+// Labels sit on the side with open space (Seattle and Kirkland face west, over the water).
+const side: Record<string, 'l' | 'r'> = { seattle: 'l', kirkland: 'l' };
+const inView = (p: Pt) => p.x > -S * 0.15 && p.x < S * 1.15 && p.y > S * 0.1 && p.y < S * 0.9;
+const others = areas
+  .filter((a) => a.slug !== slug)
+  .map((a) => ({ slug: a.slug, city: a.city, p: P(a.lat, a.lng), side: side[a.slug] ?? 'r' }))
+  .filter((a) => inView(a.p));
+const tSide = side[slug] ?? 'r';
+
+// Water labels (desktop only): the first anchor whose text box stays inside the safe frame and
+// clear of pins, city labels and the route. Sizes mirror the CSS below (fractions of S).
+type Box = { x1: number; y1: number; x2: number; y2: number };
+const FS = { city: 0.026, name: 0.05, water: 0.0165 };
+const textBox = (p: Pt, chars: number, fs: number, dir: 'l' | 'r', gap: number): Box => {
+  const w = chars * 0.6 * fs * S;
+  const x = dir === 'l' ? p.x - gap - w : p.x + gap;
+  return { x1: x, x2: x + w, y1: p.y - fs * S * 0.6, y2: p.y + fs * S * 0.6 };
+};
+const dotBox = (p: Pt, r: number): Box => ({ x1: p.x - r, x2: p.x + r, y1: p.y - r, y2: p.y + r });
+const obstacles: Box[] = [
+  dotBox(h, S * 0.04),
+  dotBox(t, S * 0.05),
+  textBox(h, 6, FS.city, 'r', S * 0.033),
+  textBox(t, target.city.length, FS.name, tSide, S * 0.043),
+  ...others.flatMap((o) => [dotBox(o.p, S * 0.02), textBox(o.p, o.city.length, FS.city, o.side, S * 0.02)]),
+];
+const c = ctrl(h, t);
+for (let i = 0; i <= 24; i++) {
+  const k = i / 24;
+  const q = { x: (1 - k) ** 2 * h.x + 2 * (1 - k) * k * c.x + k * k * t.x, y: (1 - k) ** 2 * h.y + 2 * (1 - k) * k * c.y + k * k * t.y };
+  obstacles.push(dotBox(q, S * 0.012));
+}
+const hit = (a: Box, b: Box, m: number) => a.x1 - m < b.x2 && a.x2 + m > b.x1 && a.y1 - m < b.y2 && a.y2 + m > b.y1;
+const waterLabels = WATER_LABELS.flatMap((w) => {
+  const len = w.name.length * 0.98 * FS.water * S;
+  const half = FS.water * S * 0.6;
+  for (const [la, ln] of w.at) {
+    const p = P(la, ln);
+    const b: Box = w.v ? { x1: p.x - half, x2: p.x + half, y1: p.y - len / 2, y2: p.y + len / 2 } : { x1: p.x - len / 2, x2: p.x + len / 2, y1: p.y - half, y2: p.y + half };
+    const inside = b.x1 > S * 0.04 && b.x2 < S * 0.96 && b.y1 > S * 0.13 && b.y2 < S * 0.84;
+    if (inside && !obstacles.some((o) => hit(b, o, S * 0.015))) return [{ name: w.name, v: w.v, p }];
+  }
+  return [];
+});
+
+// Graticule every 0.1 degree, drawn well past the frame (the box can be wider or taller).
+const ext = { x1: -S, x2: S * 2, y1: -S, y2: S * 2 };
+const stepY = KM_PER_DEG.lat * 0.1;
+const stepX = KM_PER_DEG.lng * 0.1;
+const gy: number[] = [];
+for (let k = Math.ceil((y0 + ext.y1) / stepY); k * stepY < y0 + ext.y2; k++) gy.push(r2(k * stepY - y0));
+const gx: number[] = [];
+for (let k = Math.ceil((x0 + ext.x1) / stepX); k * stepX < x0 + ext.x2; k++) gx.push(r2(k * stepX - x0));
+
+const u = S / 600; // ≈ one CSS pixel at desktop size, in viewBox units
+const dot = r2(S / 58);
+const coords = `${target.lat.toFixed(2)}° N  /  ${Math.abs(target.lng).toFixed(2)}° W`;
+const id = `cm-${slug}`;
+---
+<div class="cm" data-theme="dark" aria-hidden="true">
+  <svg class="cm__svg" viewBox={`0 0 ${r2(S)} ${r2(S)}`} preserveAspectRatio="xMidYMid meet" style={`--s:${r2(S)}`} data-city-map focusable="false">
+    <defs>
+      <pattern id={`${id}-dots`} width={dot} height={dot} patternUnits="userSpaceOnUse">
+        <circle cx={r2(dot / 2)} cy={r2(dot / 2)} r={r2(dot * 0.11)} class="cm__dot" />
+      </pattern>
+      <pattern id={`${id}-tide`} width={r2(dot * 0.9)} height={r2(dot * 0.9)} patternUnits="userSpaceOnUse">
+        <path d={`M0 ${r2(dot * 0.45)}H${r2(dot * 0.9)}`} class="cm__tide" />
+      </pattern>
+    </defs>
+
+    <g>
+      <rect x={r2(ext.x1)} y={r2(ext.y1)} width={r2(ext.x2 - ext.x1)} height={r2(ext.y2 - ext.y1)} fill={`url(#${id}-dots)`} />
+      <path d={water} class="cm__water" fill-rule="evenodd" />
+      <path d={water} class="cm__water-tide" fill-rule="evenodd" fill={`url(#${id}-tide)`} />
+      <path d={water} class="cm__shore" fill-rule="evenodd" />
+      <g class="cm__grid">
+        {gy.map((y) => <path d={`M${r2(ext.x1)} ${y}H${r2(ext.x2)}`} />)}
+        {gx.map((x) => <path d={`M${x} ${r2(ext.y1)}V${r2(ext.y2)}`} />)}
+      </g>
+    </g>
+
+    <g class="cm__water-labels">
+      {waterLabels.map((w) => (
+        <text x={w.p.x} y={w.p.y} dy="0.35em" text-anchor="middle" transform={w.v ? `rotate(-90 ${w.p.x} ${w.p.y})` : undefined}>{w.name}</text>
+      ))}
+    </g>
+
+    <g class="cm__net">
+      {others.map((o) => <path d={arc(h, o.p)} />)}
+    </g>
+
+    <path d={route} class="cm__route-glow" style={`stroke-width:${r2(u * 9)}`} />
+    <path d={route} class="cm__route" style={`stroke-width:${r2(u * 2.2)}`} stroke-dasharray={`${r2(u * 5)} ${r2(u * 6)}`}>
+      <animate attributeName="stroke-dashoffset" from="0" to={r2(u * -110)} dur="4s" repeatCount="indefinite" />
+    </path>
+
+    {others.map((o) => (
+      <g class="cm__city">
+        <circle cx={o.p.x} cy={o.p.y} r={r2(u * 4)} />
+        <text x={r2(o.p.x + (o.side === 'l' ? -u * 12 : u * 12))} y={o.p.y} dy="0.35em" text-anchor={o.side === 'l' ? 'end' : 'start'}>{o.city}</text>
+      </g>
+    ))}
+
+    <g class="cm__hub">
+      <circle cx={h.x} cy={h.y} r={r2(u * 13)} class="cm__hub-ring" />
+      <circle cx={h.x} cy={h.y} r={r2(u * 5)} class="cm__hub-core" />
+      <text x={r2(h.x + u * 20)} y={h.y} dy="0.35em">SeaTac</text>
+    </g>
+
+    <g class="cm__target">
+      <circle cx={t.x} cy={t.y} r={r2(u * 16)} class="cm__pulse">
+        <animate attributeName="r" values={`${r2(u * 10)};${r2(u * 34)}`} dur="2.6s" repeatCount="indefinite" />
+        <animate attributeName="opacity" values="0.7;0" dur="2.6s" repeatCount="indefinite" />
+      </circle>
+      <circle cx={t.x} cy={t.y} r={r2(u * 16)} class="cm__halo" />
+      <circle cx={t.x} cy={t.y} r={r2(u * 6)} class="cm__pin" />
+      <text x={r2(t.x + (tSide === 'l' ? -u * 26 : u * 26))} y={t.y} dy="0.35em" text-anchor={tSide === 'l' ? 'end' : 'start'} class="cm__name">{target.city}</text>
+    </g>
+
+    <circle r={r2(u * 4.5)} class="cm__car">
+      <animateMotion dur="5.5s" repeatCount="indefinite" path={route} keyPoints="0;1;1" keyTimes="0;0.8;1" calcMode="spline" keySplines="0.45 0 0.35 1;0 0 1 1" />
+      <animate attributeName="opacity" values="0;1;1;0;0" keyTimes="0;0.08;0.74;0.8;1" dur="5.5s" repeatCount="indefinite" />
+    </circle>
+  </svg>
+
+  <div class="cm__hud cm__hud--tl">
+    <span class="cm__chip"><i class="cm__live"></i>Route preview</span>
+    <span class="cm__coords">{coords}</span>
+  </div>
+  <span class="cm__compass">
+    <svg viewBox="0 0 24 24"><path d="M12 4.5l2.8 7.5H9.2z" fill="currentColor" /><path d="M12 19.5l-2.8-7.5h5.6z" fill="none" stroke="currentColor" stroke-width="1" /></svg>
+    <b>N</b>
+  </span>
+  <div class="cm__hud cm__hud--br">
+    <span class="cm__legend"><i class="cm__legend-hub"></i>SeaTac hub</span>
+    <span class="cm__legend"><i class="cm__legend-route"></i>Your route</span>
+  </div>
+</div>
+
+<style>
+  .cm {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    color: var(--text);
+    background:
+      radial-gradient(70% 60% at 55% 42%, rgb(var(--accent-rgb) / 0.07), transparent 70%),
+      radial-gradient(120% 100% at 50% 40%, var(--bg-2) 0%, var(--bg-2) 55%, var(--bg) 100%);
+  }
+  /* Screen vignette, like the home map stage */
+  .cm::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background:
+      radial-gradient(120% 95% at 50% 42%, rgb(var(--bg-rgb) / 0) 58%, rgb(var(--bg-rgb) / 0.55) 100%),
+      linear-gradient(to bottom, rgb(var(--bg-rgb) / 0.5) 0, rgb(var(--bg-rgb) / 0) 110px);
+  }
+  .cm__svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; overflow: visible; }
+
+  .cm__dot { fill: rgb(var(--fg-rgb) / 0.22); }
+  .cm__water { fill: var(--bg); }
+  .cm__tide { stroke: rgb(var(--fg-rgb) / 0.035); stroke-width: 1; vector-effect: non-scaling-stroke; }
+  .cm__shore { fill: none; stroke: rgb(var(--accent-rgb) / 0.32); stroke-width: 1; vector-effect: non-scaling-stroke; }
+  .cm__grid path { stroke: rgb(var(--fg-rgb) / 0.05); stroke-width: 1; vector-effect: non-scaling-stroke; }
+
+  .cm__net path { fill: none; stroke: rgb(var(--accent-rgb) / 0.22); stroke-width: 1; stroke-dasharray: 3 4; vector-effect: non-scaling-stroke; }
+  .cm__route-glow { fill: none; stroke: rgb(var(--accent-rgb) / 0.16); stroke-linecap: round; }
+  .cm__route { fill: none; stroke: var(--accent-2); stroke-linecap: round; }
+
+  .cm__svg text {
+    font-family: var(--font-sans);
+    font-size: calc(var(--s) * 0.026px);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    paint-order: stroke;
+    stroke: rgb(var(--bg-rgb) / 0.85);
+    stroke-width: calc(var(--s) * 0.008px);
+    stroke-linejoin: round;
+  }
+  .cm__svg .cm__water-labels text {
+    font-size: calc(var(--s) * 0.0165px); /* FS.water */
+    font-weight: 600;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    fill: rgb(var(--accent-rgb) / 0.55);
+    stroke: none;
+  }
+  .cm__city circle { fill: rgb(var(--fg-rgb) / 0.55); }
+  .cm__city text { fill: var(--muted); }
+  .cm__hub-ring { fill: none; stroke: rgb(var(--fg-rgb) / 0.4); stroke-width: 1; vector-effect: non-scaling-stroke; }
+  .cm__hub-core { fill: var(--text); }
+  .cm__hub text { fill: var(--text-2); }
+  .cm__pulse { fill: none; stroke: rgb(var(--accent-rgb) / 0.6); stroke-width: 1; vector-effect: non-scaling-stroke; }
+  .cm__halo { fill: rgb(var(--accent-rgb) / 0.16); stroke: rgb(var(--accent-rgb) / 0.5); stroke-width: 1; vector-effect: non-scaling-stroke; }
+  .cm__pin { fill: var(--accent-2); }
+  .cm__svg .cm__name {
+    font-family: var(--font-display);
+    font-size: calc(var(--s) * 0.05px);
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    fill: var(--text);
+    stroke-width: calc(var(--s) * 0.014px);
+  }
+  .cm__car { fill: var(--text); }
+
+  /* ---------- HUD ---------- */
+  .cm__hud { position: absolute; z-index: 2; display: flex; flex-direction: column; gap: 0.5rem; pointer-events: none; }
+  .cm__hud--tl { top: 1.2rem; left: 1.2rem; align-items: flex-start; }
+  .cm__hud--br { bottom: 1.2rem; right: 1.3rem; align-items: flex-end; gap: 0.4rem; }
+  .cm__chip { display: inline-flex; align-items: center; gap: 0.55rem; padding: 0.45rem 0.85rem; border-radius: 999px; border: 1px solid var(--line); background: rgb(var(--bg-rgb) / 0.6); font-size: 0.64rem; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-2); }
+  .cm__live { flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: cm-pulse 2.4s var(--ease-out) 3; }
+  @keyframes cm-pulse { 0% { box-shadow: 0 0 0 0 rgb(var(--accent-rgb) / 0.55); } 100% { box-shadow: 0 0 0 9px rgb(var(--accent-rgb) / 0); } }
+  .cm__coords { padding-left: 0.2rem; font-size: 0.62rem; letter-spacing: 0.2em; color: var(--muted); font-variant-numeric: tabular-nums; white-space: pre; }
+  .cm__compass { position: absolute; z-index: 2; top: 1.05rem; right: 1.05rem; display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--line); background: rgb(var(--bg-rgb) / 0.6); color: var(--accent); }
+  .cm__compass svg { width: 19px; height: 19px; }
+  .cm__compass b { position: absolute; top: 3px; left: 50%; width: 10px; margin-left: -5px; font-size: 0.48rem; font-weight: 700; line-height: 1; text-align: center; color: var(--text-2); }
+  .cm__legend { display: inline-flex; align-items: center; gap: 0.55rem; font-size: 0.62rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
+  .cm__legend-hub { width: 8px; height: 8px; border-radius: 50%; background: var(--text); box-shadow: 0 0 0 3px rgb(var(--fg-rgb) / 0.14); }
+  .cm__legend-route { width: 22px; height: 2px; border-radius: 2px; background: linear-gradient(90deg, rgb(var(--accent-rgb) / 0.25), var(--accent-2)); }
+
+  @media (max-width: 960px) {
+    .cm__hud--br { display: none; }
+  }
+  @media (max-width: 640px) {
+    .cm__svg text { font-size: calc(var(--s) * 0.036px); }
+    .cm__svg .cm__name { font-size: calc(var(--s) * 0.064px); }
+    /* Phones: the map is small, so keep it to pins, route and compass. */
+    .cm__water-labels, .cm__hud--tl { display: none; }
+    .cm__compass { top: 0.8rem; right: 0.8rem; width: 38px; height: 38px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cm__live { animation: none; }
+  }
+</style>
+
+<script>
+  // SMIL keeps the route animated without JS; this pauses it off-screen and for reduced motion.
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+  document.querySelectorAll<SVGSVGElement>('[data-city-map]').forEach((svg) => {
+    const still = () => {
+      svg.pauseAnimations();
+      svg.setCurrentTime(3.4); // car mid-route, pulse visible
+    };
+    if (reduce.matches) { still(); return; }
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(([e]) => (e.isIntersecting ? svg.unpauseAnimations() : svg.pauseAnimations())).observe(svg);
+    }
+    reduce.addEventListener?.('change', (e) => { if (e.matches) still(); else svg.unpauseAnimations(); });
+  });
+</script>

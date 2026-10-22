@@ -1,0 +1,78 @@
+---
+// Links to the other service-area pages, nearest first (by straight-line distance).
+import Icon from '../Icon.astro';
+import { areas, areaHref } from '../../data/site';
+import { distanceKm, etaMin, type AreaEntry } from '../../data/area-pages';
+
+interface Props { area: AreaEntry }
+const { area } = Astro.props;
+const nearby = areas
+  .filter((a) => a.slug !== area.slug)
+  .map((a) => ({ ...a, km: distanceKm(area, a) }))
+  .sort((a, b) => a.km - b.km);
+---
+<section class="section section--tight nb" aria-labelledby="nb-title">
+  <div class="container">
+    <div class="nb__head">
+      <h2 id="nb-title" class="nb__title" data-reveal="fade">Nearby service areas</h2>
+      <a href="/service-areas/" class="link-underline nb__all" data-reveal="fade">All service areas <Icon name="arrow" /></a>
+    </div>
+    <ul class="nb__list" role="list" data-stagger="0.05">
+      {nearby.map((a) => (
+        <li>
+          <a href={areaHref(a)} class="nb__item">
+            <span class="nb__city">{a.city}</span>
+            <span class="nb__eta">{etaMin(a.eta)} from SeaTac</span>
+            <span class="nb__go" aria-hidden="true"><Icon name="arrow" /></span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>
+
+<style>
+  .nb__head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.6rem 2rem; margin-bottom: 1.2rem; }
+  .nb__title { font-size: 0.72rem; font-family: var(--font-sans); font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); line-height: 1.4; }
+  .nb__all { min-height: 44px; }
+  .nb__all::after { bottom: calc(50% - 0.95em); }
+  .nb__all :global(svg) { width: 14px; height: 14px; }
+  .nb__list { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); margin: 0; padding: 0; border-top: 1px solid var(--line-strong); }
+  .nb__list li + li { border-left: 1px solid var(--line); }
+  .nb__item {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: 'city go' 'eta go';
+    align-items: center;
+    column-gap: 0.8rem;
+    row-gap: 0.2rem;
+    min-height: 88px;
+    padding: 1.1rem 1.2rem;
+    transition: background 0.5s var(--ease-out);
+  }
+  .nb__list li:first-child .nb__item { padding-left: 0.2rem; }
+  .nb__item:hover { background: linear-gradient(180deg, rgb(var(--accent-rgb) / 0.07), rgb(var(--accent-rgb) / 0)); }
+  .nb__item:focus-visible { outline-offset: -3px; }
+  .nb__city { grid-area: city; font-family: var(--font-display); font-size: 1.3rem; font-weight: 500; letter-spacing: -0.02em; line-height: 1.15; color: var(--text); }
+  .nb__eta { grid-area: eta; font-size: 0.78rem; color: var(--muted); }
+  .nb__go { grid-area: go; color: var(--muted-2); transition: color 0.4s, transform 0.5s var(--ease-out); }
+  .nb__go :global(svg) { width: 16px; height: 16px; }
+  .nb__item:hover .nb__go { color: var(--accent); transform: translateX(4px); }
+
+  @media (max-width: 900px) {
+    .nb__list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .nb__list li + li { border-left: 0; }
+    .nb__list li { border-bottom: 1px solid var(--line); }
+    .nb__list li:nth-child(even) { border-left: 1px solid var(--line); }
+    .nb__list li .nb__item, .nb__list li:first-child .nb__item { padding: 1rem 0.9rem; }
+    .nb__list li:nth-child(odd) .nb__item { padding-left: 0.2rem; }
+  }
+  @media (max-width: 560px) {
+    .nb__list { grid-template-columns: 1fr; }
+    .nb__list li:nth-child(even) { border-left: 0; }
+    .nb__list li .nb__item, .nb__list li:first-child .nb__item, .nb__list li:nth-child(odd) .nb__item { padding: 0.9rem 0.2rem; }
+    .nb__item { grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: 'city eta go'; min-height: 64px; }
+    .nb__city { font-size: 1.15rem; }
+  }
+</style>

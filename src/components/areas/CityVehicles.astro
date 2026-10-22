@@ -1,0 +1,196 @@
+---
+// Recommended vehicles for the city: photo cards with the key specs (capacity first), linking to
+// the fleet page and to /book/ with the vehicle and city prefilled.
+import Icon from '../Icon.astro';
+import { fleet, images } from '../../data/site';
+import { bookHref, type AreaEntry } from '../../data/area-pages';
+
+interface Props { area: AreaEntry }
+const { area } = Astro.props;
+
+type Photo = { src: string; alt: string; position?: string; grade?: boolean; studio?: boolean };
+// Card photography. site.ts points the S550 at images.chauffeur (a person drinking from a bottle),
+// so the sedan card uses a studio sedan shot instead, whichever one the other cards are not using.
+const photos: Record<string, Photo> = {
+  escalade: { src: images.escalade, alt: 'Black Cadillac Escalade luxury SUV parked at the roadside', position: '50% 62%' },
+  electric: { src: images.darkCar, alt: 'Dark luxury electric sedan sculpted by low studio light', position: '72% 55%' },
+  stretch: { src: images.studioSedan, alt: 'Black luxury car in silhouette under a single studio light', position: '50% 60%' },
+  'party-sprinter': { src: images.sprinter, alt: 'White Mercedes-Benz Sprinter with its sliding door open, ready for guests to board', position: '60% 55%', grade: true },
+  sprinter: { src: images.sprinterStudio, alt: 'White Mercedes-Benz Sprinter executive van', studio: true },
+};
+const sedanShots: Photo[] = [
+  { src: images.studioSedan, alt: 'Black Mercedes-Benz sedan in silhouette under a single studio light', position: '50% 60%' },
+  { src: images.darkCar, alt: 'Black luxury sedan sculpted by low studio light', position: '72% 55%' },
+];
+
+const ids = area.page.vehicles.map((p) => p.id);
+const used = new Set(ids.filter((id) => id !== 's550').map((id) => photos[id]?.src));
+const photoFor = (id: string): Photo | undefined =>
+  id === 's550' ? sedanShots.find((p) => !used.has(p.src)) ?? sedanShots[0] : photos[id];
+
+const picks = area.page.vehicles.flatMap((p) => {
+  const v = fleet.find((f) => f.id === p.id);
+  return v ? [{ ...v, why: p.why, photo: photoFor(v.id) }] : [];
+});
+---
+<section class="section cv" aria-labelledby="cv-title">
+  <div class="container">
+    <header class="cv__head">
+      <div class="cv__title">
+        <p class="eyebrow" data-reveal="fade">Recommended vehicles</p>
+        <h2 id="cv-title" data-split>Pick your <em>car.</em></h2>
+      </div>
+      <a href="/fleet/" class="link-underline cv__all" data-reveal="fade">Compare the full fleet <Icon name="arrow" /></a>
+    </header>
+
+    <ul class="cv__strip" role="list" data-stagger="0.07" data-cv-strip>
+      {picks.map((v) => (
+        <li class:list={['veh', v.photo?.grade && 'veh--grade', v.photo?.studio && 'veh--studio']}>
+          {v.photo && (
+            <div class="veh__media" data-theme={v.photo.studio ? 'light' : undefined}>
+              <img
+                src={v.photo.src}
+                alt={v.photo.alt}
+                width="800"
+                height="500"
+                loading="lazy"
+                decoding="async"
+                style={v.photo.position ? `object-position: ${v.photo.position}` : undefined}
+              />
+            </div>
+          )}
+          <div class="veh__body">
+          <p class="veh__cat">{v.category}</p>
+          <h3 class="veh__name">{v.name}</h3>
+          <p class="veh__why">{v.why}</p>
+          <dl class="veh__spec">
+            <div><dt>Guests</dt><dd>{v.passengers}</dd></div>
+            <div><dt>Bags</dt><dd>{v.luggage}</dd></div>
+          </dl>
+          <ul class="veh__feat" role="list">
+            {v.features.slice(0, 2).map((f) => <li><Icon name="check" />{f}</li>)}
+          </ul>
+          <div class="veh__links">
+            <a href={bookHref({ vehicle: v.id, from: area.city })} class="veh__reserve">Reserve<span class="sr-only"> the {v.name}</span> <Icon name="arrow" /></a>
+            <a href={`/fleet/#${v.id}`} class="veh__more">Details<span class="sr-only">: {v.name}</span></a>
+          </div>
+          </div>
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>
+
+<style>
+  .cv { padding-top: 0; }
+  .cv .container { padding-top: clamp(3.5rem, 7vw, 6rem); border-top: 1px solid var(--line); }
+  .cv__head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 1.2rem 2rem; margin-bottom: clamp(2rem, 4vw, 3rem); }
+  .cv__title { display: grid; gap: 1.2rem; }
+  .cv h2 :global(.split-line) { vertical-align: top; }
+  .cv__all { min-height: 44px; }
+  .cv__all::after { bottom: calc(50% - 0.95em); }
+  .cv__all :global(svg) { width: 14px; height: 14px; }
+
+  .cv__strip {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: clamp(0.9rem, 1.4vw, 1.25rem);
+    margin: 0;
+    padding: 0;
+  }
+  .veh {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--card-bg);
+    box-shadow: var(--card-highlight), var(--card-shadow);
+    transition: transform 0.6s var(--ease-out), box-shadow 0.6s var(--ease-out), border-color 0.4s;
+  }
+  .veh:hover { transform: translateY(-4px); border-color: var(--line-strong); box-shadow: var(--card-highlight), var(--card-shadow-hover); }
+  .veh__media { position: relative; aspect-ratio: 16 / 10; overflow: hidden; background: var(--bg-3); border-bottom: 1px solid var(--line); }
+  .veh__media img { width: 100%; height: 100%; object-fit: cover; transition: transform 1.2s var(--ease-out); }
+  .veh:hover .veh__media img { transform: scale(1.04); }
+  :global([data-theme='dark']) .veh__media img { filter: brightness(0.86) contrast(1.04); }
+  /* Daylight stock shot: soften it into the palette (as on the fleet page). */
+  .veh--grade .veh__media img { filter: brightness(0.97) contrast(1.04) saturate(0.75); }
+  :global([data-theme='dark']) .veh--grade .veh__media img { filter: brightness(0.74) contrast(1.12) saturate(0.6); }
+  /* Studio cut-out on white: an ivory plate in both themes, the photo blended into it. */
+  .veh--studio .veh__media { background: var(--bg-3); }
+  .veh--studio .veh__media img { object-fit: contain; padding: 8% 10% 6%; mix-blend-mode: multiply; filter: none; }
+  .veh__body { display: flex; flex-direction: column; flex: 1; padding: 1.3rem 1.4rem 1.3rem; }
+  .veh__cat { font-size: 0.64rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); }
+  .veh__name { font-size: 1.35rem; line-height: 1.15; letter-spacing: -0.025em; margin: 0.55rem 0 0.4rem; }
+  .veh__why { font-size: 0.88rem; line-height: 1.5; color: var(--muted); }
+  .veh__spec { display: grid; grid-template-columns: 1fr 1fr; margin: 1.3rem 0 1rem; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .veh__spec > div { display: flex; flex-direction: column-reverse; gap: 0.2rem; padding: 0.85rem 0; }
+  .veh__spec > div + div { padding-left: 1rem; border-left: 1px solid var(--line); }
+  .veh__spec dd { margin: 0; font-family: var(--font-display); font-size: 2.1rem; font-weight: 500; line-height: 1; letter-spacing: -0.04em; color: var(--text); font-variant-numeric: tabular-nums; }
+  .veh__spec dt { font-size: 0.64rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
+  .veh__feat { display: grid; gap: 0.4rem; margin: 0 0 1.2rem; padding: 0; }
+  .veh__feat li { display: flex; align-items: center; gap: 0.5rem; font-size: 0.84rem; color: var(--text-2); }
+  .veh__feat :global(svg) { width: 14px; height: 14px; color: var(--accent); flex: none; }
+  .veh__links { display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; margin-top: auto; }
+  .veh__reserve {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    padding: 0 1.1rem;
+    border-radius: 999px;
+    background: var(--cta-bg);
+    color: var(--cta-fg);
+    box-shadow: var(--cta-glow);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .veh__reserve :global(svg) { width: 13px; height: 13px; transition: transform 0.45s var(--ease-out); }
+  .veh__reserve:hover :global(svg) { transform: translateX(3px); }
+  .veh__more { display: inline-flex; align-items: center; min-height: 44px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid transparent; transition: color 0.3s; }
+  .veh__more:hover { color: var(--text); }
+
+  @media (max-width: 1100px) {
+    .cv__strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  /* Phones: a swipeable strip that bleeds to the screen edges */
+  @media (max-width: 640px) {
+    .cv__strip {
+      display: flex;
+      gap: 0.85rem;
+      margin-inline: calc(var(--gutter) * -1);
+      padding: 0.25rem var(--gutter) 1.5rem;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      scroll-padding-inline: var(--gutter);
+      scrollbar-width: none;
+      overscroll-behavior-x: contain;
+    }
+    .cv__strip::-webkit-scrollbar { display: none; }
+    .veh { flex: 0 0 min(78vw, 300px); scroll-snap-align: start; }
+    .veh:hover { transform: none; }
+    .veh:hover .veh__media img { transform: none; }
+  }
+</style>
+
+<script>
+  // Phones: the cards sit in a horizontal scroll-snap strip. Chrome does not scroll a partly
+  // visible focus target into view, so a Tab into the next card would leave its links mostly
+  // off-screen. Bring the focused card fully into the strip (aligned to its snap point).
+  document.querySelectorAll<HTMLElement>('[data-cv-strip]').forEach((strip) => {
+    strip.addEventListener('focusin', (e) => {
+      if (strip.scrollWidth <= strip.clientWidth + 1) return; // desktop grid: nothing to scroll
+      const card = (e.target as HTMLElement).closest<HTMLElement>('.veh');
+      if (!card) return;
+      const s = strip.getBoundingClientRect();
+      const c = card.getBoundingClientRect();
+      const pad = parseFloat(getComputedStyle(strip).scrollPaddingInlineStart) || 0;
+      if (c.left >= s.left + pad - 1 && c.right <= s.right + 1) return;
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      strip.scrollTo({ left: strip.scrollLeft + (c.left - s.left - pad), behavior: reduce ? 'auto' : 'smooth' });
+    });
+  });
+</script>

@@ -1,0 +1,118 @@
+---
+// Airports & cruise terminals band: each row links to the matching service landing page.
+import Icon from '../Icon.astro';
+import { images, services, serviceHref } from '../../data/site';
+
+const airport = services.find((s) => s.slug === 'airport')!;
+const cruise = services.find((s) => s.slug === 'cruise')!;
+
+const ports = [
+  { kind: 'Airport', code: 'SEA', name: 'Seattle-Tacoma International', sub: 'SeaTac', text: 'Flight-tracked arrivals, meet & greet and help with the luggage.', service: airport },
+  { kind: 'Airport', code: 'PAE', name: 'Paine Field', sub: 'Everett', text: 'The north-end alternative to SeaTac, close to Everett, Mukilteo and Mill Creek.', service: airport },
+  { kind: 'Airport', code: 'BFI', name: 'Boeing Field', sub: 'King County International · On request', text: 'Just south of downtown Seattle. Mention Boeing Field when you book and dispatch confirms the details.', service: airport },
+  { kind: 'Pier', code: '66', name: 'Bell Street Cruise Terminal', sub: 'Pier 66 · Downtown waterfront', text: 'A major departure point for Alaskan cruises, with a smooth curbside drop-off.', service: cruise },
+  { kind: 'Pier', code: '91', name: 'Smith Cove Cruise Terminal', sub: 'Pier 91 · Elliott Bay', text: 'Just north of downtown and home to multiple cruise lines.', service: cruise },
+];
+---
+<section class="section section--tight surface-2 pb" aria-labelledby="ports-title">
+  <div class="container pb__grid">
+    <div class="pb__intro">
+      <p class="eyebrow" data-reveal="fade">Airports &amp; cruise terminals</p>
+      <h2 id="ports-title" data-split>Every terminal, <em>covered.</em></h2>
+      <p class="lead" data-reveal data-delay="0.1">
+        Flight-tracked pickups at SeaTac and Paine Field, Boeing Field on request, and door-to-gangway transfers to both Seattle cruise piers. Your chauffeur texts the exact meeting point before you arrive.
+      </p>
+      <div class="pb__media media" data-reveal="scale">
+        <img src={images.plane} alt="Aircraft wing above the clouds in warm evening light" loading="lazy" decoding="async" width="1600" height="1067" />
+      </div>
+      <div class="pb__links" data-reveal data-delay="0.15">
+        <a href={serviceHref(airport)} class="link-underline">Airport transfers <Icon name="arrow" /></a>
+        <a href={serviceHref(cruise)} class="link-underline">Cruise transfers <Icon name="arrow" /></a>
+      </div>
+    </div>
+
+    <ul class="pb__list" role="list" data-stagger="0.07">
+      {ports.map((p) => (
+        <li>
+          <a href={serviceHref(p.service)} class="pb-row">
+            <span class="pb-row__code" aria-hidden="true">
+              <small>{p.kind}</small>
+              <b>{p.code}</b>
+            </span>
+            <span class="pb-row__body">
+              <span class="pb-row__name">{p.name}</span>
+              <span class="pb-row__sub">{p.sub}</span>
+              <span class="pb-row__text">{p.text}</span>
+            </span>
+            <span class="pb-row__go" aria-hidden="true"><Icon name="arrow-up-right" /></span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>
+
+<style>
+  .pb__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: clamp(2.5rem, 6vw, 6rem);
+    align-items: start;
+  }
+  .pb__intro { display: grid; gap: 1.3rem; justify-items: start; position: sticky; top: calc(var(--header-h) + 1.5rem); }
+  .pb__intro h2 :global(.split-line) { vertical-align: top; }
+  .pb__intro .lead { max-width: 46ch; }
+  .pb__media { width: 100%; aspect-ratio: 16 / 9; margin-top: 0.6rem; box-shadow: 0 1px 2px rgb(var(--fg-rgb) / 0.04), 0 30px 60px -40px rgb(var(--fg-rgb) / 0.4); }
+  :global([data-theme='dark']) .pb__media img { filter: brightness(0.78) saturate(0.85); }
+  .pb__links { display: flex; flex-wrap: wrap; gap: 0.4rem 2rem; }
+  .pb__links .link-underline { min-height: 44px; }
+  .pb__links .link-underline::after { bottom: calc(50% - 0.95em); }
+  .pb__links :global(svg) { width: 14px; height: 14px; }
+
+  .pb__list { margin: 0; padding: 0; border-top: 1px solid var(--line-strong); }
+  .pb__list li { border-bottom: 1px solid var(--line); }
+  .pb-row {
+    position: relative;
+    display: grid;
+    grid-template-columns: 4.6rem minmax(0, 1fr) auto;
+    align-items: center;
+    gap: clamp(1rem, 2vw, 1.75rem);
+    padding: clamp(1.2rem, 2vw, 1.6rem) 0.5rem clamp(1.2rem, 2vw, 1.6rem) 0;
+    transition: background 0.5s var(--ease-out);
+  }
+  .pb-row:hover { background: linear-gradient(90deg, rgb(var(--accent-rgb) / 0.07), rgb(var(--accent-rgb) / 0) 80%); }
+  .pb-row:focus-visible { outline-offset: -2px; }
+  .pb-row__code {
+    display: grid;
+    justify-items: center;
+    align-content: center;
+    gap: 0.1rem;
+    width: 4.6rem;
+    height: 4.6rem;
+    border-radius: 14px;
+    border: 1px solid var(--line-strong);
+    background: var(--bg-3);
+    box-shadow: 0 1px 2px rgb(var(--fg-rgb) / 0.04), 0 12px 24px -18px rgb(var(--fg-rgb) / 0.35);
+  }
+  :global([data-theme='dark']) .pb-row__code { background: rgb(var(--fg-rgb) / 0.03); box-shadow: none; }
+  .pb-row__code small { font-size: 0.56rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); }
+  .pb-row__code b { font-family: var(--font-display); font-size: 1.45rem; font-weight: 500; letter-spacing: -0.02em; line-height: 1; color: var(--accent); }
+  .pb-row__body { display: grid; gap: 0.2rem; min-width: 0; }
+  .pb-row__name { font-family: var(--font-display); font-size: clamp(1.15rem, 1.5vw, 1.4rem); font-weight: 500; letter-spacing: -0.02em; line-height: 1.2; color: var(--text); }
+  .pb-row__sub { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
+  .pb-row__text { font-size: 0.9rem; line-height: 1.55; color: var(--text-2); margin-top: 0.35rem; }
+  .pb-row__go { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line-strong); color: var(--text); transition: background 0.45s var(--ease-out), border-color 0.45s, color 0.45s; }
+  .pb-row__go :global(svg) { width: 15px; height: 15px; }
+  .pb-row:hover .pb-row__go { background: var(--cta-bg); border-color: transparent; color: var(--cta-fg); }
+
+  @media (max-width: 900px) {
+    .pb__grid { grid-template-columns: 1fr; }
+    .pb__intro { position: static; }
+  }
+  @media (max-width: 560px) {
+    .pb-row { grid-template-columns: 3.6rem minmax(0, 1fr); align-items: start; }
+    .pb-row__code { width: 3.6rem; height: 3.6rem; border-radius: 12px; }
+    .pb-row__code b { font-size: 1.15rem; }
+    .pb-row__go { display: none; }
+  }
+</style>

@@ -1,6 +1,6 @@
-# Seattle Door to Door Limo — Website Redesign (UI demo)
+# Seattle Door to Door Limo — Website Redesign
 
-Luxury redesign of seattledoortodoorlimo.com. This build is the **UI demo for client review**; SEO, the booking back-end and production hardening are deliberately deferred to phase 2.
+Luxury redesign of seattledoortodoorlimo.com: Astro static site with a light "Ivory & Onyx" theme (default) and a dark "Onyx" mode, 3D hero and map, a booking wizard, and SEO landing pages for every service and city.
 
 ## Run it
 
@@ -9,7 +9,22 @@ npm install
 npm run dev        # http://localhost:4321
 ```
 
-Pages: `/` (home), `/fleet/`, `/book/` (reservation flow).
+Pages: `/`, `/fleet/`, `/book/`, `/services/` (+ 6 service pages), `/service-areas/` (+ 6 city pages), `/about/`, `/contact/`, `/faq/`, `/blog/`, `/privacy/`, `/terms/`, 404.
+
+## Booking & contact requests
+
+Forms POST JSON to `PUBLIC_LEAD_ENDPOINT` (see `.env.example`): a GoHighLevel inbound webhook, Zapier/Make hook or Formspree endpoint all work. Set it as a build environment variable in Cloudflare (**Settings → Variables and Secrets**, build-time). Logic lives in `src/lib/submit.ts`.
+
+Without an endpoint, nothing is sent silently: the booking and contact forms finish on a "one last step" screen that lets the customer text, email or call the request in, with the details prefilled.
+
+Optional: `PUBLIC_GOOGLE_MAPS_KEY` enables address autocomplete on the booking form (restrict the key to the site's domain).
+
+## SEO
+
+- Canonical URLs, Open Graph/Twitter tags and JSON-LD come from `src/layouts/Base.astro` + `src/lib/seo.ts` (LocalBusiness on every page; Service, FAQPage, BreadcrumbList, Article per page).
+- `@astrojs/sitemap` writes `sitemap-index.xml`; `public/robots.txt` points to it.
+- `public/_redirects` maps old URLs (`/booking`, `/reservations`, `/privacy-policy`); `public/_headers` sets caching and security headers.
+- Social share image: `public/og-image.jpg` (1200×630).
 
 ## Deploy on Cloudflare
 
@@ -24,7 +39,8 @@ Static site, so no adapter is needed. Node version is pinned in `.node-version`.
 - **Three.js**: hero "Seattle after dark" scene (`src/scripts/hero-scene.ts`) and 3D service-area map (`src/scripts/area-map.ts`)
 - **GSAP + ScrollTrigger**: reveals, pinned horizontal services, scroll-drawn timeline
 - **Lenis**: smooth scrolling
-- Fonts self-hosted via Fontsource: Cormorant Garamond (display) + Manrope (UI)
+- Fonts self-hosted via Fontsource: Inter Tight (headings) + Inter (body)
+- Themes: light "Ivory & Onyx" by default, dark "Onyx" via the header toggle (`html[data-theme]`, saved in `localStorage`); tokens in `src/styles/global.css`
 
 ## Where things live
 
@@ -37,7 +53,9 @@ Static site, so no adapter is needed. Node version is pinned in `.node-version`.
 | Home sections | `src/components/home/*.astro` |
 | Booking wizard logic | `src/scripts/booking.ts` |
 
-## Phase 2 (after client sign-off)
+## Before launch
+
+The full list of questions for the client is in [docs/CLIENT-CHECKLIST.md](docs/CLIENT-CHECKLIST.md).
 
 **Content the client needs to supply or confirm**
 - Professional fleet photography. The stretch limo uses a stock studio sedan, and the two Sprinter photos are white-background/daylight shots.
@@ -46,10 +64,10 @@ Static site, so no adapter is needed. Node version is pinned in `.node-version`.
 - Reservations email address. `site.email` is a placeholder.
 - Real logo files, if they want to keep their mark. The demo uses a re-typeset wordmark with a Space Needle monogram.
 
+- Legal review of `/privacy/` and `/terms/` (templates), and of the two new draft journal posts.
+
 **Technical**
-- Booking back-end: wire `submitBooking()` in `src/scripts/booking.ts` to their CRM, GoHighLevel webhook, Formspree, or the existing booking system. The current `/booking` iframe on the live site renders blank.
-- Address autocomplete (Google Places), analytics (GA4/GTM, Meta Pixel and CAPI events are already pushed to `dataLayer`).
-- SEO: per-service and per-city landing pages, meta and OG images, LocalBusiness/FAQ schema, sitemap, and redirects from old URLs (`/booking`, `/blog`).
-- Self-host and optimize images (AVIF/WebP, responsive sizes) instead of hotlinking.
-- Blog migration, privacy and terms pages, 404 page.
-- Lighthouse/performance pass (code-split Three.js, reduce-motion and low-power fallbacks), cross-browser QA (Safari/iOS).
+- Choose where booking requests go and set `PUBLIC_LEAD_ENDPOINT` (the current live `/booking` iframe renders blank).
+- Analytics: GA4/GTM and Meta Pixel snippets (events are already pushed to `dataLayer`).
+- **Self-host the photos before cutover.** They are hotlinked from the old site on the same domain, so they will break when the domain switches to this build. Optimize them (AVIF/WebP, responsive sizes) at the same time.
+- Cross-browser QA on real Safari/iOS devices.

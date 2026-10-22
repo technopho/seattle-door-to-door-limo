@@ -1,0 +1,167 @@
+---
+import Icon from '../Icon.astro';
+import { site, ratings, testimonials } from '../../data/site';
+---
+<section class="section rs" aria-labelledby="rs-title">
+  <div class="container">
+    <div class="rs__head">
+      <div class="rs__head-main">
+        <p class="eyebrow" data-reveal="fade">In their words</p>
+        <h2 id="rs-title" data-split>Rated {site.rating.score} from <em>{site.rating.count} reviews.</em></h2>
+      </div>
+      <ul class="rs__platforms" role="list" data-stagger="0.08">
+        {ratings.map((r) => (
+          <li class="rs__plat">
+            <span class="rs__plat-score">{r.score}</span>
+            <span class="rs__plat-meta">
+              <span class="rs__plat-name">{r.platform}</span>
+              <span class="rs__plat-count">{r.count}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+
+    <div class="rs__scroller" role="region" aria-label="Client testimonials" data-rs-scroller>
+      <ul class="rs__list" role="list" data-stagger="0.08">
+        {testimonials.map((t) => (
+          <li class="rs__card">
+            <figure>
+              <span class="rs__mark" aria-hidden="true"><Icon name="quote" /></span>
+              <blockquote class="rs__quote"><p>{t.quote}</p></blockquote>
+              <figcaption class="rs__by">
+                <span class="rs__initial" aria-hidden="true">{t.name.charAt(0)}</span>
+                <span class="rs__who">
+                  <span class="rs__name">{t.name}</span>
+                  <span class="rs__ctx">{t.context}</span>
+                </span>
+              </figcaption>
+            </figure>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </div>
+</section>
+
+<style>
+  .rs__head {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) auto;
+    align-items: end;
+    gap: 2rem 4rem;
+    margin-bottom: clamp(2.5rem, 5vw, 4rem);
+  }
+  .rs__head-main { display: grid; gap: 1.4rem; }
+  .rs__head-main h2 { max-width: 15ch; }
+  /* Short accent stays on one line where h2 balancing is unsupported (data-split turns &nbsp; into a
+     breakable space, and Chrome's balance misplaces breaks around a nowrap box, so modern browsers skip it) */
+  @supports not (text-wrap: balance) { .rs__head-main h2 em { white-space: nowrap; } }
+  .rs__head-main h2 :global(.split-line) { vertical-align: top; }
+  .rs__platforms { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+  .rs__plat {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 1.1rem 0.6rem 0.7rem;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--chip-bg);
+    box-shadow: var(--chip-shadow);
+  }
+  .rs__plat-score {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: var(--cta-bg);
+    color: var(--cta-fg);
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+  .rs__plat-meta { display: grid; line-height: 1.25; }
+  .rs__plat-name { font-size: 0.86rem; font-weight: 600; color: var(--text); }
+  .rs__plat-count { font-size: 0.74rem; color: var(--muted); }
+
+  .rs__scroller { border-radius: var(--radius); }
+  .rs__scroller:focus-visible { outline-offset: 6px; }
+  .rs__list { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
+  .rs__card { display: flex; }
+  .rs__card figure {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    width: 100%;
+    padding: clamp(1.4rem, 2.2vw, 1.9rem);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--card-bg);
+    box-shadow: var(--card-highlight), var(--card-shadow);
+    transition: transform 0.6s var(--ease-out), box-shadow 0.6s var(--ease-out), border-color 0.4s;
+  }
+  .rs__card figure:hover { transform: translateY(-4px); border-color: var(--line-strong); box-shadow: var(--card-highlight), var(--card-shadow-hover); }
+  .rs__mark { display: inline-flex; color: var(--accent); opacity: 0.85; }
+  .rs__mark :global(svg) { width: 26px; height: 26px; }
+  .rs__quote { flex: 1; font-size: 1rem; line-height: 1.65; color: var(--text-2); }
+  .rs__by { display: flex; align-items: center; gap: 0.8rem; padding-top: 1.1rem; border-top: 1px solid var(--line); }
+  .rs__initial {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid rgb(var(--accent-rgb) / 0.35);
+    background: rgb(var(--accent-rgb) / 0.08);
+    color: var(--accent);
+    font-family: var(--font-display);
+    font-weight: 600;
+  }
+  .rs__who { display: grid; line-height: 1.3; }
+  .rs__name { font-size: 0.92rem; font-weight: 600; color: var(--text); }
+  .rs__ctx { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+
+  @media (max-width: 1180px) {
+    .rs__list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 860px) {
+    .rs__head { grid-template-columns: 1fr; }
+  }
+  /* Phones: a swipeable row that bleeds to the screen edges */
+  @media (max-width: 640px) {
+    .rs__scroller {
+      margin-inline: calc(var(--gutter) * -1);
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      scroll-padding-inline: var(--gutter);
+      scrollbar-width: none;
+      overscroll-behavior-x: contain;
+      border-radius: 0;
+    }
+    .rs__scroller::-webkit-scrollbar { display: none; }
+    .rs__list { display: flex; gap: 0.75rem; width: max-content; padding: 0.25rem var(--gutter) 1.5rem; }
+    .rs__card { width: min(82vw, 330px); scroll-snap-align: start; }
+    .rs__card figure:hover { transform: none; }
+    .rs__plat { padding-right: 0.9rem; }
+  }
+</style>
+
+<script>
+  // The testimonial row only scrolls sideways on phones: make it a keyboard stop only while it actually scrolls.
+  const scroller = document.querySelector<HTMLElement>('[data-rs-scroller]');
+  if (scroller) {
+    const sync = () => {
+      const scrolls = scroller.scrollWidth > scroller.clientWidth + 1;
+      if (scrolls) scroller.setAttribute('tabindex', '0');
+      else scroller.removeAttribute('tabindex');
+      scroller.setAttribute('aria-label', scrolls ? 'Client testimonials, scroll sideways for more' : 'Client testimonials');
+    };
+    sync();
+    const ro = new ResizeObserver(sync);
+    ro.observe(scroller);
+    if (scroller.firstElementChild) ro.observe(scroller.firstElementChild);
+  }
+</script>

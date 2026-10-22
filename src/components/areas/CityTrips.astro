@@ -1,0 +1,137 @@
+---
+// Typical trips from/to the city, laid out like a departures board. Each row deep-links to /book/.
+import Icon from '../Icon.astro';
+import { bookHref, etaMin, tripLabel, type AreaEntry } from '../../data/area-pages';
+
+interface Props { area: AreaEntry }
+const { area } = Astro.props;
+---
+<section class="section surface-2 ct" aria-labelledby="ct-title">
+  <div class="container">
+    <header class="section-head section-head--split">
+      <div class="ct__title">
+        <p class="eyebrow" data-reveal="fade">Typical trips</p>
+        <h2 id="ct-title" data-split>Trips we <em>know well.</em></h2>
+      </div>
+      <p class="lead" data-reveal data-delay="0.1">
+        Popular trips from {area.city}. Each one opens the booking form with the route filled in, ready for your date and time.
+      </p>
+    </header>
+
+    <ol class="ct__board" role="list" data-stagger="0.06">
+      {area.page.trips.map((t) => (
+        <li class="ct-row">
+          <span class="ct-row__icon" aria-hidden="true"><Icon name={t.icon} /></span>
+          <div class="ct-row__main">
+            <h3 class="ct-row__title">{t.title}</h3>
+            <p class="ct-row__text">{t.text}</p>
+          </div>
+          <span class:list={['ct-row__tag', t.eta && 'is-eta']}>
+            {t.eta ? <Fragment><b>{etaMin(area.eta)}</b> typical</Fragment> : tripLabel[t.type]}
+          </span>
+          <a href={bookHref({ type: t.type, from: t.from, to: t.to })} class="ct-row__go">
+            Reserve<span class="sr-only">: {t.title}</span> <Icon name="arrow" />
+          </a>
+        </li>
+      ))}
+    </ol>
+  </div>
+</section>
+
+<style>
+  .ct__title { display: grid; gap: 1.2rem; }
+  .ct h2 :global(.split-line) { vertical-align: top; }
+  .ct__board { margin: 0; padding: 0; border-top: 1px solid var(--line-strong); }
+  .ct-row {
+    position: relative;
+    display: grid;
+    grid-template-columns: 52px minmax(0, 1fr) 9.5rem auto;
+    align-items: center;
+    gap: clamp(1rem, 2.4vw, 2rem);
+    padding: clamp(1.1rem, 1.8vw, 1.5rem) 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .ct-row::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 1px;
+    background: var(--accent-grad);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.8s var(--ease-out);
+  }
+  .ct-row:hover::before, .ct-row:focus-within::before { transform: scaleX(1); }
+  .ct-row__icon {
+    display: grid;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    border: 1px solid var(--line-strong);
+    background: var(--bg-3);
+    color: var(--accent);
+  }
+  :global([data-theme='dark']) .ct-row__icon { background: rgb(var(--fg-rgb) / 0.03); }
+  .ct-row__icon :global(svg) { width: 20px; height: 20px; }
+  .ct-row__main { display: grid; gap: 0.3rem; min-width: 0; }
+  .ct-row__title { font-size: clamp(1.15rem, 1.6vw, 1.45rem); line-height: 1.2; letter-spacing: -0.02em; }
+  .ct-row__text { font-size: 0.92rem; line-height: 1.55; color: var(--text-2); max-width: 62ch; }
+  .ct-row__tag {
+    justify-self: start;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.35rem;
+    padding: 0.38rem 0.8rem;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .ct-row__tag.is-eta { border-color: rgb(var(--accent-rgb) / 0.35); background: rgb(var(--accent-rgb) / 0.07); color: var(--accent); }
+  .ct-row__tag b { font-size: 0.82rem; letter-spacing: 0.04em; color: var(--text); }
+  .ct-row__go {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    min-height: 44px;
+    padding: 0 1.2rem;
+    border-radius: 999px;
+    border: 1px solid var(--line-strong);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text);
+    transition: background 0.45s var(--ease-out), color 0.45s, border-color 0.45s;
+  }
+  .ct-row__go :global(svg) { width: 14px; height: 14px; }
+  .ct-row__go:hover, .ct-row:hover .ct-row__go { background: var(--cta-bg); color: var(--cta-fg); border-color: transparent; }
+
+  @media (max-width: 900px) {
+    .ct-row { grid-template-columns: 44px minmax(0, 1fr) auto; grid-template-areas: 'icon main go' 'icon tag go'; row-gap: 0.7rem; }
+    .ct-row__icon { grid-area: icon; align-self: start; width: 44px; height: 44px; }
+    .ct-row__main { grid-area: main; }
+    .ct-row__tag { grid-area: tag; }
+    .ct-row__go { grid-area: go; }
+  }
+  /* Phones: tag and a compact Reserve link share one row under the trip text. */
+  @media (max-width: 560px) {
+    .ct-row {
+      grid-template-columns: 40px auto minmax(0, 1fr);
+      grid-template-areas: 'icon main main' 'icon tag go';
+      column-gap: 0.9rem;
+      row-gap: 0.75rem;
+    }
+    .ct-row__icon { width: 40px; height: 40px; }
+    .ct-row__icon :global(svg) { width: 18px; height: 18px; }
+    .ct-row__tag { align-self: center; }
+    .ct-row__go { justify-self: end; padding: 0 0.95rem; gap: 0.45rem; }
+  }
+</style>

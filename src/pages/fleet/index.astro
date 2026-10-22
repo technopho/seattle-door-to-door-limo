@@ -4,8 +4,15 @@ import FleetHero from '../../components/fleet/FleetHero.astro';
 import FleetBrowser from '../../components/fleet/FleetBrowser.astro';
 import FleetCompare from '../../components/fleet/FleetCompare.astro';
 import FleetHelp from '../../components/fleet/FleetHelp.astro';
+import { breadcrumbs } from '../../lib/seo';
+
+const title = 'Seattle Limo Fleet: Sedans, SUVs & Sprinters | Door to Door';
+const description =
+  'Compare our Seattle chauffeur fleet: Mercedes-Benz S550, Cadillac Escalade, Tesla Model S, stretch limo and Sprinters for 3 to 20 guests. Reserve online.';
+// FleetHelp already closes the page with a booking card (book + call), so the footer's compact
+// CTA band is dropped (footerCta={false}) to avoid two identical asks back to back.
 ---
-<Base title="Our Fleet | Seattle Door to Door Limo" darkHero>
+<Base title={title} description={description} jsonLd={[breadcrumbs([['Fleet', '/fleet/']])]} darkHero footerCta={false}>
   <FleetHero />
   <FleetBrowser />
   <FleetCompare />

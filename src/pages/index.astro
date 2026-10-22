@@ -9,7 +9,7 @@ import AreasMap from '../components/home/AreasMap.astro';
 import Reviews from '../components/home/Reviews.astro';
 import Faq from '../components/home/Faq.astro';
 ---
-<Base preloader darkHero>
+<Base darkHero title="Seattle Limo & Chauffeur Service | Door to Door Limo">
   <Hero />
   <Intro />
   <Services />
@@ -19,3 +19,12 @@ import Faq from '../components/home/Faq.astro';
   <Reviews />
   <Faq />
 </Base>
+
+<style>
+  /* Fleet, Experience and Areas each follow a section on the same page surface, so two full
+     .section paddings stacked into a ~320px dead band (176px on phones). Trim the top padding at
+     those joins only (≈200px at 1440, ≈120px at 390). Reviews keeps its own bg-2 band.
+     The pinned Services stage (desktop) has no bottom padding, so Fleet keeps its full top
+     padding after it; it is trimmed only after the unpinned (phone / reduced-motion) layout. */
+  :global(#experience), :global(#areas), :global(.svc:not(.is-pinned) ~ #fleet) { padding-top: clamp(2rem, 3vw, 2.5rem); }
+</style>

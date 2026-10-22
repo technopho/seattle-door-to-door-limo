@@ -1,0 +1,59 @@
+---
+import Icon from '../Icon.astro';
+import AreaList from './AreaList.astro';
+import { services, serviceHref } from '../../data/site';
+
+const airport = services.find((s) => s.slug === 'airport');
+const cruise = services.find((s) => s.slug === 'cruise');
+const hubs = [
+  { name: 'Seattle-Tacoma International (SEA)', icon: 'plane', href: airport ? serviceHref(airport) : '/services/' },
+  { name: 'Paine Field (PAE) · Boeing Field (BFI)', icon: 'plane', href: airport ? serviceHref(airport) : '/services/' },
+  { name: 'Pier 66 Bell Street · Pier 91 Smith Cove', icon: 'ship', href: cruise ? serviceHref(cruise) : '/services/' },
+];
+---
+<section class="section section--tight surface-2 ca" aria-labelledby="ca-title">
+  <div class="container">
+    <div class="ca__grid">
+      <div class="ca__head">
+        <p class="eyebrow" data-reveal="fade">Service area</p>
+        <h2 id="ca-title" class="ca__title" data-split>Seattle and the Puget Sound, <em>door to door.</em></h2>
+        <p class="ca__lead" data-reveal data-delay="0.1">Based in Seattle, serving the city, the Eastside, Tacoma and Everett. Going further? Custom routes on request.</p>
+        <ul class="ca__hubs" role="list" data-stagger="0.06">
+          {hubs.map((h) => (
+            <li><a href={h.href} class="ca__hub"><Icon name={h.icon} /> <span>{h.name}</span></a></li>
+          ))}
+        </ul>
+        <a href="/service-areas/" class="link-underline ca__all">All service areas <Icon name="arrow" /></a>
+      </div>
+      <AreaList cols={2} />
+    </div>
+  </div>
+</section>
+
+<style>
+  .ca__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.25fr);
+    gap: 2.5rem clamp(2.5rem, 6vw, 6rem);
+    align-items: start;
+  }
+  .ca__head { display: grid; gap: 1.1rem; justify-items: start; }
+  .ca__title { max-width: 14ch; }
+  /* Short accent stays on one line where h2 balancing is unsupported (data-split turns &nbsp; into a
+     breakable space, and Chrome's balance misplaces breaks around a nowrap box, so modern browsers skip it) */
+  @supports not (text-wrap: balance) { .ca__title em { white-space: nowrap; } }
+  .ca__title :global(.split-line) { vertical-align: top; }
+  .ca__lead { color: var(--text-2); line-height: 1.65; max-width: 42ch; }
+  .ca__hubs { display: grid; width: 100%; margin-top: 0.4rem; border-top: 1px solid var(--line); }
+  .ca__hubs li { border-bottom: 1px solid var(--line); }
+  .ca__hub { display: flex; align-items: center; gap: 0.7rem; min-height: 48px; font-size: 0.9rem; color: var(--text-2); transition: color 0.3s, padding 0.5s var(--ease-out); }
+  .ca__hub :global(svg) { flex: none; width: 17px; height: 17px; color: var(--accent); }
+  .ca__hub:hover { color: var(--text); padding-left: 0.4rem; }
+  .ca__all { min-height: 44px; margin-top: 0.4rem; }
+  .ca__all::after { bottom: 9px; }
+  .ca__all :global(svg) { width: 15px; height: 15px; }
+
+  @media (max-width: 980px) {
+    .ca__grid { grid-template-columns: 1fr; }
+  }
+</style>

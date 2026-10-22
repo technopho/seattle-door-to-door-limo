@@ -1,0 +1,130 @@
+---
+// The six services, linked to their landing pages, framed for this city.
+import Icon from '../Icon.astro';
+import { services, serviceHref } from '../../data/site';
+import { serviceIcon, type AreaEntry } from '../../data/area-pages';
+
+interface Props { area: AreaEntry }
+const { area } = Astro.props;
+---
+<section class="section section--tight cs" aria-labelledby="cs-title">
+  <div class="container">
+    <header class="section-head section-head--split">
+      <div class="cs__title">
+        <p class="eyebrow" data-reveal="fade">Services</p>
+        <h2 id="cs-title" data-split>Services in <em>{area.city}.</em></h2>
+      </div>
+      <p class="lead" data-reveal data-delay="0.1">
+        Every service we offer runs here, from a single airport transfer to a wedding-day fleet, with the same chauffeurs and the same standard of care.
+      </p>
+    </header>
+
+    <ul class="cs__grid" role="list" data-stagger="0.06">
+      {services.map((s) => (
+        <li>
+          <a href={serviceHref(s)} class="svl">
+            <span class="svl__icon" aria-hidden="true"><Icon name={serviceIcon[s.slug] ?? 'car'} /></span>
+            <span class="svl__body">
+              <span class="svl__title">{s.title}</span>
+              <span class="svl__kicker">{s.kicker}</span>
+            </span>
+            <span class="svl__go" aria-hidden="true"><Icon name="arrow-up-right" /></span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>
+
+<style>
+  .cs__title { display: grid; gap: 1.2rem; }
+  .cs h2 :global(.split-line) { vertical-align: top; }
+  /* Same open hairline table as "Services we're known for" on /about/ (AboutServices.astro):
+     outlined round icons, the name stacked under the icon, an arrow in the corner. */
+  .cs__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid var(--line-strong);
+  }
+  .cs__grid > li { display: flex; border-bottom: 1px solid var(--line); }
+  .cs__grid > li:not(:nth-child(3n + 1)) { border-left: 1px solid var(--line); }
+  .svl {
+    position: relative;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    gap: 1.6rem;
+    width: 100%;
+    padding: clamp(1.4rem, 2.4vw, 2rem) clamp(1.1rem, 2vw, 1.75rem);
+    transition: background 0.5s var(--ease-out);
+  }
+  .svl:hover { background: rgb(var(--fg-rgb) / 0.03); }
+  .svl:focus-visible { outline-offset: -2px; border-radius: 12px; }
+  .svl__icon {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1px solid var(--line-strong);
+    color: var(--accent);
+    transition: background 0.4s var(--ease-out), color 0.4s, border-color 0.4s;
+  }
+  .svl__icon :global(svg) { width: 19px; height: 19px; }
+  .svl:hover .svl__icon { background: var(--cta-bg); color: var(--cta-fg); border-color: transparent; }
+  .svl__body { display: grid; gap: 0.4rem; align-content: end; min-width: 0; }
+  .svl__title {
+    font-family: var(--font-display);
+    font-size: clamp(1.2rem, 1.6vw, 1.42rem);
+    font-weight: 500;
+    line-height: 1.15;
+    letter-spacing: -0.024em;
+    color: var(--text);
+    transition: color 0.4s;
+  }
+  .svl:hover .svl__title { color: var(--accent); }
+  .svl__kicker { font-size: 0.82rem; line-height: 1.5; color: var(--muted); text-wrap: pretty; }
+  .svl__go {
+    position: absolute;
+    top: clamp(1.4rem, 2.4vw, 2rem);
+    right: clamp(1.1rem, 2vw, 1.75rem);
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    margin-top: 4px;
+    border-radius: 50%;
+    border: 1px solid var(--line-strong);
+    color: var(--text);
+    transition: background 0.4s var(--ease-out), color 0.4s, border-color 0.4s, transform 0.5s var(--ease-out);
+  }
+  .svl__go :global(svg) { width: 14px; height: 14px; }
+  .svl:hover .svl__go { background: var(--cta-bg); color: var(--cta-fg); border-color: transparent; transform: translate(2px, -2px); }
+
+  @media (max-width: 980px) {
+    .cs__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .cs__grid > li:not(:nth-child(3n + 1)) { border-left: 0; }
+    .cs__grid > li:nth-child(2n) { border-left: 1px solid var(--line); }
+  }
+  /* Phones: compact rows (icon, name and the full service line), arrow on the right */
+  @media (max-width: 640px) {
+    .cs__grid { grid-template-columns: 1fr; }
+    .cs__grid > li:nth-child(2n) { border-left: 0; }
+    .svl {
+      grid-template-rows: none;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 0.9rem;
+      min-height: 76px;
+      padding: 0.95rem 0.25rem;
+    }
+    .svl__icon { width: 42px; height: 42px; }
+    .svl__body { gap: 0.15rem; }
+    .svl__title { font-size: 1.1rem; }
+    .svl__kicker { font-size: 0.78rem; line-height: 1.45; }
+    .svl__go { position: static; margin-top: 0; width: 34px; height: 34px; border-color: transparent; color: var(--muted); }
+    .svl:hover { background: none; }
+    .svl:hover .svl__go { background: none; color: var(--accent); border-color: transparent; }
+  }
+</style>

@@ -1,0 +1,138 @@
+---
+// Closing strip on /about/: a link into every service page. No buttons here on purpose:
+// the footer's "Your chauffeur is waiting" block is the page's single closing call to action.
+import Icon from '../Icon.astro';
+import { services, serviceHref } from '../../data/site';
+
+const icons: Record<string, string> = { airport: 'plane', corporate: 'briefcase', weddings: 'rings', cruise: 'ship', events: 'glass', hourly: 'hourglass' };
+---
+<section class="section section--tight sv" aria-labelledby="sv-title">
+  <div class="container">
+    <div class="sv__head">
+      <div class="sv__head-main">
+        <p class="eyebrow" data-reveal="fade">What we do</p>
+        <h2 id="sv-title" class="sv__title" data-split>Services we’re <em>known for.</em></h2>
+      </div>
+      <a href="/services/" class="link-underline sv__all" data-reveal data-delay="0.15">All services <Icon name="arrow" /></a>
+    </div>
+
+    <ul class="sv__grid" role="list" data-stagger="0.06">
+      {services.map((s) => (
+        <li class="sv__cell">
+          <a href={serviceHref(s)} class="sv__item">
+            <span class="sv__icon" aria-hidden="true"><Icon name={icons[s.slug] ?? 'car'} /></span>
+            <span class="sv__text">
+              <span class="sv__name">{s.title}</span>
+              <span class="sv__kicker">{s.kicker}</span>
+            </span>
+            <span class="sv__go" aria-hidden="true"><Icon name="arrow-up-right" /></span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>
+
+<style>
+  .sv { border-top: 1px solid var(--line); }
+  .sv__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1.25rem 3rem;
+    margin-bottom: clamp(2rem, 4.5vw, 3.25rem);
+  }
+  .sv__head-main { display: grid; gap: 1.2rem; }
+  .sv__title { max-width: 16ch; } /* size comes from the global h2 scale (var(--fs-h2)) */
+  .sv__title :global(.split-line) { vertical-align: top; }
+  .sv__all { min-height: 44px; font-size: 0.92rem; font-weight: 500; }
+  .sv__all::after { bottom: 9px; }
+  .sv__all :global(svg) { width: 15px; height: 15px; }
+
+  /* A hairline table of services: three across on desktop, two on tablets, one on phones */
+  .sv__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    border-top: 1px solid var(--line-strong);
+  }
+  .sv__cell { display: flex; border-bottom: 1px solid var(--line); }
+  .sv__cell:not(:nth-child(3n + 1)) { border-left: 1px solid var(--line); }
+  .sv__item {
+    position: relative;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    gap: 1.6rem;
+    width: 100%;
+    padding: clamp(1.4rem, 2.4vw, 2rem) clamp(1.1rem, 2vw, 1.75rem);
+    transition: background 0.5s var(--ease-out);
+  }
+  .sv__item:hover { background: rgb(var(--fg-rgb) / 0.03); }
+  .sv__item:focus-visible { outline-offset: -2px; border-radius: 12px; }
+  .sv__icon {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1px solid var(--line-strong);
+    color: var(--accent);
+    transition: background 0.4s var(--ease-out), color 0.4s, border-color 0.4s;
+  }
+  .sv__icon :global(svg) { width: 19px; height: 19px; }
+  .sv__item:hover .sv__icon { background: var(--cta-bg); color: var(--cta-fg); border-color: transparent; }
+  .sv__text { display: grid; gap: 0.4rem; align-content: end; }
+  .sv__name {
+    font-family: var(--font-display);
+    font-size: clamp(1.2rem, 1.6vw, 1.42rem);
+    font-weight: 500;
+    line-height: 1.15;
+    letter-spacing: -0.024em;
+    color: var(--text);
+    transition: color 0.4s;
+  }
+  .sv__item:hover .sv__name { color: var(--accent); }
+  .sv__kicker { font-size: 0.82rem; line-height: 1.5; color: var(--muted); text-wrap: pretty; }
+  .sv__go {
+    position: absolute;
+    top: clamp(1.4rem, 2.4vw, 2rem);
+    right: clamp(1.1rem, 2vw, 1.75rem);
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    margin-top: 4px;
+    border-radius: 50%;
+    border: 1px solid var(--line-strong);
+    color: var(--text);
+    transition: background 0.4s var(--ease-out), color 0.4s, border-color 0.4s, transform 0.5s var(--ease-out);
+  }
+  .sv__go :global(svg) { width: 14px; height: 14px; }
+  .sv__item:hover .sv__go { background: var(--cta-bg); color: var(--cta-fg); border-color: transparent; transform: translate(2px, -2px); }
+
+  @media (max-width: 980px) {
+    .sv__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .sv__cell:not(:nth-child(3n + 1)) { border-left: 0; }
+    .sv__cell:nth-child(2n) { border-left: 1px solid var(--line); }
+  }
+  /* Phones: compact rows (icon, name and the full service line, wrapped), arrow on the right */
+  @media (max-width: 640px) {
+    .sv__grid { grid-template-columns: 1fr; }
+    .sv__cell:nth-child(2n) { border-left: 0; }
+    .sv__item {
+      grid-template-rows: none;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 0.9rem;
+      min-height: 76px;
+      padding: 0.95rem 0.25rem;
+    }
+    .sv__icon { width: 42px; height: 42px; }
+    .sv__text { gap: 0.15rem; }
+    .sv__name { font-size: 1.1rem; }
+    .sv__kicker { font-size: 0.78rem; line-height: 1.45; }
+    .sv__go { position: static; margin-top: 0; width: 34px; height: 34px; border-color: transparent; color: var(--muted); }
+    .sv__item:hover { background: none; }
+    .sv__item:hover .sv__go { background: none; color: var(--accent); border-color: transparent; }
+  }
+</style>

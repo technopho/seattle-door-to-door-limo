@@ -10,7 +10,10 @@
   --font-display: 'Inter Tight Variable', 'Inter Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-sans: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
 
+  /* Two H1 tiers: --fs-hero for hub heroes (home, fleet, service areas, about),
+     --fs-page-h1 for every other page hero (FAQ, journal, contact, city, post, 404). */
   --fs-hero: clamp(2.8rem, 6.2vw, 6rem);
+  --fs-page-h1: clamp(2.4rem, 5.4vw, 5rem);
   --fs-h1: clamp(2.3rem, 4.6vw, 4.2rem);
   --fs-h2: clamp(1.9rem, 3.4vw, 3.1rem);
   --fs-h3: clamp(1.25rem, 1.7vw, 1.55rem);
@@ -50,7 +53,9 @@
   --text: #16130f;
   --text-2: #3d382f;
   --muted: #6c655a;
-  --muted-2: #958d80;
+  /* Tertiary text (indices, counts, hints): ≥ 4.5:1 on every ivory surface it sits on
+     (--bg 4.96, --bg-2 4.58, --bg-3 5.36); set apart from --muted by size and weight, not lightness. */
+  --muted-2: #6d665a;
 
   /* Bronze accent, tuned for AA contrast on ivory */
   --accent: #7a5a2c;
@@ -69,18 +74,26 @@
 
   --ok: #2f7a52;
   --err: #b0473a;
-  --grain: 0.022;
+  /* No film grain on ivory: it was imperceptible and forced a blended full-screen composite */
+  --grain: 0;
 
   /* Component surfaces (light): raised paper, hairlines, soft shadows */
   --card-bg: var(--bg-3);
   --card-shadow: 0 1px 2px rgb(22 19 15 / 0.04), 0 20px 50px -30px rgb(22 19 15 / 0.25);
-  --chip-bg: rgb(251 248 243 / 0.7);
+  --card-shadow-hover: 0 1px 2px rgb(22 19 15 / 0.05), 0 30px 60px -30px rgb(22 19 15 / 0.32);
+  --card-highlight: inset 0 1px 0 rgb(255 255 255 / 0.7);
+  --glass-shadow: 0 1px 2px rgb(22 19 15 / 0.04), 0 20px 50px -30px rgb(22 19 15 / 0.25);
+  --chip-bg: rgb(251 248 243 / 0.85);
+  --chip-shadow: 0 1px 2px rgb(22 19 15 / 0.04);
   --input-bg: var(--bg-3);
   --input-bg-focus: #fffdf9;
+  --input-border: rgb(22 19 15 / 0.16);
+  --input-shadow: inset 0 1px 2px rgb(22 19 15 / 0.04);
   --ghost-bg: rgb(251 248 243 / 0.35);
   --sheen: rgb(255 255 255 / 0.16);
   --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none' stroke='%237a5a2c' stroke-width='1.6'%3E%3Cpath d='M1 1.5l5 5 5-5'/%3E%3C/svg%3E");
-  --cursor-ring: rgb(22 19 15 / 0.35);
+  --cursor-ring: rgb(22 19 15 / 0.55);
+  --cursor-fill: rgb(22 19 15 / 0.04);
   --cursor-blend: normal;
   color-scheme: light;
 }
@@ -100,7 +113,7 @@
   --text: #f3eee4;
   --text-2: #d9d3c7;
   --muted: #9b968c;
-  --muted-2: #6f6b64;
+  --muted-2: #8a857c;
 
   /* Champagne gold accent */
   --accent: #c9a86a;
@@ -118,19 +131,26 @@
 
   --ok: #7fc8a0;
   --err: #e58a7a;
-  --grain: 0.045;
+  --grain: 0.04;
 
   /* Component surfaces (dark): faint sheen on obsidian */
   --card-bg: linear-gradient(180deg, rgb(255 255 255 / 0.035), rgb(255 255 255 / 0.01));
   --card-shadow: none;
+  --card-shadow-hover: 0 30px 60px -30px rgb(0 0 0 / 0.8);
+  --card-highlight: inset 0 1px 0 rgb(255 255 255 / 0.04);
+  --glass-shadow: 0 30px 70px -40px rgb(0 0 0 / 0.7);
   --chip-bg: rgb(255 255 255 / 0.02);
+  --chip-shadow: none;
   --input-bg: rgb(10 10 12 / 0.55);
   --input-bg-focus: rgb(10 10 12 / 0.8);
+  --input-border: var(--line-strong);
+  --input-shadow: none;
   --ghost-bg: rgb(255 255 255 / 0.02);
   --sheen: rgb(255 255 255 / 0.5);
   --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none' stroke='%23c9a86a' stroke-width='1.6'%3E%3Cpath d='M1 1.5l5 5 5-5'/%3E%3C/svg%3E");
-  --cursor-ring: rgb(232 211 162 / 0.55);
-  --cursor-blend: difference;
+  --cursor-ring: rgb(232 211 162 / 0.6);
+  --cursor-fill: transparent;
+  --cursor-blend: normal;
   color-scheme: dark;
 }
 
@@ -148,7 +168,10 @@ html[data-theme='dark'] { --page-bg: #0a0a0c; }
 /* ---------- Reset ---------- */
 *, *::before, *::after { box-sizing: border-box; }
 * { margin: 0; }
-html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; scroll-padding-top: calc(var(--header-h) + 1rem); }
+/* Phones: keyboard focus stops above the fixed quick-action bar (and /book/'s sticky Continue bar)
+   instead of scrolling in underneath it (WCAG 2.4.11). */
+@media (max-width: 760px) { html { scroll-padding-bottom: calc(96px + env(safe-area-inset-bottom)); } }
 html.lenis, html.lenis body { height: auto; }
 .lenis.lenis-smooth { scroll-behavior: auto !important; }
 .lenis.lenis-stopped { overflow: hidden; }
@@ -170,18 +193,28 @@ button { cursor: pointer; background: none; border: 0; padding: 0; }
 a { color: inherit; text-decoration: none; }
 ul[role='list'], ol[role='list'] { list-style: none; padding: 0; }
 ::selection { background: var(--accent); color: var(--on-accent); }
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+/* Programmatic focus target of "Skip to content" needs no ring. */
+#main:focus { outline: none; }
 
-/* Film grain overlay for a tactile, photographic finish */
-body::after {
+/* No italics anywhere (the client rejected the ornamental serif look).
+   Headline <em> is an accent gradient (below); body-copy <em> gets weight + ink instead.
+   :where() keeps these at zero specificity so any component style wins. */
+em, i, cite, dfn, address { font-style: normal; }
+:where(p, li, dd, td, th, blockquote, figcaption, summary) :where(em) { font-weight: 600; color: var(--text); }
+
+/* Film grain overlay for a tactile, photographic finish (Onyx only, desktop only:
+   a full-screen fixed layer is not worth the compositing cost on phones). */
+html[data-theme='dark'] body::after {
   content: '';
   position: fixed;
-  inset: -50%;
+  inset: 0;
   z-index: 9998;
   pointer-events: none;
   opacity: var(--grain);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
+@media (pointer: coarse) { html[data-theme='dark'] body::after { content: none; } }
 
 /* ---------- Layout ---------- */
 .container { width: min(100% - var(--gutter) * 2, var(--container)); margin-inline: auto; }
@@ -199,10 +232,13 @@ body::after {
   letter-spacing: -0.032em;
   color: var(--text);
   text-wrap: pretty;
+  font-kerning: normal;
 }
-h1, .h1 { font-size: var(--fs-h1); letter-spacing: -0.035em; }
-h2, .h2 { font-size: var(--fs-h2); line-height: 1.07; letter-spacing: -0.03em; }
-h3, .h3 { font-size: var(--fs-h3); line-height: 1.2; letter-spacing: -0.018em; }
+h1, .h1 { font-size: var(--fs-h1); letter-spacing: -0.035em; text-wrap: balance; }
+/* balance, not pretty: multi-line display headings should never end on a lone word */
+h2, .h2 { font-size: var(--fs-h2); line-height: 1.07; letter-spacing: -0.03em; text-wrap: balance; }
+h3, .h3 { font-size: var(--fs-h3); line-height: 1.2; letter-spacing: -0.02em; }
+h4, .h4 { font-family: var(--font-display); font-size: 1.08rem; font-weight: 600; line-height: 1.3; letter-spacing: -0.012em; color: var(--text); }
 .display em, h1 em, h2 em, h3 em, .italic-gold {
   font-style: normal;
   font-weight: inherit;
@@ -232,12 +268,14 @@ h3, .h3 { font-size: var(--fs-h3); line-height: 1.2; letter-spacing: -0.018em; }
   font-family: var(--font-sans);
   font-size: var(--fs-micro);
   font-weight: 600;
-  letter-spacing: 0.24em;
+  line-height: 1.4;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--accent);
 }
 .eyebrow::before {
   content: '';
+  flex: none;
   width: 2.4rem;
   height: 1px;
   background: linear-gradient(90deg, transparent, var(--accent));
@@ -247,6 +285,9 @@ h3, .h3 { font-size: var(--fs-h3); line-height: 1.2; letter-spacing: -0.018em; }
 .section-head--center .lead { margin-inline: auto; }
 .section-head--split { grid-template-columns: 1.2fr 1fr; align-items: end; gap: 2rem 4rem; }
 @media (max-width: 860px) { .section-head--split { grid-template-columns: 1fr; } }
+/* The eyebrow + heading column of a split head: same 1.2rem rhythm everywhere. Zero specificity,
+   so a component that styles its own column keeps its values. */
+:where(.section-head) > :where(div:first-child) { display: grid; gap: 1.2rem; justify-items: start; }
 
 /* ---------- Buttons ---------- */
 .btn {
@@ -267,8 +308,9 @@ h3, .h3 { font-size: var(--fs-h3); line-height: 1.2; letter-spacing: -0.018em; }
   isolation: isolate;
   overflow: hidden;
   transition: color 0.4s var(--ease-out), border-color 0.4s var(--ease-out), box-shadow 0.4s var(--ease-out), transform 0.4s var(--ease-out);
-  will-change: transform;
 }
+/* Promote only while a magnetic button is actually moving under the pointer */
+@media (hover: hover) and (pointer: fine) { .btn[data-magnetic]:hover { will-change: transform; } }
 .btn svg { width: 1.05em; height: 1.05em; flex: none; transition: transform 0.4s var(--ease-out); }
 .btn:hover svg.arrow { transform: translateX(4px); }
 .btn--gold { color: var(--cta-fg); background: var(--cta-bg); background-size: 200% 100%; box-shadow: var(--cta-glow); }
@@ -282,7 +324,9 @@ h3, .h3 { font-size: var(--fs-h3); line-height: 1.2; letter-spacing: -0.018em; }
   transition: transform 0.9s var(--ease-out);
 }
 .btn--gold:hover::before { transform: translateX(120%); }
-.btn--ghost { color: var(--text); border: 1px solid var(--line-strong); background: var(--ghost-bg); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+/* backdrop-filter: prefixed first everywhere, since lightningcss (the build's CSS minifier) keeps only
+   the -webkit- declaration when the unprefixed one comes first, and Chrome/Firefox ignore that. */
+.btn--ghost { color: var(--text); border: 1px solid var(--line-strong); background: var(--ghost-bg); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
 .btn--ghost::before {
   content: '';
   position: absolute;
@@ -297,6 +341,7 @@ h3, .h3 { font-size: var(--fs-h3); line-height: 1.2; letter-spacing: -0.018em; }
 .btn--sm { min-height: 42px; padding: 0 1.25rem; font-size: 0.7rem; }
 .btn--lg { min-height: 60px; padding: 0 2.2rem; }
 .btn--block { width: 100%; }
+.btn:focus-visible { outline-offset: 4px; }
 
 .link-underline { position: relative; display: inline-flex; align-items: center; gap: 0.5rem; color: var(--accent); font-weight: 600; font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase; }
 .link-underline::after { content: ''; position: absolute; left: 0; right: 0; bottom: -5px; height: 1px; background: currentColor; opacity: 0.6; transform-origin: right; transform: scaleX(0.25); transition: transform 0.5s var(--ease-out), opacity 0.5s; }
@@ -309,13 +354,17 @@ h3, .h3 { font-size: var(--fs-h3); line-height: 1.2; letter-spacing: -0.018em; }
   background: var(--card-bg);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  box-shadow: var(--card-shadow);
+  box-shadow: var(--card-highlight), var(--card-shadow);
 }
+/* Opt-in lift for clickable cards */
+.card--hover { transition: transform 0.6s var(--ease-out), box-shadow 0.6s var(--ease-out), border-color 0.4s; }
+.card--hover:hover { transform: translateY(-4px); border-color: var(--line-strong); box-shadow: var(--card-highlight), var(--card-shadow-hover); }
 .glass {
   background: var(--glass);
   border: 1px solid var(--line);
-  backdrop-filter: blur(22px) saturate(140%);
+  box-shadow: var(--glass-shadow);
   -webkit-backdrop-filter: blur(22px) saturate(140%);
+  backdrop-filter: blur(22px) saturate(140%);
 }
 .chip {
   display: inline-flex;
@@ -325,9 +374,12 @@ h3, .h3 { font-size: var(--fs-h3); line-height: 1.2; letter-spacing: -0.018em; }
   border: 1px solid var(--line);
   border-radius: 999px;
   font-size: 0.76rem;
+  line-height: 1.3;
   color: var(--text-2);
   background: var(--chip-bg);
+  box-shadow: var(--chip-shadow);
 }
+.chip svg { width: 14px; height: 14px; flex: none; color: var(--accent); }
 .stars { display: inline-flex; gap: 2px; color: var(--accent); }
 .stars svg { width: 14px; height: 14px; }
 
@@ -339,15 +391,25 @@ h3, .h3 { font-size: var(--fs-h3); line-height: 1.2; letter-spacing: -0.018em; }
   min-height: 52px;
   padding: 0.85rem 1rem;
   border-radius: var(--radius-s);
-  border: 1px solid var(--line-strong);
+  border: 1px solid var(--input-border);
   background-color: var(--input-bg);
+  box-shadow: var(--input-shadow);
   color: var(--text);
   transition: border-color 0.3s, box-shadow 0.3s, background 0.3s;
 }
-.input::placeholder { color: var(--muted-2); }
+/* Placeholders carry real hints ("Address, hotel or venue"): --muted keeps them ≥ 5:1 */
+.input::placeholder { color: var(--muted); opacity: 1; }
 .input:hover { border-color: rgb(var(--fg-rgb) / 0.3); }
 .input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px rgb(var(--accent-rgb) / 0.15); background-color: var(--input-bg-focus); }
 .input[aria-invalid='true'] { border-color: var(--err); }
+.input[aria-invalid='true']:focus { box-shadow: 0 0 0 4px color-mix(in srgb, var(--err) 18%, transparent); }
+textarea.input { min-height: 140px; resize: vertical; line-height: 1.55; }
+/* Keep browser autofill on-palette instead of the default yellow/blue */
+.input:-webkit-autofill, .input:-webkit-autofill:hover, .input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text);
+  -webkit-box-shadow: 0 0 0 100px var(--input-bg-focus) inset;
+  caret-color: var(--text);
+}
 select.input { appearance: none; background-image: var(--select-arrow); background-repeat: no-repeat; background-position: right 1rem center; padding-right: 2.5rem; }
 /* Native date/time pickers follow the theme of their scope (color-scheme is set per theme). */
 
@@ -366,6 +428,12 @@ select.input { appearance: none; background-image: var(--select-arrow); backgrou
 .js [data-reveal]:not(.is-in) { opacity: 0; }
 .js [data-reveal='scale']:not(.is-in) { opacity: 1; clip-path: inset(12% 6% 12% 6% round var(--radius)); }
 .js [data-stagger] > *:not(.is-in) { opacity: 0; }
+/* Split headlines stay hidden until global.ts has wrapped their words and set the start pose, so they
+   do not paint, vanish and rise again. Failsafe: shown after 2.5s even if the script never runs. */
+@media (prefers-reduced-motion: no-preference) {
+  .js [data-split]:not([data-split-done], [data-split-manual]) { visibility: hidden; animation: split-failsafe 0s linear 2.5s forwards; }
+}
+@keyframes split-failsafe { to { visibility: visible; } }
 .split-line { display: block; overflow: hidden; padding-bottom: 0.08em; margin-bottom: -0.08em; }
 .split-word { display: inline-block; will-change: transform; }
 
@@ -383,11 +451,17 @@ select.input { appearance: none; background-image: var(--select-arrow); backgrou
 .no-scroll { overflow: hidden; }
 
 /* Cursor follower (desktop, fine pointers only) */
-.cursor { position: fixed; top: 0; left: 0; z-index: 9999; pointer-events: none; width: 34px; height: 34px; margin: -17px 0 0 -17px; border: 1px solid var(--cursor-ring); border-radius: 50%; transition: width 0.35s var(--ease-out), height 0.35s var(--ease-out), margin 0.35s var(--ease-out), background 0.35s, border-color 0.35s, opacity 0.3s; opacity: 0; mix-blend-mode: var(--cursor-blend); }
+.cursor { position: fixed; top: 0; left: 0; z-index: 9999; pointer-events: none; width: 34px; height: 34px; margin: -17px 0 0 -17px; border: 1px solid var(--cursor-ring); border-radius: 50%; background: var(--cursor-fill); transition: width 0.35s var(--ease-out), height 0.35s var(--ease-out), margin 0.35s var(--ease-out), background 0.35s, border-color 0.35s, opacity 0.3s; opacity: 0; mix-blend-mode: var(--cursor-blend); }
+/* The follower adopts the theme of whatever it hovers (data-theme set from global.ts),
+   so the ring stays visible on ivory pages and on always-dark islands alike. */
 .cursor.is-visible { opacity: 1; }
 .cursor.is-hover { width: 64px; height: 64px; margin: -32px 0 0 -32px; background: rgb(var(--accent-rgb) / 0.1); border-color: var(--accent); }
 .cursor.has-label { width: 82px; height: 82px; margin: -41px 0 0 -41px; background: var(--accent); border-color: var(--accent); mix-blend-mode: normal; }
-.cursor-label { position: fixed; top: 0; left: 0; z-index: 9999; pointer-events: none; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--on-accent); transform: translate(-50%, -50%); }
+/* Centering (xPercent/yPercent -50) is owned by GSAP in global.ts: a CSS translate here would be
+   parsed once while the label is still empty (0px wide) and stick at 0%. */
+.cursor-label { position: fixed; top: 0; left: 0; z-index: 9999; pointer-events: none; font-size: 0.62rem; font-weight: 700; line-height: 1; letter-spacing: 0.2em; padding-left: 0.2em; text-transform: uppercase; white-space: nowrap; opacity: 0; transition: opacity 0.25s; }
+.cursor-label.is-visible { opacity: 1; }
+.cursor-label, .cursor-label[data-theme] { color: var(--on-accent); }
 @media (hover: none), (pointer: coarse) { .cursor, .cursor-label { display: none; } }
 
 @media (prefers-reduced-motion: reduce) {

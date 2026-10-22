@@ -1,0 +1,157 @@
+---
+import Icon from '../Icon.astro';
+
+// The Door-to-Door Standard. Every claim maps to site.ts copy (services, faqs, fleet).
+const pillars = [
+  {
+    icon: 'clock',
+    title: 'Punctuality',
+    tag: 'On time is the minimum.',
+    copy: 'We plan around rush hour, game days and sailing days. Arriving flights are tracked in real time and pickup adjusts automatically, and your chauffeur texts the exact meeting point before you land.',
+    practice: ['Live flight monitoring', 'Complimentary wait time', 'Chauffeur details before pickup'],
+  },
+  {
+    icon: 'briefcase',
+    title: 'Discretion',
+    tag: 'What is said in the cabin stays there.',
+    copy: 'Itineraries stay confidential and conversations stay private. Chauffeurs read the room: a quiet ride before a big meeting, a warm welcome after a long flight, a celebration that is entirely yours.',
+    practice: ['Strict confidentiality', 'Privacy partitions in select vehicles', 'Corporate accounts & invoicing'],
+  },
+  {
+    icon: 'shield',
+    title: 'Safety',
+    tag: 'Licensed, checked, trained.',
+    copy: 'Every chauffeur is licensed, background-checked and trained in safety-first service. Every vehicle is immaculately detailed before each ride and driven only by a professional chauffeur.',
+    practice: ['Background-checked chauffeurs', 'Detailed before every ride', 'Chauffeur-driven only'],
+  },
+  {
+    icon: 'pin',
+    title: 'Local expertise',
+    tag: 'Seattle, inside out.',
+    copy: 'From the SeaTac arrivals curb to the Bell Street and Smith Cove cruise terminals, from Lumen Field on game day to the back roads of Woodinville wine country, our chauffeurs know the way and the timing.',
+    practice: ['SeaTac, Paine Field & Boeing Field', 'Pier 66 & Pier 91', 'Stadiums, venues & wineries'],
+  },
+];
+const pad = (n: number) => String(n).padStart(2, '0');
+---
+<section id="standard" class="section std surface-2" aria-labelledby="std-title">
+  <div class="std__glow" aria-hidden="true"></div>
+  <div class="container">
+    <div class="section-head section-head--split std__head">
+      <div class="std__head-main">
+        <p class="eyebrow" data-reveal="fade">The Door-to-Door Standard</p>
+        <h2 id="std-title" data-split>Four commitments. <em>No exceptions.</em></h2>
+      </div>
+      <p class="lead" data-reveal data-delay="0.15">Whatever the vehicle and whatever the occasion, every chauffeur works to the same four standards, on every ride.</p>
+    </div>
+
+    <ol class="std__list" role="list">
+      {pillars.map((p, i) => (
+        <li class="std__row" data-reveal data-delay={String(i * 0.05)}>
+          <span class="std__num" aria-hidden="true">{pad(i + 1)}</span>
+          <div class="std__name">
+            <span class="std__icon" aria-hidden="true"><Icon name={p.icon} /></span>
+            <div>
+              <h3 class="std__title">{p.title}</h3>
+              <p class="std__tag">{p.tag}</p>
+            </div>
+          </div>
+          <p class="std__copy">{p.copy}</p>
+          <ul class="std__practice" role="list" aria-label={`${p.title} in practice`}>
+            {p.practice.map((x) => <li><Icon name="check" /> {x}</li>)}
+          </ul>
+        </li>
+      ))}
+    </ol>
+  </div>
+</section>
+
+<style>
+  .std { overflow: clip; }
+  .std__glow {
+    position: absolute;
+    pointer-events: none;
+    left: -15%;
+    top: -25%;
+    width: min(900px, 110vw);
+    aspect-ratio: 1;
+    background: radial-gradient(closest-side, rgb(var(--bg-rgb) / 0.85), rgb(var(--bg-rgb) / 0) 70%);
+  }
+  :global([data-theme='dark']) .std__glow { background: radial-gradient(closest-side, rgb(var(--accent-rgb) / 0.08), transparent 70%); }
+  .std .container { position: relative; }
+  .std__head-main { display: grid; gap: 1.4rem; }
+  /* Short accent stays on one line where h2 balancing is unsupported (data-split turns &nbsp; into a
+     breakable space, and Chrome's balance misplaces breaks around a nowrap box, so modern browsers skip it) */
+  @supports not (text-wrap: balance) { .std__head-main h2 em { white-space: nowrap; } }
+  .std__head .lead { max-width: 46ch; }
+
+  .std__list { display: grid; border-top: 1px solid var(--line-strong); }
+  .std__row {
+    position: relative;
+    display: grid;
+    grid-template-columns: 4.5rem minmax(0, 1fr) minmax(0, 1.35fr) minmax(0, 0.95fr);
+    gap: 1.5rem clamp(1.5rem, 3.4vw, 3.5rem);
+    align-items: start;
+    padding: clamp(1.8rem, 3.4vw, 2.8rem) 0;
+    border-bottom: 1px solid var(--line);
+  }
+  /* A bronze hairline draws across the row on hover */
+  .std__row::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 1px;
+    background: var(--accent-grad);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.9s var(--ease-out);
+  }
+  .std__row:hover::after { transform: scaleX(1); }
+
+  .std__num {
+    font-family: var(--font-display);
+    font-size: 0.85rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    padding-top: 0.55rem;
+    transition: color 0.5s;
+  }
+  .std__row:hover .std__num { color: var(--accent); }
+  .std__name { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 1rem; align-items: start; }
+  .std__icon {
+    display: grid;
+    place-items: center;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    border: 1px solid var(--line-strong);
+    background: var(--card-bg);
+    box-shadow: var(--card-highlight);
+    color: var(--accent);
+    transition: background 0.5s var(--ease-out), color 0.5s, border-color 0.5s;
+  }
+  .std__icon :global(svg) { width: 20px; height: 20px; }
+  .std__row:hover .std__icon { background: var(--cta-bg); color: var(--cta-fg); border-color: transparent; }
+  .std__title { font-size: clamp(1.5rem, 2.2vw, 2rem); line-height: 1.1; letter-spacing: -0.028em; }
+  .std__tag { margin-top: 0.45rem; font-size: 0.92rem; color: var(--accent); font-weight: 500; }
+  .std__copy { color: var(--text-2); line-height: 1.7; padding-top: 0.35rem; }
+  .std__practice { display: grid; gap: 0.6rem; padding-top: 0.4rem; }
+  .std__practice li { display: flex; align-items: flex-start; gap: 0.6rem; font-size: 0.88rem; line-height: 1.45; color: var(--text); }
+  .std__practice :global(svg) { flex: none; width: 16px; height: 16px; margin-top: 0.12em; color: var(--accent); }
+
+  @media (max-width: 1100px) {
+    .std__row { grid-template-columns: 3.5rem minmax(0, 1fr) minmax(0, 1.3fr); }
+    .std__practice { grid-column: 3; }
+  }
+  @media (max-width: 760px) {
+    .std__row { grid-template-columns: minmax(0, 1fr); gap: 1.1rem; padding: 2rem 0; }
+    .std__num { position: absolute; right: 0; top: 2rem; padding-top: 0.2rem; }
+    .std__name { padding-right: 2.5rem; }
+    .std__practice { grid-column: auto; padding-top: 0; }
+    .std__copy { padding-top: 0; }
+  }
+</style>

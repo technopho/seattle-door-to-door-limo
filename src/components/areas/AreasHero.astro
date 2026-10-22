@@ -1,0 +1,96 @@
+---
+// /service-areas/ hero: page-themed (ivory in light, onyx in dark), headline + wide aerial photo.
+// Kept lean on purpose: the city cards right below carry the facts (cities, ETAs, terminals).
+import Icon from '../Icon.astro';
+import Crumbs from './Crumbs.astro';
+import { site, images } from '../../data/site';
+---
+<section class="ah" aria-labelledby="areas-title">
+  <div class="ah__glow" aria-hidden="true"></div>
+  <div class="container">
+    <div data-reveal="fade"><Crumbs items={[['Service Areas', '/service-areas/']]} /></div>
+
+    <div class="ah__head">
+      <div class="ah__main">
+        <p class="eyebrow" data-reveal="fade">Service areas · Puget Sound</p>
+        <h1 id="areas-title" class="ah__title" data-split>Chauffeur service across <em>Puget Sound</em></h1>
+      </div>
+      <div class="ah__aside" data-reveal data-delay="0.2">
+        <p class="lead">One team of professional chauffeurs for Seattle, the Eastside, Tacoma and Everett: airport runs, cruise days, meetings and nights out, reserved around the clock.</p>
+        <div class="ah__ctas">
+          <a href="/book/" class="btn btn--gold" data-magnetic="0.2">Reserve a ride <Icon name="arrow" /></a>
+          <a href={site.phoneHref} class="btn btn--ghost" data-cursor="Call"><Icon name="phone" /> {site.phone}</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="ah__media" data-reveal="scale">
+      <div class="ah__par" data-parallax="0.06">
+        <img
+          src={images.bellevue}
+          alt="Aerial view of Lake Union and the Aurora Bridge, with downtown Seattle and the Space Needle beyond"
+          width="1600"
+          height="900"
+          decoding="async"
+          fetchpriority="high"
+        />
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .ah {
+    position: relative;
+    isolation: isolate;
+    padding: calc(var(--header-h) + 0.75rem) 0 0;
+  }
+  .ah__glow {
+    position: absolute;
+    inset: 0 0 auto;
+    height: 70%;
+    z-index: -1;
+    pointer-events: none;
+    background: radial-gradient(60% 70% at 85% 0%, rgb(var(--accent-rgb) / 0.08), transparent 70%);
+  }
+  .ah__head {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    align-items: end;
+    gap: 1.5rem clamp(2rem, 5vw, 5rem);
+    margin: clamp(1.5rem, 3vw, 2.5rem) 0 clamp(2rem, 4vw, 3rem);
+  }
+  .ah__main { display: grid; gap: 1.2rem; }
+  .ah__title { font-size: var(--fs-hero); line-height: 0.98; letter-spacing: -0.04em; max-width: 12ch; }
+  /* Tight display leading: give the word masks room for descenders (g, p, y). */
+  .ah__title :global(.split-line) { vertical-align: top; padding-bottom: 0.2em; margin-bottom: -0.2em; }
+  /* The gold gradient is clipped to each word box; extend it under the descenders. */
+  .ah__title :global(em .split-word) { padding-bottom: 0.2em; margin-bottom: -0.2em; }
+  .ah__aside { display: grid; gap: 1.4rem; justify-items: start; padding-bottom: 0.5rem; }
+  .ah__aside .lead { max-width: 44ch; }
+  .ah__ctas { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+
+  .ah__media {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--radius-l);
+    aspect-ratio: 21 / 8.5;
+    background: var(--bg-3);
+    box-shadow: 0 1px 2px rgb(var(--fg-rgb) / 0.05), 0 40px 80px -50px rgb(var(--fg-rgb) / 0.45);
+  }
+  .ah__par { position: absolute; inset: -8% 0; }
+  .ah__par img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 28%; }
+  :global([data-theme='dark']) .ah__par img { filter: brightness(0.82) contrast(1.06) saturate(0.85); }
+  .ah__media::after { content: ''; position: absolute; inset: 0; pointer-events: none; border-radius: inherit; box-shadow: inset 0 0 0 1px rgb(var(--fg-rgb) / 0.06); }
+
+  @media (max-width: 900px) {
+    .ah__head { grid-template-columns: 1fr; align-items: start; }
+    .ah__media { aspect-ratio: 16 / 10; }
+  }
+  @media (max-width: 640px) {
+    .ah__ctas { display: grid; width: 100%; }
+    .ah__ctas .btn { width: 100%; }
+    .ah__media { aspect-ratio: 4 / 3; border-radius: var(--radius); }
+    .ah__par img { object-position: 38% 50%; }
+  }
+</style>
